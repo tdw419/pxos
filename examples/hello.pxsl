@@ -1,0 +1,5 @@
+fn pixel_main() -> vec4<f32> {
+    let u = coord.x / screen_dims.x;
+    let v = coord.y / screen_dims.y;
+    return vec4<f32>(u, v, 0.5, 1.0);
+}
