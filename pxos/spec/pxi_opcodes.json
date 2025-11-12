@@ -1,0 +1,55 @@
+{
+  "name": "PXI Opcode Palette",
+  "version": "0.1",
+  "description": "Machine-readable specification of the Pixel Instruction (PXI) set for pxOS.",
+  "opcodes": [
+    {
+      "opcode": "0x00",
+      "mnemonic": "NOP",
+      "action": "No operation. The Kernel Cursor advances to the next pixel without side effects.",
+      "rgba": [0, 0, 0, 255]
+    },
+    {
+      "opcode": "0x10",
+      "mnemonic": "LOAD",
+      "action": "Read a pixel value from the DATA region. The address is specified by the (G, B) channels of the instruction pixel, interpreted as (X, Y) coordinates. The loaded value is stored in a temporary register.",
+      "rgba": [16, 0, 0, 255]
+    },
+    {
+      "opcode": "0x20",
+      "mnemonic": "STORE",
+      "action": "Write a pixel value from a temporary register to the DATA region. The destination address is specified by the (G, B) channels.",
+      "rgba": [32, 0, 0, 255]
+    },
+    {
+      "opcode": "0x30",
+      "mnemonic": "ADD",
+      "action": "Perform a parallel addition (e.g., alpha blend) of two pixel values. The source and destination are specified by operands.",
+      "rgba": [48, 0, 0, 255]
+    },
+    {
+      "opcode": "0x40",
+      "mnemonic": "JUMP",
+      "action": "Set the Kernel Cursor to a new location in the PXI Region. The target address is specified by the (G, B) channels.",
+      "rgba": [64, 0, 0, 255]
+    },
+    {
+      "opcode": "0x50",
+      "mnemonic": "CMP",
+      "action": "Compare two pixel values. The result is stored in the FLAGS channel (Alpha) of a status register.",
+      "rgba": [80, 0, 0, 255]
+    },
+    {
+      "opcode": "0x60",
+      "mnemonic": "DRAW",
+      "action": "Emit the current contents of the DATA region to the FRAME region, making it visible to the user.",
+      "rgba": [96, 0, 0, 255]
+    },
+    {
+      "opcode": "0xFF",
+      "mnemonic": "HALT",
+      "action": "Stop the execution of the current program. The PxOS scheduler will terminate the process.",
+      "rgba": [255, 0, 0, 255]
+    }
+  ]
+}
