@@ -61,6 +61,7 @@ class PxVmAssembler:
         'JMP':    0x70,
         'JZ':     0x71,
         'JNZ':    0x72,
+        'SYSCALL': 0x80,
         'PRINT':  0xF0,
         'HALT':   0xFF,
     }
@@ -82,6 +83,7 @@ class PxVmAssembler:
         'JMP':    'L',       # JMP label
         'JZ':     'RL',      # JZ rs, label
         'JNZ':    'RL',      # JNZ rs, label
+        'SYSCALL': '',       # SYSCALL (no operands, uses registers)
         'PRINT':  'R',       # PRINT rd
         'HALT':   '',        # HALT
     }

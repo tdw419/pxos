@@ -1,0 +1,59 @@
+; echo.pxasm - Read from stdin, write to stdout
+; Demonstrates bidirectional I/O using syscalls
+;
+; Uses:
+;   - SYS_READ (syscall #2) to read from STDIN
+;   - SYS_WRITE (syscall #1) to write to STDOUT
+;
+; To test:
+;   > FEED Hello, this is a test!
+;   > ASM echo examples/echo.pxasm
+;   > RUN echo
+
+main:
+    ; Read from stdin into buffer at address 2000
+    ; Syscall convention for read:
+    ;   R0 = syscall number (2 = SYS_READ)
+    ;   R1 = fd (0 = STDIN)
+    ;   R2 = buffer address
+    ;   R3 = max bytes to read
+    ;   → R0 = bytes actually read (or error code)
+
+    IMM32 R0, 2         ; SYS_READ
+    IMM32 R1, 0         ; STDIN
+    IMM32 R2, 2000      ; buffer address
+    IMM32 R3, 256       ; read up to 256 bytes
+    SYSCALL
+
+    ; Save number of bytes read
+    MOV R4, R0          ; R4 = bytes_read
+
+    ; Check if we read anything
+    IMM32 R5, 0
+    SUB R6, R4, R5      ; R6 = bytes_read - 0
+    JZ R6, no_data      ; if bytes_read == 0, jump to no_data
+
+    ; Write to stdout
+    ; Syscall convention for write:
+    ;   R0 = syscall number (1 = SYS_WRITE)
+    ;   R1 = fd (1 = STDOUT)
+    ;   R2 = buffer address
+    ;   R3 = bytes to write
+    ;   → R0 = bytes actually written
+
+    IMM32 R0, 1         ; SYS_WRITE
+    IMM32 R1, 1         ; STDOUT
+    IMM32 R2, 2000      ; buffer address (same as we read into)
+    MOV R3, R4          ; bytes to write = bytes we read
+    SYSCALL
+
+    ; R0 now contains bytes written
+    PRINT R0
+    HALT
+
+no_data:
+    ; No data was read (EOF or empty stdin)
+    ; Print -1 to indicate this
+    IMM32 R0, 0
+    PRINT R0
+    HALT

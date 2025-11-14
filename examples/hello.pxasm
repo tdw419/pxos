@@ -1,0 +1,100 @@
+; hello.pxasm - Classic "Hello, World!" using syscalls
+; This is the first pxVM program to perform real I/O!
+;
+; Uses: SYS_WRITE (syscall #1) to write to STDOUT
+
+main:
+    ; Store "Hello, World!\n" in memory at address 1000
+    IMM32 R7, 1000      ; R7 = base buffer address
+
+    ; Write each character to memory
+    ; Strategy: Load character into R0, address into R1, then STORE
+
+    ; H
+    IMM32 R0, 0x48
+    IMM32 R1, 1000
+    STORE R1, R0
+
+    ; e
+    IMM32 R0, 0x65
+    IMM32 R1, 1001
+    STORE R1, R0
+
+    ; l
+    IMM32 R0, 0x6C
+    IMM32 R1, 1002
+    STORE R1, R0
+
+    ; l
+    IMM32 R0, 0x6C
+    IMM32 R1, 1003
+    STORE R1, R0
+
+    ; o
+    IMM32 R0, 0x6F
+    IMM32 R1, 1004
+    STORE R1, R0
+
+    ; ,
+    IMM32 R0, 0x2C
+    IMM32 R1, 1005
+    STORE R1, R0
+
+    ; (space)
+    IMM32 R0, 0x20
+    IMM32 R1, 1006
+    STORE R1, R0
+
+    ; W
+    IMM32 R0, 0x57
+    IMM32 R1, 1007
+    STORE R1, R0
+
+    ; o
+    IMM32 R0, 0x6F
+    IMM32 R1, 1008
+    STORE R1, R0
+
+    ; r
+    IMM32 R0, 0x72
+    IMM32 R1, 1009
+    STORE R1, R0
+
+    ; l
+    IMM32 R0, 0x6C
+    IMM32 R1, 1010
+    STORE R1, R0
+
+    ; d
+    IMM32 R0, 0x64
+    IMM32 R1, 1011
+    STORE R1, R0
+
+    ; !
+    IMM32 R0, 0x21
+    IMM32 R1, 1012
+    STORE R1, R0
+
+    ; \n (newline)
+    IMM32 R0, 0x0A
+    IMM32 R1, 1013
+    STORE R1, R0
+
+    ; Now make the syscall: write(STDOUT, buffer, length)
+    ; Syscall convention:
+    ;   R0 = syscall number
+    ;   R1 = fd (file descriptor)
+    ;   R2 = buffer address
+    ;   R3 = count (bytes to write)
+
+    IMM32 R0, 1         ; SYS_WRITE
+    IMM32 R1, 1         ; STDOUT
+    IMM32 R2, 1000      ; buffer address
+    IMM32 R3, 14        ; length ("Hello, World!\n" = 14 bytes)
+    SYSCALL             ; Make the syscall!
+
+    ; R0 now contains bytes written (should be 14)
+    ; Let's print it to verify
+    PRINT R0
+
+    HALT                ; Exit program

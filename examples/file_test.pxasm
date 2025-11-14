@@ -1,0 +1,166 @@
+; file_test.pxasm - Test file I/O operations
+; Demonstrates: SYS_OPEN, SYS_WRITE, SYS_CLOSE, SYS_READ
+;
+; This program:
+;   1. Creates a file "test.txt"
+;   2. Writes "Hello, file!" to it
+;   3. Closes the file
+;   4. Reopens the file
+;   5. Reads the contents
+;   6. Writes contents to STDOUT
+
+main:
+    ; === Part 1: Write to file ===
+
+    ; First, store filename "test.txt" in memory at address 3000
+    IMM32 R1, 3000
+    IMM32 R0, 0x74      ; 't'
+    STORE R1, R0
+
+    IMM32 R1, 3001
+    IMM32 R0, 0x65      ; 'e'
+    STORE R1, R0
+
+    IMM32 R1, 3002
+    IMM32 R0, 0x73      ; 's'
+    STORE R1, R0
+
+    IMM32 R1, 3003
+    IMM32 R0, 0x74      ; 't'
+    STORE R1, R0
+
+    IMM32 R1, 3004
+    IMM32 R0, 0x2E      ; '.'
+    STORE R1, R0
+
+    IMM32 R1, 3005
+    IMM32 R0, 0x74      ; 't'
+    STORE R1, R0
+
+    IMM32 R1, 3006
+    IMM32 R0, 0x78      ; 'x'
+    STORE R1, R0
+
+    IMM32 R1, 3007
+    IMM32 R0, 0x74      ; 't'
+    STORE R1, R0
+
+    IMM32 R1, 3008
+    IMM32 R0, 0x00      ; null terminator
+    STORE R1, R0
+
+    ; Open file for writing (O_WRONLY | O_CREATE)
+    ; SYS_OPEN (3): R1 = path_addr, R2 = flags
+    IMM32 R0, 3         ; SYS_OPEN
+    IMM32 R1, 3000      ; path address
+    IMM32 R2, 0x41      ; O_WRONLY (0x01) | O_CREATE (0x40)
+    SYSCALL
+
+    ; R0 now contains file descriptor (should be 3)
+    MOV R6, R0          ; Save fd in R6
+    PRINT R6            ; Print fd
+
+    ; Store "Hello, file!" in memory at address 1000
+    IMM32 R1, 1000
+    IMM32 R0, 0x48      ; 'H'
+    STORE R1, R0
+
+    IMM32 R1, 1001
+    IMM32 R0, 0x65      ; 'e'
+    STORE R1, R0
+
+    IMM32 R1, 1002
+    IMM32 R0, 0x6C      ; 'l'
+    STORE R1, R0
+
+    IMM32 R1, 1003
+    IMM32 R0, 0x6C      ; 'l'
+    STORE R1, R0
+
+    IMM32 R1, 1004
+    IMM32 R0, 0x6F      ; 'o'
+    STORE R1, R0
+
+    IMM32 R1, 1005
+    IMM32 R0, 0x2C      ; ','
+    STORE R1, R0
+
+    IMM32 R1, 1006
+    IMM32 R0, 0x20      ; ' '
+    STORE R1, R0
+
+    IMM32 R1, 1007
+    IMM32 R0, 0x66      ; 'f'
+    STORE R1, R0
+
+    IMM32 R1, 1008
+    IMM32 R0, 0x69      ; 'i'
+    STORE R1, R0
+
+    IMM32 R1, 1009
+    IMM32 R0, 0x6C      ; 'l'
+    STORE R1, R0
+
+    IMM32 R1, 1010
+    IMM32 R0, 0x65      ; 'e'
+    STORE R1, R0
+
+    IMM32 R1, 1011
+    IMM32 R0, 0x21      ; '!'
+    STORE R1, R0
+
+    ; Write to file
+    ; SYS_WRITE (1): R1 = fd, R2 = buf_addr, R3 = count
+    IMM32 R0, 1         ; SYS_WRITE
+    MOV R1, R6          ; fd from R6
+    IMM32 R2, 1000      ; buffer address
+    IMM32 R3, 12        ; "Hello, file!" = 12 bytes
+    SYSCALL
+
+    PRINT R0            ; Print bytes written
+
+    ; Close the file
+    ; SYS_CLOSE (4): R1 = fd
+    IMM32 R0, 4         ; SYS_CLOSE
+    MOV R1, R6          ; fd from R6
+    SYSCALL
+
+    PRINT R0            ; Print result (should be 0 = success)
+
+    ; === Part 2: Read from file ===
+
+    ; Reopen file for reading (O_RDONLY)
+    IMM32 R0, 3         ; SYS_OPEN
+    IMM32 R1, 3000      ; path address (same as before)
+    IMM32 R2, 0x00      ; O_RDONLY
+    SYSCALL
+
+    MOV R6, R0          ; Save new fd in R6
+    PRINT R6            ; Print fd
+
+    ; Read from file into buffer at address 2000
+    ; SYS_READ (2): R1 = fd, R2 = buf_addr, R3 = count
+    IMM32 R0, 2         ; SYS_READ
+    MOV R1, R6          ; fd from R6
+    IMM32 R2, 2000      ; buffer address
+    IMM32 R3, 256       ; max bytes to read
+    SYSCALL
+
+    MOV R7, R0          ; Save bytes read in R7
+    PRINT R7            ; Print bytes read
+
+    ; Write to stdout
+    IMM32 R0, 1         ; SYS_WRITE
+    IMM32 R1, 1         ; STDOUT
+    IMM32 R2, 2000      ; buffer address (where we read to)
+    MOV R3, R7          ; bytes to write = bytes read
+    SYSCALL
+
+    PRINT R0            ; Print bytes written
+
+    ; Close the file
+    IMM32 R0, 4         ; SYS_CLOSE
+    MOV R1, R6          ; fd from R6
+    SYSCALL
+
+    HALT
