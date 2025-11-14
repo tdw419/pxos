@@ -285,6 +285,60 @@ class PxOSTerminalGPU:
         else:
             print(f"[CMD] RECT out of bounds or invalid size")
 
+    def cmd_hline(self, x: int, y: int, length: int, r: int, g: int, b: int, a: int = 255):
+        """
+        HLINE x y length r g b [a]
+
+        Draw a horizontal line in VRAM.
+
+        Args:
+            x, y: Starting position (left endpoint)
+            length: Length of line in pixels
+            r, g, b, a: Color components (0-255)
+
+        Example:
+            terminal.cmd_hline(0, 100, 800, 255, 0, 0)  # Red line across screen
+        """
+        # Clamp to screen bounds
+        if not (0 <= y < HEIGHT):
+            print(f"[CMD] HLINE out of bounds: y={y}")
+            return
+        x1 = max(0, x)
+        x2 = min(WIDTH, x + length)
+
+        if x2 > x1:
+            self.vram[y, x1:x2] = [r, g, b, a]
+            print(f"[CMD] HLINE {x} {y} {length} {r} {g} {b} {a}")
+        else:
+            print(f"[CMD] HLINE out of bounds or invalid length")
+
+    def cmd_vline(self, x: int, y: int, length: int, r: int, g: int, b: int, a: int = 255):
+        """
+        VLINE x y length r g b [a]
+
+        Draw a vertical line in VRAM.
+
+        Args:
+            x, y: Starting position (top endpoint)
+            length: Length of line in pixels
+            r, g, b, a: Color components (0-255)
+
+        Example:
+            terminal.cmd_vline(400, 0, 600, 255, 0, 0)  # Red line down center
+        """
+        # Clamp to screen bounds
+        if not (0 <= x < WIDTH):
+            print(f"[CMD] VLINE out of bounds: x={x}")
+            return
+        y1 = max(0, y)
+        y2 = min(HEIGHT, y + length)
+
+        if y2 > y1:
+            self.vram[y1:y2, x] = [r, g, b, a]
+            print(f"[CMD] VLINE {x} {y} {length} {r} {g} {b} {a}")
+        else:
+            print(f"[CMD] VLINE out of bounds or invalid length")
+
     def run(self):
         """Start the event loop"""
         print("[pxOS] Starting event loop...")

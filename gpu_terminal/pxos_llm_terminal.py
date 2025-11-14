@@ -80,6 +80,26 @@ class PxOSLLMTerminal:
                     rgba.append(255)
                 self.gpu_terminal.cmd_rect(*xywh, *rgba)
 
+            elif cmd == "HLINE":
+                if len(args) not in (6, 7):
+                    print(f"[LLM] ERROR: HLINE requires 6 or 7 args (x y length r g b [a]), got {len(args)}")
+                    return True
+                xyl = list(map(int, args[:3]))
+                rgba = list(map(int, args[3:]))
+                if len(rgba) == 3:
+                    rgba.append(255)
+                self.gpu_terminal.cmd_hline(*xyl, *rgba)
+
+            elif cmd == "VLINE":
+                if len(args) not in (6, 7):
+                    print(f"[LLM] ERROR: VLINE requires 6 or 7 args (x y length r g b [a]), got {len(args)}")
+                    return True
+                xyl = list(map(int, args[:3]))
+                rgba = list(map(int, args[3:]))
+                if len(rgba) == 3:
+                    rgba.append(255)
+                self.gpu_terminal.cmd_vline(*xyl, *rgba)
+
             elif cmd == "HELP":
                 self.print_help()
 
@@ -114,6 +134,14 @@ class PxOSLLMTerminal:
         print("RECT x y w h r g b [a]")
         print("  Draw a filled rectangle")
         print("  Example: RECT 100 100 200 150 255 0 0")
+        print()
+        print("HLINE x y length r g b [a]")
+        print("  Draw a horizontal line")
+        print("  Example: HLINE 0 100 800 255 0 0")
+        print()
+        print("VLINE x y length r g b [a]")
+        print("  Draw a vertical line")
+        print("  Example: VLINE 400 0 600 0 255 0")
         print()
         print("INFO")
         print("  Show terminal information")

@@ -1,0 +1,58 @@
+# Test HLINE and VLINE commands
+# This demonstrates the new line drawing primitives
+
+# Clear to black
+CLEAR 0 0 0
+
+# Draw a border using lines
+HLINE 0 0 800 255 255 255      # Top edge
+HLINE 0 599 800 255 255 255    # Bottom edge
+VLINE 0 0 600 255 255 255      # Left edge
+VLINE 799 0 600 255 255 255    # Right edge
+
+# Draw a crosshair at center
+HLINE 0 300 800 255 0 0        # Red horizontal
+VLINE 400 0 600 0 0 255        # Blue vertical
+
+# Draw a grid
+# Vertical lines every 100 pixels
+VLINE 100 0 600 64 64 64
+VLINE 200 0 600 64 64 64
+VLINE 300 0 600 64 64 64
+VLINE 400 0 600 64 64 64
+VLINE 500 0 600 64 64 64
+VLINE 600 0 600 64 64 64
+VLINE 700 0 600 64 64 64
+
+# Horizontal lines every 100 pixels
+HLINE 0 100 800 64 64 64
+HLINE 0 200 800 64 64 64
+HLINE 0 300 800 64 64 64
+HLINE 0 400 800 64 64 64
+HLINE 0 500 800 64 64 64
+
+# Draw some colored bars
+HLINE 100 50 600 255 0 0       # Red bar
+HLINE 100 51 600 255 0 0
+HLINE 100 52 600 255 0 0
+
+HLINE 100 70 600 0 255 0       # Green bar
+HLINE 100 71 600 0 255 0
+HLINE 100 72 600 0 255 0
+
+HLINE 100 90 600 0 0 255       # Blue bar
+HLINE 100 91 600 0 0 255
+HLINE 100 92 600 0 0 255
+
+# Draw a simple graph using vertical lines
+# Simulate data points at different heights
+VLINE 150 200 100 255 255 0
+VLINE 200 250 50 255 255 0
+VLINE 250 150 150 255 255 0
+VLINE 300 180 120 255 255 0
+VLINE 350 220 80 255 255 0
+VLINE 400 100 200 255 255 0
+VLINE 450 240 60 255 255 0
+VLINE 500 190 110 255 255 0
+VLINE 550 160 140 255 255 0
+VLINE 600 210 90 255 255 0

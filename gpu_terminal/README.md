@@ -227,6 +227,52 @@ RECT 100 100 200 150 255 0 0
 RECT 50 50 100 100 0 255 0 128
 ```
 
+### HLINE
+
+**Python API:**
+```python
+terminal.cmd_hline(x, y, length, r, g, b, a=255)
+```
+
+**Text protocol:**
+```
+HLINE x y length r g b [a]
+```
+
+Draw a horizontal line.
+
+**Examples:**
+```python
+terminal.cmd_hline(0, 100, 800, 255, 0, 0)  # Red line across screen
+```
+```
+HLINE 0 100 800 255 0 0
+HLINE 50 200 300 0 255 0
+```
+
+### VLINE
+
+**Python API:**
+```python
+terminal.cmd_vline(x, y, length, r, g, b, a=255)
+```
+
+**Text protocol:**
+```
+VLINE x y length r g b [a]
+```
+
+Draw a vertical line.
+
+**Examples:**
+```python
+terminal.cmd_vline(400, 0, 600, 0, 0, 255)  # Blue line down center
+```
+```
+VLINE 400 0 600 0 0 255
+VLINE 100 50 200 255 255 0
+```
+
 ## Design Principles
 
 ### 1. Frozen Shader = Stable Foundation
@@ -284,26 +330,31 @@ If something looks wrong:
 
 ## Next Steps
 
-### Phase 1: Raster Terminal ✅ (Current)
+### Phase 1: Raster Terminal ✅
 - [x] Frozen display shader
 - [x] CPU VRAM buffer
 - [x] Basic commands (CLEAR, PIXEL, RECT)
+- [x] Line commands (HLINE, VLINE)
+- [x] LLM text protocol (interactive + script modes)
 
-### Phase 2: Text Terminal
+### Phase 2: Text Terminal (In Progress)
 - [ ] Bitmap font loading
 - [ ] GLYPH command (draw character)
 - [ ] TEXT command (draw string)
 - [ ] Cursor state
 
 ### Phase 3: Advanced Graphics
+- [x] Basic lines (HLINE, VLINE)
+- [ ] Arbitrary LINE command (Bresenham algorithm)
+- [ ] CIRCLE command (midpoint circle)
 - [ ] BLIT command (copy buffer region)
-- [ ] LINE command
-- [ ] CIRCLE command
 - [ ] SPRITE command
 
-### Phase 4: LLM Integration
-- [ ] Terminal command parser
-- [ ] LLM prompt interface
+### Phase 4: LLM Integration (In Progress)
+- [x] Terminal command parser (text protocol)
+- [x] Interactive mode (stdin)
+- [x] Script mode (file execution)
+- [ ] Direct LLM API integration
 - [ ] pxVM integration
 - [ ] Command history/replay
 
