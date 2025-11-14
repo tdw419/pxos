@@ -2,6 +2,12 @@
 """
 PxOS LLM Terminal - PXTERM command interpreter
 Parses and executes PXTERM instruction format
+
+IMPERFECT COMPUTING MODE:
+- Bad commands log warnings and continue (never crash)
+- Missing args use defaults when possible
+- Unknown commands are logged and skipped
+- Drawing errors are caught and logged
 """
 from __future__ import annotations
 import sys
@@ -9,23 +15,41 @@ from typing import Optional
 from pxos_gpu_terminal import PxOSTerminalGPU
 
 
-def run_pxterm_file(filename: str, output: Optional[str] = None):
-    """Execute a .pxterm file"""
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-
-    # Parse canvas dimensions (first line should be CANVAS width height)
-    first_line = lines[0].strip().split()
-    if first_line[0] != "CANVAS":
-        print("Error: First line must be CANVAS width height")
+def run_pxterm_file(filename: str, output: Optional[str] = None, imperfect: bool = True):
+    """Execute a .pxterm file (imperfect mode: never crashes)"""
+    try:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+    except Exception as e:
+        print(f"[ERROR] Could not read file '{filename}': {e}")
+        if not imperfect:
+            raise
         return
 
-    width = int(first_line[1])
-    height = int(first_line[2])
+    # Parse canvas dimensions (imperfect: use defaults if missing/bad)
+    try:
+        first_line = lines[0].strip().split()
+        if first_line[0] != "CANVAS":
+            print("[WARNING] First line should be 'CANVAS width height', using defaults")
+            width, height = 800, 600
+        else:
+            width = int(first_line[1]) if len(first_line) > 1 else 800
+            height = int(first_line[2]) if len(first_line) > 2 else 600
+            width = max(1, min(4096, width))  # clamp to reasonable range
+            height = max(1, min(4096, height))
+    except Exception as e:
+        print(f"[WARNING] Error parsing CANVAS: {e}, using defaults 800x600")
+        width, height = 800, 600
 
-    # Create terminal
-    term = PxOSTerminalGPU(width=width, height=height)
-    print(f"Created {width}x{height} canvas")
+    # Create terminal (imperfect: always try, even if canvas setup failed)
+    try:
+        term = PxOSTerminalGPU(width=width, height=height)
+        print(f"Created {width}x{height} canvas")
+    except Exception as e:
+        print(f"[ERROR] Could not create terminal: {e}")
+        if not imperfect:
+            raise
+        return
 
     # Process commands
     for line_num, line in enumerate(lines[1:], start=2):
@@ -152,15 +176,22 @@ def run_pxterm_file(filename: str, output: Optional[str] = None):
                     print(f"Rendered frame: {frame.shape}")
 
             else:
-                print(f"Line {line_num}: Unknown command '{cmd}'")
+                # Unknown command - imperfect: log and continue, don't crash
+                print(f"Line {line_num}: [WARNING] Unknown command '{cmd}' - skipped")
 
-        except (ValueError, IndexError) as e:
-            print(f"Line {line_num}: Error parsing '{line}': {e}")
+        except Exception as e:
+            # Imperfect computing: catch ALL exceptions, log, and continue
+            print(f"Line {line_num}: [ERROR] '{line.strip()}' -> {type(e).__name__}: {e}")
             continue
 
-    # Final draw if no explicit DRAW command
+    # Final draw if no explicit DRAW command (imperfect: catch errors)
     if output:
-        term.save_frame(output)
+        try:
+            term.save_frame(output)
+        except Exception as e:
+            print(f"[ERROR] Could not save final frame to '{output}': {e}")
+            if not imperfect:
+                raise
 
 
 def main():

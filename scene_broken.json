@@ -1,0 +1,48 @@
+{
+  "canvas": {
+    "width": "not_a_number",
+    "height": null
+  },
+  "layers": [
+    {
+      "name": "test",
+      "z": "invalid",
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 100,
+          "w": -50,
+          "h": "bad",
+          "color": [300, -100, "blue", 500]
+        },
+        {
+          "op": "UNKNOWN_OP",
+          "x": 50,
+          "y": 50
+        },
+        {
+          "op": "TEXT",
+          "x": 10,
+          "y": 10,
+          "color": "not_an_array",
+          "value": "THIS SHOULD STILL RENDER"
+        },
+        {
+          "op": "HSTACK",
+          "x": 200,
+          "y": 200,
+          "spacing": "bad",
+          "children": [
+            {"op": "RECT", "w": 50, "h": 50, "color": [255, 0, 0]},
+            null,
+            {"op": "RECT"}
+          ]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene_broken.png"
+  }
+}

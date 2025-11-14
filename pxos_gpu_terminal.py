@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 PxOS GPU Terminal - Layered rendering with frozen WGSL shader
+
+IMPERFECT COMPUTING MODE:
+- GPU initialization failures automatically fall back to CPU
+- All drawing operations clip to canvas bounds (never crash)
+- Layer operations create missing layers on demand
+- Frame rendering always succeeds (CPU or GPU)
 """
 from __future__ import annotations
 import numpy as np
@@ -24,10 +30,11 @@ class Layer:
 class PxOSTerminalGPU:
     """GPU-accelerated terminal with multi-layer compositing"""
 
-    def __init__(self, width: int = 800, height: int = 600, use_cpu: bool = False):
+    def __init__(self, width: int = 800, height: int = 600, use_cpu: bool = False, quiet_errors: bool = True):
         self.width = width
         self.height = height
         self.use_cpu = use_cpu
+        self.quiet_errors = quiet_errors
 
         # Layer management
         self.layers: Dict[str, Layer] = {}
@@ -40,13 +47,14 @@ class PxOSTerminalGPU:
         # Create default background layer
         self._create_default_layer()
 
-        # Initialize GPU (if available)
+        # Initialize GPU (if available) - imperfect: silent fallback to CPU
         if not use_cpu:
             try:
                 self._init_gpu()
             except Exception as e:
-                print(f"GPU initialization failed: {e}")
-                print("Falling back to CPU rendering")
+                if not quiet_errors:
+                    print(f"GPU initialization failed: {e}")
+                    print("Falling back to CPU rendering")
                 self.use_cpu = True
 
     def _create_default_layer(self):
@@ -363,15 +371,43 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return result
 
     def draw_frame(self) -> np.ndarray:
-        """Composite all layers and return the final frame"""
-        if self.use_cpu:
-            return self._draw_frame_cpu()
-        else:
-            return self._draw_frame_gpu()
+        """Composite all layers and return the final frame (imperfect: never crashes)"""
+        try:
+            if self.use_cpu:
+                return self._draw_frame_cpu()
+            else:
+                return self._draw_frame_gpu()
+        except Exception as e:
+            # If GPU fails, try CPU
+            if not self.use_cpu:
+                if not self.quiet_errors:
+                    print(f"[WARNING] GPU render failed ({e}), trying CPU fallback")
+                try:
+                    self.use_cpu = True
+                    return self._draw_frame_cpu()
+                except Exception as e2:
+                    if not self.quiet_errors:
+                        print(f"[ERROR] CPU render also failed ({e2}), returning blank frame")
+
+            # Last resort: return blank frame with background color
+            frame = np.zeros((self.height, self.width, 4), dtype=np.uint8)
+            if self.layers:
+                # Try to at least show the background layer
+                try:
+                    bg = self.layers.get("background")
+                    if bg:
+                        frame = bg.buffer.copy()
+                except:
+                    pass
+            return frame
 
     def save_frame(self, filename: str):
-        """Render and save frame to file"""
-        frame = self.draw_frame()
-        img = Image.fromarray(frame, mode='RGBA')
-        img.save(filename)
-        print(f"Saved frame to {filename}")
+        """Render and save frame to file (imperfect: never crashes)"""
+        try:
+            frame = self.draw_frame()
+            img = Image.fromarray(frame, mode='RGBA')
+            img.save(filename)
+            print(f"Saved frame to {filename}")
+        except Exception as e:
+            if not self.quiet_errors:
+                print(f"[ERROR] Could not save frame to '{filename}': {e}")
