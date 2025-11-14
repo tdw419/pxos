@@ -1,0 +1,136 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [0, 0, 0, 255]
+  },
+  "layers": [
+    {
+      "name": "background",
+      "z": 0,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [10, 10, 30, 255]
+        }
+      ]
+    },
+    {
+      "name": "window",
+      "z": 10,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 50,
+          "w": 600,
+          "h": 500,
+          "color": [30, 30, 60, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 50,
+          "w": 600,
+          "h": 50,
+          "color": [20, 20, 80, 255]
+        },
+        {
+          "op": "TEXT",
+          "x": 120,
+          "y": 65,
+          "color": [255, 255, 255, 255],
+          "value": "PXOS APPLICATION"
+        },
+        {
+          "op": "VSTACK",
+          "x": 150,
+          "y": 150,
+          "spacing": 30,
+          "children": [
+            {
+              "op": "RECT",
+              "w": 500,
+              "h": 60,
+              "color": [50, 50, 100, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 170,
+              "y": 165,
+              "color": [200, 200, 255, 255],
+              "value": "START NEW PROJECT"
+            },
+            {
+              "op": "RECT",
+              "w": 500,
+              "h": 60,
+              "color": [50, 50, 100, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 170,
+              "y": 255,
+              "color": [200, 200, 255, 255],
+              "value": "OPEN EXISTING"
+            },
+            {
+              "op": "RECT",
+              "w": 500,
+              "h": 60,
+              "color": [50, 50, 100, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 170,
+              "y": 345,
+              "color": [200, 200, 255, 255],
+              "value": "SETTINGS"
+            },
+            {
+              "op": "RECT",
+              "w": 500,
+              "h": 60,
+              "color": [100, 50, 50, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 170,
+              "y": 435,
+              "color": [255, 200, 200, 255],
+              "value": "EXIT"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "z": 20,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 570,
+          "w": 800,
+          "h": 30,
+          "color": [15, 15, 25, 255]
+        },
+        {
+          "op": "TEXT",
+          "x": 10,
+          "y": 577,
+          "color": [150, 150, 150, 255],
+          "value": "PXOS V1.0 READY"
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene_window.png"
+  }
+}

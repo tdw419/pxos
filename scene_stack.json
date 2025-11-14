@@ -1,0 +1,58 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [0, 0, 0, 255]
+  },
+  "layers": [
+    {
+      "name": "background",
+      "z": 0,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [0, 0, 40, 255]
+        }
+      ]
+    },
+    {
+      "name": "scene",
+      "z": 10,
+      "commands": [
+        {
+          "op": "HSTACK",
+          "x": 125,
+          "y": 240,
+          "spacing": 20,
+          "children": [
+            {
+              "op": "RECT",
+              "w": 150,
+              "h": 120,
+              "color": [200, 50, 50, 180]
+            },
+            {
+              "op": "RECT",
+              "w": 150,
+              "h": 120,
+              "color": [50, 200, 50, 180]
+            },
+            {
+              "op": "RECT",
+              "w": 150,
+              "h": 120,
+              "color": [50, 50, 200, 180]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene_stack.png"
+  }
+}

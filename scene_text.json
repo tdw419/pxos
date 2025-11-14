@@ -1,0 +1,81 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [0, 0, 0, 255]
+  },
+  "layers": [
+    {
+      "name": "background",
+      "z": 0,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [0, 0, 40, 255]
+        }
+      ]
+    },
+    {
+      "name": "ui",
+      "z": 10,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 80,
+          "w": 600,
+          "h": 60,
+          "color": [20, 20, 80, 255]
+        },
+        {
+          "op": "TEXT",
+          "x": 120,
+          "y": 95,
+          "color": [255, 255, 255, 255],
+          "value": "PXOS WINDOW TITLE"
+        },
+        {
+          "op": "VSTACK",
+          "x": 120,
+          "y": 200,
+          "spacing": 20,
+          "children": [
+            {
+              "op": "RECT",
+              "w": 300,
+              "h": 40,
+              "color": [40, 40, 100, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 130,
+              "y": 210,
+              "color": [255, 255, 255, 255],
+              "value": "BUTTON A"
+            },
+            {
+              "op": "RECT",
+              "w": 300,
+              "h": 40,
+              "color": [40, 40, 100, 255]
+            },
+            {
+              "op": "TEXT",
+              "x": 130,
+              "y": 270,
+              "color": [255, 255, 255, 255],
+              "value": "BUTTON B"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene_text.png"
+  }
+}
