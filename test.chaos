@@ -1,0 +1,19 @@
+# This file doesn't need to be "correct"
+# Just throw ideas at the GPU and watch what happens
+
+# Try drawing something at coordinate 100,100
+100 100 0xFF0000
+
+# Try some random hex
+0xDEADBEEF
+
+# Try some garbage
+banana
+12345
+0 0 0xFFFFFF
+
+# Try intentionally bad coordinates
+999999 999999 0x00FF00
+
+# The shader will show you what each line does
+# Nothing crashes. Everything draws SOMETHING.
