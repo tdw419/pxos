@@ -166,6 +166,11 @@ def run_pxterm_file(filename: str, output: Optional[str] = None, imperfect: bool
                 term.text(x, y, message, r, g, b, a)
                 print(f'TEXT "{message}" at ({x},{y}) color ({r},{g},{b},{a})')
 
+            elif cmd == "PRINT":
+                # PRINT message... - log to console (stdout for now)
+                message = " ".join(args) if args else ""
+                print(f"[PXTERM] {message}")
+
             elif cmd == "DRAW":
                 # DRAW [output.png]
                 output_file = args[0] if args else output
