@@ -41,6 +41,12 @@ SYS_FORK = 30
 SYS_SPAWN = 31
 SYS_SELF_MODIFY = 99  # Replace running kernel with new version
 
+# PX Reflex syscalls (Phase 3)
+SYS_REFLEX_WHITELIST = 100  # Whitelist PID for protected region
+SYS_REFLEX_PROTECT = 101    # Create protected region
+SYS_REFLEX_SUBSCRIBE = 102  # Subscribe to reflex events
+SYS_REFLEX_EMIT = 103       # Manually emit reflex event
+
 # New opcodes for control flow
 OP_JMP = 0x40   # JMP addr
 OP_JZ = 0x41    # JZ reg, addr (jump if zero)
@@ -192,6 +198,10 @@ class PxVMExtended:
         # Self-modification state
         self.pending_kernel_replacement: Optional[bytes] = None
         self.pending_kernel_path: Optional[str] = None
+
+        # PX Reflex engine (Phase 3)
+        self.reflex_engine = None  # Initialized when needed
+        self.reflex_subscriptions: Dict[int, List[int]] = {}  # pid -> [event_types]
 
     def create_process(self, bytecode: Optional[bytes] = None) -> int:
         """Create a new process. Returns PID."""
@@ -440,6 +450,66 @@ class PxVMExtended:
                 else:
                     self.sysout.append(f"# SELF_MODIFY ERROR: Cannot load {path}")
                     r[0] = 0  # failure
+
+            # PX Reflex syscalls (Phase 3)
+            elif num == SYS_REFLEX_PROTECT:
+                # R1 = x, R2 = y, R3 = width, R4 = height, R5 = absolute (0/1)
+                x, y, w, h = r[1], r[2], r[3], r[4]
+                absolute = r[5] != 0
+
+                # Lazy init reflex engine
+                if self.reflex_engine is None:
+                    from pxreflex.core import ReflexEngine, ProtectedRegion
+                    self.reflex_engine = ReflexEngine()
+
+                from pxreflex.core import ProtectedRegion
+                region = ProtectedRegion(x=x, y=y, width=w, height=h, absolute=absolute)
+                self.reflex_engine.add_protected_region(region)
+
+                r[0] = len(self.reflex_engine.protected_regions)  # Return region ID
+                self.sysout.append(f"# REFLEX: Protected region {r[0]} at ({x},{y}) size {w}x{h}")
+
+            elif num == SYS_REFLEX_WHITELIST:
+                # R1 = region_id, R2 = pid_to_whitelist
+                region_id = r[1] - 1  # Convert to 0-indexed
+                whitelist_pid = r[2]
+
+                if self.reflex_engine and 0 <= region_id < len(self.reflex_engine.protected_regions):
+                    self.reflex_engine.protected_regions[region_id].whitelist_pids.add(whitelist_pid)
+                    r[0] = 1  # success
+                    self.sysout.append(f"# REFLEX: PID {whitelist_pid} whitelisted for region {region_id+1}")
+                else:
+                    r[0] = 0  # failure
+
+            elif num == SYS_REFLEX_SUBSCRIBE:
+                # R1 = event_type_mask (bitfield)
+                event_mask = r[1]
+
+                if proc.pid not in self.reflex_subscriptions:
+                    self.reflex_subscriptions[proc.pid] = []
+
+                self.reflex_subscriptions[proc.pid].append(event_mask)
+                r[0] = 1  # success
+                self.sysout.append(f"# REFLEX: PID {proc.pid} subscribed to events {event_mask}")
+
+            elif num == SYS_REFLEX_EMIT:
+                # R1 = event_type, R2 = x, R3 = y, R4 = data
+                event_type = r[1]
+                x, y, data = r[2], r[3], r[4]
+
+                if self.reflex_engine:
+                    from pxreflex.events import ReflexEvent
+                    event = ReflexEvent(
+                        event_type=event_type,
+                        x=x,
+                        y=y,
+                        data=data,
+                        tick=self.reflex_engine.current_tick
+                    )
+                    self.reflex_engine.emit_event(event)
+                    r[0] = 1  # success
+                else:
+                    r[0] = 0  # reflex engine not initialized
 
             else:
                 # Unknown syscall
