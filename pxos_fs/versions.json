@@ -1,0 +1,38 @@
+{
+  "current": "v2.0",
+  "history": [
+    {
+      "id": 1,
+      "version": "v1.0",
+      "file": "kernel_v1.0.bin",
+      "parent": null,
+      "date": "2025-11-14T23:10:32.389684Z",
+      "size": 400
+    },
+    {
+      "id": 2,
+      "version": "v1.1",
+      "file": "kernel_v1.1.bin",
+      "parent": "v1.0",
+      "date": "2025-11-14T23:10:32.390441Z",
+      "size": 480
+    },
+    {
+      "id": 3,
+      "version": "v1.0",
+      "file": "kernel_v1.0.bin",
+      "parent": null,
+      "date": "2025-11-14T23:12:25.993977Z",
+      "size": 73
+    },
+    {
+      "id": 4,
+      "version": "v2.0",
+      "file": "kernel_v2.0.bin",
+      "parent": "v1.0",
+      "date": "2025-11-14T23:12:25.994345Z",
+      "size": 65
+    }
+  ],
+  "latest_id": 4
+}

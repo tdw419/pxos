@@ -39,6 +39,7 @@ SYS_FS_WRITE = 22
 SYS_FS_READ = 23
 SYS_FORK = 30
 SYS_SPAWN = 31
+SYS_SELF_MODIFY = 99  # Replace running kernel with new version
 
 # New opcodes for control flow
 OP_JMP = 0x40   # JMP addr
@@ -187,6 +188,10 @@ class PxVMExtended:
             302: "build/assembler.asm",
             303: "build/assembler.bin",
         }
+
+        # Self-modification state
+        self.pending_kernel_replacement: Optional[bytes] = None
+        self.pending_kernel_path: Optional[str] = None
 
     def create_process(self, bytecode: Optional[bytes] = None) -> int:
         """Create a new process. Returns PID."""
@@ -411,6 +416,29 @@ class PxVMExtended:
                     new_pid = self.create_process(bytes(data))
                     r[0] = new_pid
                 else:
+                    r[0] = 0  # failure
+
+            elif num == SYS_SELF_MODIFY:
+                # R1 = file_id of new kernel binary
+                # This syscall requests the host to replace the running kernel
+                # The actual replacement happens outside the VM
+                file_id = r[1]
+                path = self.file_paths.get(file_id, f"file_{file_id}")
+
+                # Read the new kernel bytecode
+                new_kernel = self.filesystem.read(path, 0, 65536)
+                if new_kernel and len(new_kernel) > 0:
+                    # Signal success - actual kernel replacement deferred to host
+                    self.sysout.append(f"# SELF_MODIFY: New kernel loaded ({len(new_kernel)} bytes)")
+                    self.sysout.append(f"# SELF_MODIFY: Requesting kernel replacement from {path}")
+
+                    # Store for host to pick up
+                    self.pending_kernel_replacement = bytes(new_kernel)
+                    self.pending_kernel_path = path
+
+                    r[0] = 1  # success
+                else:
+                    self.sysout.append(f"# SELF_MODIFY ERROR: Cannot load {path}")
                     r[0] = 0  # failure
 
             else:
