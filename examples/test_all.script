@@ -1,5 +1,7 @@
 # test_all.script - Test all example programs
 
+# ===== Phase 1.1 Tests: Basic VM =====
+
 # Test 1: Factorial(5) = 120
 ASM factorial examples/factorial.pxasm
 RUN factorial
@@ -11,3 +13,20 @@ RUN fibonacci
 # Test 3: Loop counting 1-10
 ASM loop examples/loop.pxasm
 RUN loop
+
+# ===== Phase 2.1 Tests: Syscalls =====
+
+# Test 4: Hello World (SYS_WRITE to STDOUT)
+ASM hello examples/hello.pxasm
+RUN hello
+
+# Test 5: Echo (SYS_READ + SYS_WRITE)
+FEED Hello from stdin!
+ASM echo examples/echo.pxasm
+RUN echo
+
+# Test 6: File I/O (all 4 syscalls)
+ASM file_test examples/file_test.pxasm
+RUN file_test
+LS
+CAT test.txt
