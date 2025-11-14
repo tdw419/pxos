@@ -1,0 +1,74 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [20, 20, 20, 255]
+  },
+  "layers": [
+    {
+      "name": "background",
+      "z": 0,
+      "commands": [
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [30, 30, 30, 255]
+        }
+      ]
+    },
+    {
+      "name": "menu",
+      "z": 10,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "VSTACK demo - vertical menu stack"
+        },
+        {
+          "op": "VSTACK",
+          "x": 50,
+          "y": 50,
+          "spacing": 10,
+          "children": [
+            {
+              "op": "RECT",
+              "w": 200,
+              "h": 50,
+              "color": [60, 60, 60, 255]
+            },
+            {
+              "op": "RECT",
+              "w": 200,
+              "h": 50,
+              "color": [80, 80, 80, 255]
+            },
+            {
+              "op": "RECT",
+              "w": 200,
+              "h": 50,
+              "color": [100, 100, 100, 255]
+            },
+            {
+              "op": "RECT",
+              "w": 200,
+              "h": 50,
+              "color": [120, 120, 120, 255]
+            },
+            {
+              "op": "RECT",
+              "w": 200,
+              "h": 50,
+              "color": [140, 140, 140, 255]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene5_vstack.png"
+  }
+}

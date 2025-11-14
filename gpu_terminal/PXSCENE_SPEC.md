@@ -1,4 +1,6 @@
-# PXSCENE v0.1 Specification
+# PXSCENE Specification
+
+**Current Version: v0.2**
 
 **PXSCENE** is a JSON-based scene description language designed for LLMs.
 
@@ -295,10 +297,157 @@ Execute PXTERM:
 python pxos_llm_terminal.py scene.pxterm
 ```
 
+## PXSCENE v0.2 - Layout Operations
+
+Version 0.2 adds higher-level layout operators that exist **only in the JSON scene description**.
+They are compiled down into PXTERM v1 instructions by `pxscene_compile.py`.
+
+### HSTACK - Horizontal Stack
+
+Stack children horizontally from left to right with automatic x-positioning.
+
+**Schema:**
+```json
+{
+  "op": "HSTACK",
+  "x": 100,
+  "y": 250,
+  "spacing": 10,
+  "children": [
+    {"op": "RECT", "w": 150, "h": 100, "color": [255, 0, 0, 180]},
+    {"op": "RECT", "w": 150, "h": 100, "color": [0, 255, 0, 180]},
+    {"op": "RECT", "w": 150, "h": 100, "color": [0, 0, 255, 180]}
+  ]
+}
+```
+
+**Parameters:**
+- `x`, `y` (optional, default 0): Top-left starting position of the stack
+- `spacing` (optional, default 0): Gap in pixels between children
+- `children` (required): Array of child commands to stack
+
+**Behavior:**
+- For `RECT` children: `w` and `h` are required
+- Each child is placed at the current cursor position
+- Cursor advances by `child_width + spacing` after each child
+- Children's local `x`, `y` default to 0
+
+**Example:**
+```json
+{
+  "op": "HSTACK",
+  "x": 125,
+  "y": 240,
+  "spacing": 40,
+  "children": [
+    {"op": "RECT", "w": 150, "h": 120, "color": [255, 0, 0, 180]},
+    {"op": "RECT", "w": 150, "h": 120, "color": [0, 255, 0, 180]},
+    {"op": "RECT", "w": 150, "h": 120, "color": [0, 0, 255, 180]}
+  ]
+}
+```
+
+Compiles to:
+```
+RECT 125 240 150 120 255 0 0 180
+RECT 315 240 150 120 0 255 0 180   # 125 + 150 + 40
+RECT 505 240 150 120 0 0 255 180   # 315 + 150 + 40
+```
+
+### VSTACK - Vertical Stack
+
+Stack children vertically from top to bottom with automatic y-positioning.
+
+**Schema:**
+```json
+{
+  "op": "VSTACK",
+  "x": 50,
+  "y": 50,
+  "spacing": 5,
+  "children": [
+    {"op": "RECT", "w": 200, "h": 40, "color": [60, 60, 60, 255]},
+    {"op": "RECT", "w": 200, "h": 40, "color": [100, 100, 100, 255]},
+    {"op": "RECT", "w": 200, "h": 40, "color": [140, 140, 140, 255]}
+  ]
+}
+```
+
+**Parameters:**
+- `x`, `y` (optional, default 0): Top-left starting position
+- `spacing` (optional, default 0): Vertical gap in pixels
+- `children` (required): Array of child commands to stack
+
+**Behavior:**
+- For `RECT` children: `w` and `h` are required
+- Each child is placed at `(x, current_y)`
+- Cursor advances by `child_height + spacing` after each child
+- Children's local `x`, `y` default to 0
+
+**Example:**
+```json
+{
+  "op": "VSTACK",
+  "x": 50,
+  "y": 50,
+  "spacing": 10,
+  "children": [
+    {"op": "RECT", "w": 200, "h": 50, "color": [60, 60, 60, 255]},
+    {"op": "RECT", "w": 200, "h": 50, "color": [80, 80, 80, 255]},
+    {"op": "RECT", "w": 200, "h": 50, "color": [100, 100, 100, 255]}
+  ]
+}
+```
+
+Compiles to:
+```
+RECT 50 50 200 50 60 60 60 255
+RECT 50 110 200 50 80 80 80 255    # 50 + 50 + 10
+RECT 50 170 200 50 100 100 100 255 # 110 + 50 + 10
+```
+
+### Why Layout Operations?
+
+Layout operations eliminate coordinate calculation for LLMs:
+
+**Before (v0.1 - manual coordinates):**
+```json
+{"op": "RECT", "x": 125, "y": 240, "w": 150, "h": 120, "color": [255, 0, 0]},
+{"op": "RECT", "x": 315, "y": 240, "w": 150, "h": 120, "color": [0, 255, 0]},
+{"op": "RECT", "x": 505, "y": 240, "w": 150, "h": 120, "color": [0, 0, 255]}
+```
+
+**After (v0.2 - layout-driven):**
+```json
+{
+  "op": "HSTACK",
+  "x": 125,
+  "y": 240,
+  "spacing": 40,
+  "children": [
+    {"op": "RECT", "w": 150, "h": 120, "color": [255, 0, 0]},
+    {"op": "RECT", "w": 150, "h": 120, "color": [0, 255, 0]},
+    {"op": "RECT", "w": 150, "h": 120, "color": [0, 0, 255]}
+  ]
+}
+```
+
+LLMs describe **structure** instead of calculating **positions**.
+
+### Compatibility
+
+- ✅ All v0.1 operations still work
+- ✅ Can mix v0.1 and v0.2 operations
+- ✅ PXTERM v1 remains frozen (unchanged)
+- ✅ Shader remains frozen (unchanged)
+- ✅ Only the compiler adds layout engine
+
 ## Future Extensions
 
-Potential future operations (v0.2+):
+Potential future operations (v0.3+):
 
+- `GRID` - 2D grid layout
+- `CENTER` - Center children in a container
 - `LINE` - Arbitrary angle lines (Bresenham)
 - `CIRCLE` - Circle drawing
 - `SPRITE` - Sprite/image blitting
@@ -316,6 +465,14 @@ Potential future operations (v0.2+):
 5. **Extend carefully** - Add ops only when needed
 
 ## Version History
+
+- **v0.2** (2025-11-14) - Layout operations
+  - Added HSTACK (horizontal stack with automatic x-positioning)
+  - Added VSTACK (vertical stack with automatic y-positioning)
+  - Layout engine in compiler
+  - Eliminates coordinate calculation for LLMs
+  - Backward compatible with v0.1
+  - PXTERM v1 and shader remain frozen
 
 - **v0.1** (2025-11-14) - Initial specification
   - Basic operations: CLEAR, PIXEL, RECT, HLINE, VLINE

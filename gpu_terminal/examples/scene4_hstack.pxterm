@@ -1,0 +1,34 @@
+# PXTERM v1 program
+# Generated from PXSCENE (v0.1/v0.2)
+#
+# Architecture: LLM → PXSCENE → PXTERM → GPU
+
+INFO
+LAYERS
+
+# Canvas clear
+CLEAR 0 0 20 255
+
+# Layer: background (z=0, opacity=255)
+LAYER NEW background 0
+LAYER USE background
+
+# Dark blue background
+RECT 0 0 800 600 0 0 40
+
+# Layer: scene (z=10, opacity=255)
+LAYER NEW scene 10
+LAYER USE scene
+
+# HSTACK demo - three boxes with automatic spacing
+# HSTACK at (125, 240) spacing=40
+RECT 125 240 150 120 255 0 0 180
+RECT 315 240 150 120 0 255 0 180
+RECT 505 240 150 120 0 0 255 180
+
+# Save output
+SAVE scene4_hstack.png
+
+# End of program
+INFO
+LAYERS

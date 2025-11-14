@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-pxscene_compile.py - Compile PXSCENE v0.1 JSON into PXTERM v1 script.
+pxscene_compile.py - Compile PXSCENE JSON into PXTERM v1 script.
 
 This is the "compiler" layer that bridges LLM-friendly structured data
 and the PXTERM machine code.
 
 Architecture:
   LLM → PXSCENE JSON → pxscene_compile → PXTERM v1 → pxos_llm_terminal → GPU
+
+Supports:
+  - PXSCENE v0.1: Basic operations (CLEAR, PIXEL, RECT, HLINE, VLINE)
+  - PXSCENE v0.2: Layout operations (HSTACK, VSTACK)
 
 Usage:
   python pxscene_compile.py scene.json scene.pxterm
@@ -19,12 +23,172 @@ from typing import List, Dict, Any
 from pathlib import Path
 
 
+# ============================================================================
+# PXTERM Emission Helpers
+# ============================================================================
+
+def emit_rect(lines: List[str], x: int, y: int, w: int, h: int, color: List[int]):
+    """Emit a RECT command to PXTERM"""
+    r, g, b, *rest = color
+    a = rest[0] if rest else 255
+    if a != 255:
+        lines.append(f"RECT {x} {y} {w} {h} {r} {g} {b} {a}")
+    else:
+        lines.append(f"RECT {x} {y} {w} {h} {r} {g} {b}")
+
+
+def emit_pixel(lines: List[str], x: int, y: int, color: List[int]):
+    """Emit a PIXEL command to PXTERM"""
+    r, g, b, *rest = color
+    a = rest[0] if rest else 255
+    if a != 255:
+        lines.append(f"PIXEL {x} {y} {r} {g} {b} {a}")
+    else:
+        lines.append(f"PIXEL {x} {y} {r} {g} {b}")
+
+
+def emit_hline(lines: List[str], x: int, y: int, length: int, color: List[int]):
+    """Emit an HLINE command to PXTERM"""
+    r, g, b, *rest = color
+    a = rest[0] if rest else 255
+    if a != 255:
+        lines.append(f"HLINE {x} {y} {length} {r} {g} {b} {a}")
+    else:
+        lines.append(f"HLINE {x} {y} {length} {r} {g} {b}")
+
+
+def emit_vline(lines: List[str], x: int, y: int, length: int, color: List[int]):
+    """Emit a VLINE command to PXTERM"""
+    r, g, b, *rest = color
+    a = rest[0] if rest else 255
+    if a != 255:
+        lines.append(f"VLINE {x} {y} {length} {r} {g} {b} {a}")
+    else:
+        lines.append(f"VLINE {x} {y} {length} {r} {g} {b}")
+
+
+# ============================================================================
+# Layout Engine - Compile Commands Recursively
+# ============================================================================
+
+def compile_command(lines: List[str], base_x: int, base_y: int, cmd: Dict[str, Any]):
+    """
+    Lower a single PXSCENE command (including HSTACK/VSTACK) into PXTERM lines.
+
+    This is the layout engine that compiles high-level layout operations
+    into low-level PXTERM drawing commands.
+
+    Args:
+        lines: Output list to append PXTERM commands to
+        base_x, base_y: Base offset to apply to command coordinates
+        cmd: PXSCENE command dictionary
+
+    Supports:
+        - v0.1 ops: CLEAR, PIXEL, RECT, HLINE, VLINE, COMMENT
+        - v0.2 ops: HSTACK, VSTACK (layout operators)
+    """
+    op = cmd.get("op", "").upper()
+
+    # ===== v0.1 Basic Operations =====
+
+    if op == "CLEAR":
+        r, g, b, *rest = cmd["color"]
+        a = rest[0] if rest else 255
+        lines.append(f"CLEAR {int(r)} {int(g)} {int(b)} {int(a)}")
+
+    elif op == "RECT":
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        w = int(cmd["w"])
+        h = int(cmd["h"])
+        emit_rect(lines, x, y, w, h, cmd["color"])
+
+    elif op == "PIXEL":
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        emit_pixel(lines, x, y, cmd["color"])
+
+    elif op == "HLINE":
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        length = int(cmd["length"])
+        emit_hline(lines, x, y, length, cmd["color"])
+
+    elif op == "VLINE":
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        length = int(cmd["length"])
+        emit_vline(lines, x, y, length, cmd["color"])
+
+    elif op == "COMMENT":
+        # Allow structured comments in JSON
+        comment = cmd.get("text", "")
+        lines.append(f"# {comment}")
+
+    # ===== v0.2 Layout Operations =====
+
+    elif op == "HSTACK":
+        # Horizontal stack of children - automatic x-positioning
+        x0 = base_x + int(cmd.get("x", 0))
+        y0 = base_y + int(cmd.get("y", 0))
+        spacing = int(cmd.get("spacing", 0))
+        cursor_x = x0
+
+        lines.append(f"# HSTACK at ({x0}, {y0}) spacing={spacing}")
+
+        for child in cmd.get("children", []):
+            child_op = child.get("op", "").upper()
+            child_local = dict(child)  # shallow copy
+            # Default local offsets to 0 so compile_command adds base
+            child_local.setdefault("x", 0)
+            child_local.setdefault("y", 0)
+
+            if child_op == "RECT":
+                w = int(child_local["w"])
+                h = int(child_local["h"])
+                compile_command(lines, cursor_x, y0, child_local)
+                cursor_x += w + spacing
+            else:
+                # For non-RECT, place at current cursor
+                compile_command(lines, cursor_x, y0, child_local)
+                # Note: Could add width calculation for other ops if needed
+
+    elif op == "VSTACK":
+        # Vertical stack of children - automatic y-positioning
+        x0 = base_x + int(cmd.get("x", 0))
+        y0 = base_y + int(cmd.get("y", 0))
+        spacing = int(cmd.get("spacing", 0))
+        cursor_y = y0
+
+        lines.append(f"# VSTACK at ({x0}, {y0}) spacing={spacing}")
+
+        for child in cmd.get("children", []):
+            child_op = child.get("op", "").upper()
+            child_local = dict(child)
+            child_local.setdefault("x", 0)
+            child_local.setdefault("y", 0)
+
+            if child_op == "RECT":
+                w = int(child_local["w"])
+                h = int(child_local["h"])
+                compile_command(lines, x0, cursor_y, child_local)
+                cursor_y += h + spacing
+            else:
+                # For non-RECT, place at current cursor
+                compile_command(lines, x0, cursor_y, child_local)
+
+    else:
+        lines.append(f"# WARNING: Unknown operation '{op}', skipping")
+
+
 def compile_scene(scene: Dict[str, Any]) -> List[str]:
     """
     Compile a PXSCENE JSON structure into PXTERM v1 commands.
 
+    Supports both v0.1 (basic) and v0.2 (layout) operations.
+
     Args:
-        scene: PXSCENE v0.1 JSON structure
+        scene: PXSCENE JSON structure
 
     Returns:
         List of PXTERM command lines
@@ -33,7 +197,7 @@ def compile_scene(scene: Dict[str, Any]) -> List[str]:
 
     # Header
     lines.append("# PXTERM v1 program")
-    lines.append("# Generated from PXSCENE v0.1")
+    lines.append("# Generated from PXSCENE (v0.1/v0.2)")
     lines.append("#")
     lines.append("# Architecture: LLM → PXSCENE → PXTERM → GPU")
     lines.append("")
@@ -64,55 +228,10 @@ def compile_scene(scene: Dict[str, Any]) -> List[str]:
         lines.append(f"LAYER USE {name}")
         lines.append("")
 
-        # Process commands for this layer
+        # Process commands for this layer using layout engine
         commands = layer.get("commands", [])
-        for cmd_idx, cmd in enumerate(commands):
-            op = cmd.get("op", "").upper()
-
-            if op == "CLEAR":
-                r, g, b, *rest = cmd["color"]
-                a = rest[0] if rest else 255
-                lines.append(f"CLEAR {int(r)} {int(g)} {int(b)} {int(a)}")
-
-            elif op == "PIXEL":
-                x = int(cmd["x"])
-                y = int(cmd["y"])
-                r, g, b, *rest = cmd["color"]
-                a = rest[0] if rest else 255
-                lines.append(f"PIXEL {x} {y} {int(r)} {int(g)} {int(b)} {int(a)}")
-
-            elif op == "RECT":
-                x = int(cmd["x"])
-                y = int(cmd["y"])
-                w = int(cmd["w"])
-                h = int(cmd["h"])
-                r, g, b, *rest = cmd["color"]
-                a = rest[0] if rest else 255
-                lines.append(f"RECT {x} {y} {w} {h} {int(r)} {int(g)} {int(b)} {int(a)}")
-
-            elif op == "HLINE":
-                x = int(cmd["x"])
-                y = int(cmd["y"])
-                length = int(cmd["length"])
-                r, g, b, *rest = cmd["color"]
-                a = rest[0] if rest else 255
-                lines.append(f"HLINE {x} {y} {length} {int(r)} {int(g)} {int(b)} {int(a)}")
-
-            elif op == "VLINE":
-                x = int(cmd["x"])
-                y = int(cmd["y"])
-                length = int(cmd["length"])
-                r, g, b, *rest = cmd["color"]
-                a = rest[0] if rest else 255
-                lines.append(f"VLINE {x} {y} {length} {int(r)} {int(g)} {int(b)} {int(a)}")
-
-            elif op == "COMMENT":
-                # Allow structured comments in JSON
-                comment = cmd.get("text", "")
-                lines.append(f"# {comment}")
-
-            else:
-                lines.append(f"# WARNING: Unknown operation '{op}', skipping")
+        for cmd in commands:
+            compile_command(lines, 0, 0, cmd)
 
         lines.append("")  # Blank line after each layer
 
@@ -133,7 +252,7 @@ def compile_scene(scene: Dict[str, Any]) -> List[str]:
 
 def validate_scene(scene: Dict[str, Any]) -> bool:
     """
-    Validate PXSCENE v0.1 structure.
+    Validate PXSCENE structure (v0.1/v0.2).
 
     Returns True if valid, prints errors and returns False otherwise.
     """
@@ -186,7 +305,11 @@ def main():
     """Main entry point"""
 
     if len(sys.argv) not in (2, 3):
-        print("pxscene_compile.py - PXSCENE v0.1 → PXTERM v1 Compiler")
+        print("pxscene_compile.py - PXSCENE → PXTERM v1 Compiler")
+        print()
+        print("Supports:")
+        print("  - PXSCENE v0.1: Basic operations")
+        print("  - PXSCENE v0.2: Layout operations (HSTACK, VSTACK)")
         print()
         print("Usage:")
         print("  python pxscene_compile.py <scene.json> <output.pxterm>")
@@ -222,12 +345,12 @@ def main():
         sys.exit(1)
 
     # Validate
-    print(f"[COMPILE] Validating PXSCENE v0.1 structure...")
+    print(f"[COMPILE] Validating PXSCENE structure...")
     if not validate_scene(scene):
         sys.exit(1)
 
     # Compile
-    print(f"[COMPILE] Compiling to PXTERM v1...")
+    print(f"[COMPILE] Compiling to PXTERM v1 (with layout engine)...")
     lines = compile_scene(scene)
 
     # Write output

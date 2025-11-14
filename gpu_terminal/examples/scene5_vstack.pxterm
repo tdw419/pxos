@@ -1,0 +1,35 @@
+# PXTERM v1 program
+# Generated from PXSCENE (v0.1/v0.2)
+#
+# Architecture: LLM → PXSCENE → PXTERM → GPU
+
+INFO
+LAYERS
+
+# Canvas clear
+CLEAR 20 20 20 255
+
+# Layer: background (z=0, opacity=255)
+LAYER NEW background 0
+LAYER USE background
+
+RECT 0 0 800 600 30 30 30
+
+# Layer: menu (z=10, opacity=255)
+LAYER NEW menu 10
+LAYER USE menu
+
+# VSTACK demo - vertical menu stack
+# VSTACK at (50, 50) spacing=10
+RECT 50 50 200 50 60 60 60
+RECT 50 110 200 50 80 80 80
+RECT 50 170 200 50 100 100 100
+RECT 50 230 200 50 120 120 120
+RECT 50 290 200 50 140 140 140
+
+# Save output
+SAVE scene5_vstack.png
+
+# End of program
+INFO
+LAYERS
