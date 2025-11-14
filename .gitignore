@@ -1,0 +1,11 @@
+# pxVM bytecode files
+*.pxvm
+
+# Debug and test scripts
+debug_*.script
+test_*.script
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
