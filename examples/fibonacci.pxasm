@@ -1,0 +1,48 @@
+; fibonacci.pxasm - Compute Fibonacci numbers
+; Calculates fib(10) = 55
+
+main:
+    IMM32 R0, 10         ; n = 10
+    CALL fibonacci       ; Call fib(10)
+    PRINT R0             ; Print result
+    HALT
+
+; fibonacci(n) - Recursive Fibonacci
+; Input:  R0 = n
+; Output: R0 = fib(n)
+fibonacci:
+    IMM32 R1, 1
+    IMM32 R2, 2
+
+    ; Base case: fib(0) = 0, fib(1) = 1
+    JZ R0, fib_zero      ; if n == 0
+    SUB R3, R0, R1       ; R3 = n - 1
+    JZ R3, fib_one       ; if n == 1
+
+    ; Recursive case: fib(n) = fib(n-1) + fib(n-2)
+    PUSH R0              ; Save n
+
+    ; Calculate fib(n-1)
+    SUB R0, R0, R1       ; R0 = n - 1
+    CALL fibonacci       ; R0 = fib(n-1)
+    PUSH R0              ; Save fib(n-1)
+
+    ; Calculate fib(n-2)
+    POP R3               ; Get fib(n-1) (will push back)
+    POP R0               ; Get original n
+    PUSH R3              ; Push fib(n-1) back
+    SUB R0, R0, R2       ; R0 = n - 2
+    CALL fibonacci       ; R0 = fib(n-2)
+
+    ; Add results
+    POP R1               ; R1 = fib(n-1)
+    ADD R0, R0, R1       ; R0 = fib(n-2) + fib(n-1)
+    RET
+
+fib_zero:
+    IMM32 R0, 0
+    RET
+
+fib_one:
+    IMM32 R0, 1
+    RET

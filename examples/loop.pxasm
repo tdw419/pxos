@@ -1,0 +1,15 @@
+; loop.pxasm - Simple counting loop
+; Counts from 1 to 10
+
+main:
+    IMM32 R0, 0          ; Counter = 0
+    IMM32 R1, 1          ; Increment = 1
+    IMM32 R2, 10         ; Limit = 10
+
+loop:
+    ADD R0, R0, R1       ; counter++
+    PRINT R0             ; Print current value
+    SUB R3, R2, R0       ; R3 = limit - counter
+    JNZ R3, loop         ; Continue if not at limit
+
+    HALT                 ; Done

@@ -1,0 +1,28 @@
+; factorial.pxasm - Recursive factorial computation
+; Computes factorial(5) = 120
+
+main:
+    IMM32 R0, 5          ; Load n = 5
+    CALL factorial       ; Call factorial(5)
+    PRINT R0             ; Print result
+    HALT                 ; Exit program
+
+; factorial(n) - Recursive implementation
+; Input:  R0 = n
+; Output: R0 = n!
+factorial:
+    IMM32 R1, 1          ; R1 = 1 (constant)
+    SUB R2, R0, R1       ; R2 = n - 1
+    JZ R2, base_case     ; if (n-1 == 0) return 1
+
+    ; Recursive case: n * factorial(n-1)
+    PUSH R0              ; Save n
+    MOV R0, R2           ; R0 = n - 1
+    CALL factorial       ; R0 = factorial(n-1)
+    POP R1               ; R1 = original n
+    MUL R0, R0, R1       ; R0 = factorial(n-1) * n
+    RET                  ; Return result
+
+base_case:
+    IMM32 R0, 1          ; Return 1
+    RET

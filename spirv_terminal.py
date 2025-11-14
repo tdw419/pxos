@@ -6,6 +6,14 @@ A SPIR-V terminal with CPU-based pxVM interpreter
 
 import sys
 import struct
+from pathlib import Path
+
+# Import assembler if available
+try:
+    from pxvm_assembler import PxVmAssembler
+    ASSEMBLER_AVAILABLE = True
+except ImportError:
+    ASSEMBLER_AVAILABLE = False
 
 class SpirvTerminal:
     def __init__(self):
@@ -389,6 +397,57 @@ class SpirvTerminal:
             return
         print(f"OK RUN {name}")
         self.run_pxvm(self.programs[name])
+
+    def cmd_ASM(self, name, path):
+        """Assemble .pxasm to .pxvm: ASM <name> <path.pxasm>"""
+        if not ASSEMBLER_AVAILABLE:
+            print("ERR assembler not available (pxvm_assembler.py missing)")
+            return
+
+        try:
+            with open(path, 'r') as f:
+                source = f.read()
+
+            assembler = PxVmAssembler()
+            bytecode = assembler.assemble(source)
+
+            # Auto-generate .pxvm filename
+            pxvm_path = Path(path).with_suffix('.pxvm')
+
+            with open(pxvm_path, 'wb') as f:
+                f.write(bytecode)
+
+            # Load into programs
+            self.programs[name] = bytecode
+
+            print(f"OK ASM {name} ({len(bytecode)} bytes → {pxvm_path})")
+
+            # Show label addresses
+            if assembler.labels:
+                for label, addr in sorted(assembler.labels.items(), key=lambda x: x[1]):
+                    print(f"  {label:20s} = 0x{addr:04X}")
+
+        except FileNotFoundError:
+            print(f"ERR file not found: {path}")
+        except Exception as e:
+            print(f"ERR ASM: {e}")
+
+    def cmd_DISASM(self, name):
+        """Disassemble a program: DISASM <name>"""
+        if name not in self.programs:
+            print(f"ERR program {name} not loaded")
+            return
+
+        if not ASSEMBLER_AVAILABLE:
+            print("ERR assembler not available (pxvm_assembler.py missing)")
+            return
+
+        try:
+            assembler = PxVmAssembler()
+            asm = assembler.disassemble(self.programs[name])
+            print(asm)
+        except Exception as e:
+            print(f"ERR DISASM: {e}")
 
     def execute_line(self, line):
         """Execute a single command line"""

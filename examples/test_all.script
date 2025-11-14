@@ -1,0 +1,13 @@
+# test_all.script - Test all example programs
+
+# Test 1: Factorial(5) = 120
+ASM factorial examples/factorial.pxasm
+RUN factorial
+
+# Test 2: Fibonacci(10) = 55
+ASM fibonacci examples/fibonacci.pxasm
+RUN fibonacci
+
+# Test 3: Loop counting 1-10
+ASM loop examples/loop.pxasm
+RUN loop
