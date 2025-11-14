@@ -1,0 +1,172 @@
+{
+  "canvas": {
+    "clear": [20, 20, 20]
+  },
+  "layers": [
+    {
+      "name": "desktop",
+      "z": 0,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Desktop background with gradient approximation"
+        },
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [40, 40, 60, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Bottom taskbar"
+        },
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 560,
+          "w": 800,
+          "h": 40,
+          "color": [30, 30, 30, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 0,
+          "y": 560,
+          "length": 800,
+          "color": [60, 60, 60, 255]
+        }
+      ]
+    },
+    {
+      "name": "window1",
+      "z": 10,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Window frame"
+        },
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 100,
+          "w": 300,
+          "h": 200,
+          "color": [50, 50, 50, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Window title bar"
+        },
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 100,
+          "w": 300,
+          "h": 30,
+          "color": [70, 130, 180, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Window content area"
+        },
+        {
+          "op": "RECT",
+          "x": 105,
+          "y": 135,
+          "w": 290,
+          "h": 160,
+          "color": [240, 240, 240, 255]
+        }
+      ]
+    },
+    {
+      "name": "window2",
+      "z": 15,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Overlapping window (higher z-index)"
+        },
+        {
+          "op": "RECT",
+          "x": 250,
+          "y": 180,
+          "w": 300,
+          "h": 200,
+          "color": [50, 50, 50, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 250,
+          "y": 180,
+          "w": 300,
+          "h": 30,
+          "color": [180, 70, 70, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 255,
+          "y": 215,
+          "w": 290,
+          "h": 160,
+          "color": [240, 240, 240, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Some content lines"
+        },
+        {
+          "op": "HLINE",
+          "x": 260,
+          "y": 225,
+          "length": 280,
+          "color": [100, 100, 100, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 260,
+          "y": 235,
+          "length": 200,
+          "color": [100, 100, 100, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 260,
+          "y": 245,
+          "length": 250,
+          "color": [100, 100, 100, 255]
+        }
+      ]
+    },
+    {
+      "name": "cursor",
+      "z": 100,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Simple cursor at top z-index"
+        },
+        {
+          "op": "VLINE",
+          "x": 400,
+          "y": 300,
+          "length": 15,
+          "color": [255, 255, 255, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 400,
+          "y": 300,
+          "length": 10,
+          "color": [255, 255, 255, 255]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene2_ui.png"
+  }
+}

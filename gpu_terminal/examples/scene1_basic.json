@@ -1,0 +1,72 @@
+{
+  "canvas": {
+    "clear": [0, 0, 32]
+  },
+  "layers": [
+    {
+      "name": "background",
+      "z": 0,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Draw blue frame background"
+        },
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [0, 0, 50, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 10,
+          "y": 10,
+          "w": 780,
+          "h": 580,
+          "color": [0, 0, 0, 255]
+        }
+      ]
+    },
+    {
+      "name": "content",
+      "z": 10,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Draw a semi-transparent red box"
+        },
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 100,
+          "w": 200,
+          "h": 150,
+          "color": [255, 0, 0, 128]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Draw white crosshair"
+        },
+        {
+          "op": "HLINE",
+          "x": 0,
+          "y": 300,
+          "length": 800,
+          "color": [255, 255, 255, 255]
+        },
+        {
+          "op": "VLINE",
+          "x": 400,
+          "y": 0,
+          "length": 600,
+          "color": [255, 255, 255, 255]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene1_basic.png"
+  }
+}

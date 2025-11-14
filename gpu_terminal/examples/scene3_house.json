@@ -1,0 +1,258 @@
+{
+  "canvas": {
+    "clear": [135, 206, 235]
+  },
+  "layers": [
+    {
+      "name": "sky_and_ground",
+      "z": 0,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Sky (already set by canvas clear)"
+        },
+        {
+          "op": "COMMENT",
+          "text": "Green grass (bottom third)"
+        },
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 400,
+          "w": 800,
+          "h": 200,
+          "color": [34, 139, 34, 255]
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "z": 5,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Sun approximation (using rectangles)"
+        },
+        {
+          "op": "RECT",
+          "x": 650,
+          "y": 50,
+          "w": 80,
+          "h": 80,
+          "color": [255, 255, 0, 255]
+        }
+      ]
+    },
+    {
+      "name": "house",
+      "z": 10,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "House body (tan/beige)"
+        },
+        {
+          "op": "RECT",
+          "x": 250,
+          "y": 250,
+          "w": 300,
+          "h": 200,
+          "color": [222, 184, 135, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Roof (red triangle approximation)"
+        },
+        {
+          "op": "RECT",
+          "x": 225,
+          "y": 200,
+          "w": 350,
+          "h": 15,
+          "color": [178, 34, 34, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 235,
+          "y": 215,
+          "w": 330,
+          "h": 15,
+          "color": [178, 34, 34, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 245,
+          "y": 230,
+          "w": 310,
+          "h": 15,
+          "color": [178, 34, 34, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 255,
+          "y": 245,
+          "w": 290,
+          "h": 10,
+          "color": [178, 34, 34, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Door (dark blue)"
+        },
+        {
+          "op": "RECT",
+          "x": 350,
+          "y": 350,
+          "w": 100,
+          "h": 100,
+          "color": [0, 0, 139, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Left window"
+        },
+        {
+          "op": "RECT",
+          "x": 280,
+          "y": 290,
+          "w": 50,
+          "h": 50,
+          "color": [173, 216, 230, 255]
+        },
+        {
+          "op": "VLINE",
+          "x": 305,
+          "y": 290,
+          "length": 50,
+          "color": [100, 100, 100, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 280,
+          "y": 315,
+          "length": 50,
+          "color": [100, 100, 100, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Right window"
+        },
+        {
+          "op": "RECT",
+          "x": 470,
+          "y": 290,
+          "w": 50,
+          "h": 50,
+          "color": [173, 216, 230, 255]
+        },
+        {
+          "op": "VLINE",
+          "x": 495,
+          "y": 290,
+          "length": 50,
+          "color": [100, 100, 100, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 470,
+          "y": 315,
+          "length": 50,
+          "color": [100, 100, 100, 255]
+        }
+      ]
+    },
+    {
+      "name": "tree",
+      "z": 15,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Tree trunk (brown)"
+        },
+        {
+          "op": "RECT",
+          "x": 620,
+          "y": 320,
+          "w": 40,
+          "h": 120,
+          "color": [101, 67, 33, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Tree foliage (dark green circles approximation)"
+        },
+        {
+          "op": "RECT",
+          "x": 580,
+          "y": 240,
+          "w": 120,
+          "h": 120,
+          "color": [34, 139, 34, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 590,
+          "y": 230,
+          "w": 100,
+          "h": 100,
+          "color": [34, 100, 34, 255]
+        }
+      ]
+    },
+    {
+      "name": "fence",
+      "z": 12,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Simple fence posts"
+        },
+        {
+          "op": "RECT",
+          "x": 100,
+          "y": 380,
+          "w": 15,
+          "h": 60,
+          "color": [160, 82, 45, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 150,
+          "y": 380,
+          "w": 15,
+          "h": 60,
+          "color": [160, 82, 45, 255]
+        },
+        {
+          "op": "RECT",
+          "x": 200,
+          "y": 380,
+          "w": 15,
+          "h": 60,
+          "color": [160, 82, 45, 255]
+        },
+        {
+          "op": "COMMENT",
+          "text": "Fence rails"
+        },
+        {
+          "op": "HLINE",
+          "x": 100,
+          "y": 395,
+          "length": 115,
+          "color": [160, 82, 45, 255]
+        },
+        {
+          "op": "HLINE",
+          "x": 100,
+          "y": 420,
+          "length": 115,
+          "color": [160, 82, 45, 255]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene3_house.png"
+  }
+}
