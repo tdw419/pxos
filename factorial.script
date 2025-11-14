@@ -1,0 +1,35 @@
+# factorial.script - Test pxVM v0.2 (IMM32, CALL/RET, Stack)
+# Computes factorial(5) = 120
+
+# Program structure:
+# 0x00-0x0B: main() - loads 5, calls factorial, prints result
+# 0x0C-0x2F: factorial(n) - recursive implementation
+
+# Create the factorial program bytecode
+WRITEFILE factorial.pxvm 30 00 05 00 00 00 60 0C 00 F0 00 FF 30 01 01 00 00 00 21 02 00 01 71 02 29 00 50 00 10 00 02 60 0C 00 51 01 22 00 00 01 61 30 00 01 00 00 00 61
+
+# Load and run
+LOADIMG factorial factorial.pxvm
+RUN factorial
+
+# Program explanation:
+# Address 0x00-0x0B: main()
+#   0x00: 30 00 05 00 00 00    IMM32 R0, 5           ; R0 = 5 (input)
+#   0x06: 60 0C 00             CALL 0x000C           ; Call factorial()
+#   0x09: F0 00                PRINT R0              ; Print result
+#   0x0B: FF                   HALT
+#
+# Address 0x0C-0x2F: factorial(R0) -> R0
+#   0x0C: 30 01 01 00 00 00    IMM32 R1, 1           ; R1 = 1
+#   0x12: 21 02 00 01          SUB R2, R0, R1        ; R2 = n - 1
+#   0x16: 71 02 29 00          JZ R2, 0x0029         ; if (n-1 == 0) goto base_case
+#   0x1A: 50 00                PUSH R0               ; Save n
+#   0x1C: 10 00 02             MOV R0, R2            ; R0 = n - 1
+#   0x1F: 60 0C 00             CALL 0x000C           ; factorial(n-1)
+#   0x22: 51 01                POP R1                ; R1 = original n
+#   0x24: 22 00 00 01          MUL R0, R0, R1        ; R0 = factorial(n-1) * n
+#   0x28: 61                   RET                   ; Return
+#
+# Address 0x29-0x2F: base_case (n == 1)
+#   0x29: 30 00 01 00 00 00    IMM32 R0, 1           ; R0 = 1
+#   0x2F: 61                   RET                   ; Return
