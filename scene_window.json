@@ -1,0 +1,57 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [10, 10, 20, 255]
+  },
+  "layers": [
+    {
+      "name": "ui",
+      "z": 10,
+      "commands": [
+        {
+          "op": "WINDOW",
+          "x": 100,
+          "y": 80,
+          "w": 600,
+          "h": 400,
+          "title": "PXOS CONTROL PANEL",
+          "children": [
+            {
+              "op": "VSTACK",
+              "x": 20,
+              "y": 20,
+              "spacing": 10,
+              "children": [
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "label": "START",
+                  "bg": [40, 80, 40, 255]
+                },
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "label": "STOP",
+                  "bg": [80, 40, 40, 255]
+                },
+                {
+                  "op": "LABEL",
+                  "x": 10,
+                  "y": 100,
+                  "color": [200, 200, 200, 255],
+                  "value": "System status: OK"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene_window.png"
+  }
+}
