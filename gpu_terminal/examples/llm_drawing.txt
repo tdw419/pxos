@@ -1,0 +1,36 @@
+# Example: What an LLM might generate
+# Task: "Draw a simple house with a red roof and blue door"
+
+# Clear to sky blue
+CLEAR 135 206 235
+
+# Draw grass (bottom third of screen)
+RECT 0 400 800 200 34 139 34
+
+# Draw house body (tan/beige)
+RECT 250 250 300 200 222 184 135
+
+# Draw roof (red triangle approximation using rectangles)
+RECT 225 200 350 15 178 34 34
+RECT 235 215 330 15 178 34 34
+RECT 245 230 310 15 178 34 34
+RECT 255 245 290 15 178 34 34
+
+# Draw door (blue)
+RECT 350 350 100 100 0 0 139
+
+# Draw windows (white with dark frames)
+RECT 280 280 60 60 64 64 64
+RECT 285 285 50 50 255 255 255
+
+RECT 460 280 60 60 64 64 64
+RECT 465 285 50 50 255 255 255
+
+# Draw chimney (dark gray)
+RECT 480 180 40 70 64 64 64
+
+# Add some smoke pixels (gray)
+PIXEL 495 170 128 128 128
+PIXEL 497 165 128 128 128
+PIXEL 499 160 128 128 128
+PIXEL 501 155 128 128 128

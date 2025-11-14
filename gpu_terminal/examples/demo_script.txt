@@ -1,0 +1,26 @@
+# pxOS LLM Terminal Demo Script
+# This file demonstrates the text command protocol
+
+# Clear screen to black
+CLEAR 0 0 0
+
+# Draw colored corners
+RECT 10 10 100 100 255 0 0       # Red top-left
+RECT 690 10 100 100 0 255 0      # Green top-right
+RECT 10 490 100 100 0 0 255      # Blue bottom-left
+RECT 690 490 100 100 255 255 0   # Yellow bottom-right
+
+# Draw a white cross at center
+RECT 390 0 20 600 255 255 255    # Vertical bar
+RECT 0 290 800 20 255 255 255    # Horizontal bar
+
+# Draw some test pixels
+PIXEL 400 300 255 0 0            # Red center
+PIXEL 401 300 0 255 0            # Green
+PIXEL 402 300 0 0 255            # Blue
+
+# Draw a border
+RECT 0 0 800 5 128 128 128       # Top
+RECT 0 595 800 5 128 128 128     # Bottom
+RECT 0 0 5 600 128 128 128       # Left
+RECT 795 0 5 600 128 128 128     # Right

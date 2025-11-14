@@ -42,10 +42,18 @@ The GPU Terminal implements the "Frozen Shader Bus" pattern:
 ```
 gpu_terminal/
 ├── shaders/
-│   └── frozen_display.wgsl    # v0.1 - NEVER CHANGES
-├── pxos_gpu_terminal.py        # Main GPU terminal
-├── requirements.txt            # Dependencies
-└── README.md                   # This file
+│   └── frozen_display.wgsl      # v0.1 - NEVER CHANGES
+├── pxos_gpu_terminal.py          # Main GPU terminal (low-level)
+├── pxos_llm_terminal.py          # LLM terminal (text commands)
+├── test_frozen_shader.py         # Test patterns
+├── example_llm_usage.py          # LLM usage examples
+├── examples/
+│   ├── demo_script.txt          # Example script
+│   ├── llm_drawing.txt          # LLM-generated drawing
+│   └── api_usage.py             # Python API examples
+├── requirements.txt              # Dependencies
+├── README.md                     # This file
+└── ARCHITECTURE.md               # Design philosophy
 ```
 
 ## Installation
@@ -82,45 +90,141 @@ terminal.cmd_rect(50, 50, 200, 100, 0, 255, 0)  # Green rectangle
 terminal.run()
 ```
 
+## LLM Terminal (Text Protocol)
+
+The `pxos_llm_terminal.py` provides a **text command interface** perfect for LLMs.
+
+### Interactive mode
+
+```bash
+python pxos_llm_terminal.py
+```
+
+This opens a GUI window and starts an interactive command prompt:
+
+```
+pxos> CLEAR 0 0 0
+pxos> RECT 100 100 200 150 255 0 0
+pxos> PIXEL 400 300 255 255 255
+pxos> HELP
+```
+
+### Script mode
+
+```bash
+python pxos_llm_terminal.py examples/demo_script.txt
+```
+
+Executes commands from a text file. Example script:
+
+```
+# Clear to black
+CLEAR 0 0 0
+
+# Draw a red square
+RECT 100 100 200 200 255 0 0
+
+# Draw a white pixel at center
+PIXEL 400 300 255 255 255
+```
+
+### Batch mode (Python)
+
+```python
+from pxos_llm_terminal import batch_mode
+
+batch_mode([
+    "CLEAR 0 0 0",
+    "RECT 100 100 200 150 255 0 0",
+])
+```
+
+### Why text protocol?
+
+The text command protocol is **LLM-friendly**:
+- Simple, human-readable syntax
+- No GPU knowledge required
+- Easy to generate from natural language
+- Easy to debug (just read the commands)
+
+Example LLM interaction:
+```
+User: "Draw a red square in the top-left corner"
+
+LLM generates:
+CLEAR 0 0 0
+RECT 10 10 100 100 255 0 0
+```
+
 ## Terminal Commands (v0.1)
 
 ### CLEAR
 
+**Python API:**
 ```python
 terminal.cmd_clear(r, g, b, a=255)
 ```
 
-Clear entire screen to a solid color.
+**Text protocol:**
+```
+CLEAR r g b [a]
+```
 
-**Example:**
+Clear entire screen to a solid color (0-255 per channel).
+
+**Examples:**
 ```python
 terminal.cmd_clear(0, 0, 64)  # Dark blue background
+```
+```
+CLEAR 0 0 0
+CLEAR 255 0 0 128
 ```
 
 ### PIXEL
 
+**Python API:**
 ```python
 terminal.cmd_pixel(x, y, r, g, b, a=255)
 ```
 
+**Text protocol:**
+```
+PIXEL x y r g b [a]
+```
+
 Set a single pixel. Origin (0,0) is top-left.
 
-**Example:**
+**Examples:**
 ```python
 terminal.cmd_pixel(400, 300, 255, 255, 255)  # White center pixel
+```
+```
+PIXEL 400 300 255 255 255
+PIXEL 100 100 255 0 0 200
 ```
 
 ### RECT
 
+**Python API:**
 ```python
 terminal.cmd_rect(x, y, w, h, r, g, b, a=255)
 ```
 
+**Text protocol:**
+```
+RECT x y w h r g b [a]
+```
+
 Draw a filled rectangle.
 
-**Example:**
+**Examples:**
 ```python
 terminal.cmd_rect(100, 100, 200, 150, 255, 0, 0)  # Red rectangle
+```
+```
+RECT 100 100 200 150 255 0 0
+RECT 50 50 100 100 0 255 0 128
 ```
 
 ## Design Principles
