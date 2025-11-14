@@ -102,6 +102,46 @@ terminal.layer_use("ui")
 terminal.cmd_rect(100, 100, 200, 150, 255, 0, 0)
 ```
 
+## LLM Quick Start 🤖
+
+**This is the easiest way to use the system. Perfect for LLMs and humans alike.**
+
+### 1. Use the One-Shot Runner
+
+```bash
+# Just run any PXSCENE JSON file:
+python pxscene_run.py examples/scene1_basic.json
+
+# That's it! Opens window with result and saves PNG
+```
+
+### 2. Have an LLM Generate Scenes
+
+**Step 1**: Give your LLM the prompt from [`PROMPTS.md`](./PROMPTS.md):
+
+```text
+You are a graphics compiler assistant for pxOS...
+[Full prompt in PROMPTS.md]
+```
+
+**Step 2**: Ask for a scene:
+
+```text
+Draw a sunset scene with orange sky and green ground
+```
+
+**Step 3**: Save the JSON output as `scene.json`
+
+**Step 4**: Run it:
+
+```bash
+python pxscene_run.py scene.json
+```
+
+**See**: [`PROMPTS.md`](./PROMPTS.md) for complete LLM integration guide.
+
+---
+
 ## Quick Start
 
 ### Installation
@@ -111,7 +151,13 @@ cd gpu_terminal
 pip install -r requirements.txt
 ```
 
-### Method 1: Write PXSCENE JSON (Recommended for LLMs)
+### Method 1: One-Shot Runner (Easiest)
+
+```bash
+python pxscene_run.py examples/scene1_basic.json
+```
+
+### Method 2: Write PXSCENE JSON (Recommended for LLMs)
 
 Create `my_scene.json`:
 
@@ -206,9 +252,12 @@ gpu_terminal/
 ├── pxos_gpu_terminal.py          # GPU terminal (low-level)
 ├── pxos_llm_terminal.py          # PXTERM executor
 ├── pxscene_compile.py            # PXSCENE → PXTERM compiler
+├── pxscene_run.py                # 🔥 One-shot runner (easiest!)
+├── test_pipeline.py              # Pipeline test suite
 │
 ├── PXTERM_SPEC.md                # Machine code spec (v1)
 ├── PXSCENE_SPEC.md               # Scene language spec (v0.1)
+├── PROMPTS.md                    # 🤖 LLM integration guide
 ├── README.md                     # This file
 └── requirements.txt              # Python dependencies
 ```
