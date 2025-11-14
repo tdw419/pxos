@@ -1,0 +1,32 @@
+# PXTERM v1 program
+# Generated from PXSCENE v0.1
+#
+# Architecture: LLM → PXSCENE → PXTERM → GPU
+
+INFO
+LAYERS
+
+# Canvas clear
+CLEAR 0 0 20 255
+
+# Layer: background (z=0, opacity=255)
+LAYER NEW background 0
+LAYER USE background
+
+RECT 0 0 800 600 0 0 60 255
+RECT 20 20 760 560 0 0 30 255
+
+# Layer: scene (z=10, opacity=255)
+LAYER NEW scene 10
+LAYER USE scene
+
+RECT 135 240 150 120 255 0 0 180
+RECT 325 240 150 120 0 255 0 180
+RECT 515 240 150 120 0 0 255 180
+
+# Save output
+SAVE scene_llm.png
+
+# End of program
+INFO
+LAYERS
