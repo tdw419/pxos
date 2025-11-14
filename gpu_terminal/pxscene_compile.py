@@ -143,15 +143,23 @@ def compile_command(lines: List[str], base_x: int, base_y: int, cmd: Dict[str, A
             child_local.setdefault("x", 0)
             child_local.setdefault("y", 0)
 
+            # Compile the child at current cursor position
+            compile_command(lines, cursor_x, y0, child_local)
+
+            # Calculate width based on child type
             if child_op == "RECT":
                 w = int(child_local["w"])
-                h = int(child_local["h"])
-                compile_command(lines, cursor_x, y0, child_local)
                 cursor_x += w + spacing
-            else:
-                # For non-RECT, place at current cursor
-                compile_command(lines, cursor_x, y0, child_local)
-                # Note: Could add width calculation for other ops if needed
+            elif child_op == "BUTTON":
+                w = int(child_local.get("w", 120))
+                cursor_x += w + spacing
+            elif child_op == "LABEL":
+                w = int(child_local.get("w", 100))
+                cursor_x += w + spacing
+            elif child_op == "WINDOW":
+                w = int(child_local.get("w", 400))
+                cursor_x += w + spacing
+            # Add more widget types as needed
 
     elif op == "VSTACK":
         # Vertical stack of children - automatic y-positioning
@@ -168,14 +176,104 @@ def compile_command(lines: List[str], base_x: int, base_y: int, cmd: Dict[str, A
             child_local.setdefault("x", 0)
             child_local.setdefault("y", 0)
 
+            # Compile the child at current cursor position
+            compile_command(lines, x0, cursor_y, child_local)
+
+            # Calculate height based on child type
             if child_op == "RECT":
-                w = int(child_local["w"])
                 h = int(child_local["h"])
-                compile_command(lines, x0, cursor_y, child_local)
                 cursor_y += h + spacing
-            else:
-                # For non-RECT, place at current cursor
-                compile_command(lines, x0, cursor_y, child_local)
+            elif child_op == "BUTTON":
+                h = int(child_local.get("h", 40))
+                cursor_y += h + spacing
+            elif child_op == "LABEL":
+                h = int(child_local.get("h", 20))
+                cursor_y += h + spacing
+            elif child_op == "WINDOW":
+                h = int(child_local.get("h", 300))
+                cursor_y += h + spacing
+            # Add more widget types as needed
+
+    # ===== v0.3 UI Widgets =====
+
+    elif op == "LABEL":
+        # Label widget - colored box placeholder for text
+        # Future: Will render bitmap text when text engine is added
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        w = int(cmd.get("w", 100))
+        h = int(cmd.get("h", 20))
+        color = cmd.get("color", [200, 200, 200, 255])
+        text = cmd.get("text", "")
+
+        lines.append(f"# LABEL: \"{text}\" at ({x}, {y})")
+        emit_rect(lines, x, y, w, h, color)
+
+    elif op == "BUTTON":
+        # Button widget - RECT with border and padding
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        w = int(cmd.get("w", 120))
+        h = int(cmd.get("h", 40))
+        bg_color = cmd.get("bg_color", [80, 80, 80, 255])
+        border_color = cmd.get("border_color", [150, 150, 150, 255])
+        border_width = int(cmd.get("border_width", 2))
+        text = cmd.get("text", "")
+
+        lines.append(f"# BUTTON: \"{text}\" at ({x}, {y})")
+
+        # Draw border (4 lines around the edges)
+        emit_hline(lines, x, y, w, border_color)  # Top
+        emit_hline(lines, x, y + h - 1, w, border_color)  # Bottom
+        emit_vline(lines, x, y, h, border_color)  # Left
+        emit_vline(lines, x + w - 1, y, h, border_color)  # Right
+
+        # Draw background (inset by border)
+        if border_width > 0 and w > border_width * 2 and h > border_width * 2:
+            emit_rect(lines, x + border_width, y + border_width,
+                     w - border_width * 2, h - border_width * 2, bg_color)
+
+    elif op == "WINDOW":
+        # Window widget - frame with title bar and content area
+        x = base_x + int(cmd.get("x", 0))
+        y = base_y + int(cmd.get("y", 0))
+        w = int(cmd.get("w", 400))
+        h = int(cmd.get("h", 300))
+        title = cmd.get("title", "Window")
+        title_bar_height = int(cmd.get("title_bar_height", 30))
+        title_bar_color = cmd.get("title_bar_color", [70, 130, 180, 255])
+        bg_color = cmd.get("bg_color", [50, 50, 50, 255])
+        border_color = cmd.get("border_color", [100, 100, 100, 255])
+
+        lines.append(f"# WINDOW: \"{title}\" at ({x}, {y}) size={w}x{h}")
+
+        # Draw border
+        emit_hline(lines, x, y, w, border_color)  # Top
+        emit_hline(lines, x, y + h - 1, w, border_color)  # Bottom
+        emit_vline(lines, x, y, h, border_color)  # Left
+        emit_vline(lines, x + w - 1, y, h, border_color)  # Right
+
+        # Draw title bar
+        emit_rect(lines, x + 1, y + 1, w - 2, title_bar_height, title_bar_color)
+
+        # Draw content background
+        content_y = y + 1 + title_bar_height
+        content_h = h - 2 - title_bar_height
+        if content_h > 0:
+            emit_rect(lines, x + 1, content_y, w - 2, content_h, bg_color)
+
+        # Recursively compile children in content area
+        children = cmd.get("children", [])
+        if children:
+            lines.append(f"# Window content ({len(children)} children)")
+            # Content area starts after title bar with padding
+            content_x = x + 10  # 10px padding
+            content_y_start = y + title_bar_height + 10
+
+            for child in children:
+                child_local = dict(child)
+                # Children use relative coordinates within content area
+                compile_command(lines, content_x, content_y_start, child_local)
 
     else:
         lines.append(f"# WARNING: Unknown operation '{op}', skipping")

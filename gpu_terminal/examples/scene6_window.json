@@ -1,0 +1,128 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "clear": [30, 30, 40, 255]
+  },
+  "layers": [
+    {
+      "name": "desktop",
+      "z": 0,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Desktop background with gradient approximation"
+        },
+        {
+          "op": "RECT",
+          "x": 0,
+          "y": 0,
+          "w": 800,
+          "h": 600,
+          "color": [30, 30, 40, 255]
+        }
+      ]
+    },
+    {
+      "name": "ui",
+      "z": 10,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "PXOS Control Panel - PXSCENE v0.3 Widget Demo"
+        },
+        {
+          "op": "WINDOW",
+          "x": 200,
+          "y": 100,
+          "w": 400,
+          "h": 400,
+          "title": "PXOS Control Panel",
+          "title_bar_height": 30,
+          "title_bar_color": [70, 130, 180, 255],
+          "bg_color": [50, 50, 50, 255],
+          "border_color": [100, 100, 100, 255],
+          "children": [
+            {
+              "op": "COMMENT",
+              "text": "Vertical stack of buttons"
+            },
+            {
+              "op": "VSTACK",
+              "x": 0,
+              "y": 0,
+              "spacing": 15,
+              "children": [
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "text": "System Settings",
+                  "bg_color": [80, 80, 80, 255],
+                  "border_color": [150, 150, 150, 255],
+                  "border_width": 2
+                },
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "text": "Display",
+                  "bg_color": [80, 80, 80, 255],
+                  "border_color": [150, 150, 150, 255],
+                  "border_width": 2
+                },
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "text": "Network",
+                  "bg_color": [80, 80, 80, 255],
+                  "border_color": [150, 150, 150, 255],
+                  "border_width": 2
+                },
+                {
+                  "op": "BUTTON",
+                  "w": 200,
+                  "h": 40,
+                  "text": "Storage",
+                  "bg_color": [80, 80, 80, 255],
+                  "border_color": [150, 150, 150, 255],
+                  "border_width": 2
+                },
+                {
+                  "op": "LABEL",
+                  "w": 200,
+                  "h": 20,
+                  "text": "Status: Ready",
+                  "color": [100, 200, 100, 255]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overlay",
+      "z": 20,
+      "commands": [
+        {
+          "op": "COMMENT",
+          "text": "Small indicator widget in corner"
+        },
+        {
+          "op": "LABEL",
+          "x": 650,
+          "y": 20,
+          "w": 130,
+          "h": 25,
+          "text": "PXSCENE v0.3",
+          "color": [70, 130, 180, 180]
+        }
+      ]
+    }
+  ],
+  "output": {
+    "file": "scene6_window.png"
+  }
+}

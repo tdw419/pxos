@@ -1,6 +1,6 @@
 # PXSCENE Specification
 
-**Current Version: v0.2**
+**Current Version: v0.3**
 
 **PXSCENE** is a JSON-based scene description language designed for LLMs.
 
@@ -442,6 +442,231 @@ LLMs describe **structure** instead of calculating **positions**.
 - ✅ Shader remains frozen (unchanged)
 - ✅ Only the compiler adds layout engine
 
+## PXSCENE v0.3 - UI Widgets
+
+Version 0.3 adds declarative UI widgets that compile down to PXTERM v1 primitives (RECT, HLINE, VLINE).
+
+These widgets are **structural elements** that make it easier for LLMs to describe common UI patterns.
+
+**Note:** Text rendering is not yet implemented. Widget labels are preserved in comments but not rendered visually.
+
+### LABEL - Label Widget
+
+A placeholder for text display (future: will render bitmap text).
+
+**Schema:**
+```json
+{
+  "op": "LABEL",
+  "x": 100,
+  "y": 100,
+  "w": 150,
+  "h": 20,
+  "text": "Status: Ready",
+  "color": [200, 200, 200, 255]
+}
+```
+
+**Parameters:**
+- `x`, `y` (optional, default 0): Position
+- `w` (optional, default 100): Width in pixels
+- `h` (optional, default 20): Height in pixels
+- `text` (required): Label text (stored in comment for now)
+- `color` (optional, default `[200, 200, 200, 255]`): Box color
+
+**Compiles to:**
+```
+# LABEL: "Status: Ready" at (100, 100)
+RECT 100 100 150 20 200 200 200 255
+```
+
+**Example:**
+```json
+{
+  "op": "LABEL",
+  "x": 50,
+  "y": 400,
+  "w": 200,
+  "h": 25,
+  "text": "System Ready",
+  "color": [100, 200, 100, 255]
+}
+```
+
+### BUTTON - Button Widget
+
+A clickable button with border and background.
+
+**Schema:**
+```json
+{
+  "op": "BUTTON",
+  "x": 100,
+  "y": 100,
+  "w": 120,
+  "h": 40,
+  "text": "OK",
+  "bg_color": [80, 80, 80, 255],
+  "border_color": [150, 150, 150, 255],
+  "border_width": 2
+}
+```
+
+**Parameters:**
+- `x`, `y` (optional, default 0): Position
+- `w` (optional, default 120): Width in pixels
+- `h` (optional, default 40): Height in pixels
+- `text` (required): Button text (stored in comment for now)
+- `bg_color` (optional, default `[80, 80, 80, 255]`): Background color
+- `border_color` (optional, default `[150, 150, 150, 255]`): Border color
+- `border_width` (optional, default 2): Border thickness in pixels
+
+**Compiles to:**
+```
+# BUTTON: "OK" at (100, 100)
+HLINE 100 100 120 150 150 150       # Top border
+HLINE 100 139 120 150 150 150       # Bottom border
+VLINE 100 100 40 150 150 150        # Left border
+VLINE 219 100 40 150 150 150        # Right border
+RECT 102 102 116 36 80 80 80        # Background
+```
+
+**Example:**
+```json
+{
+  "op": "BUTTON",
+  "x": 200,
+  "y": 300,
+  "w": 150,
+  "h": 50,
+  "text": "Submit",
+  "bg_color": [70, 130, 180, 255],
+  "border_color": [100, 160, 210, 255],
+  "border_width": 2
+}
+```
+
+### WINDOW - Window Widget
+
+A framed window with title bar and content area that can contain child elements.
+
+**Schema:**
+```json
+{
+  "op": "WINDOW",
+  "x": 200,
+  "y": 100,
+  "w": 400,
+  "h": 300,
+  "title": "Settings",
+  "title_bar_height": 30,
+  "title_bar_color": [70, 130, 180, 255],
+  "bg_color": [50, 50, 50, 255],
+  "border_color": [100, 100, 100, 255],
+  "children": [...]
+}
+```
+
+**Parameters:**
+- `x`, `y` (optional, default 0): Window position
+- `w` (optional, default 400): Window width
+- `h` (optional, default 300): Window height
+- `title` (optional, default "Window"): Title bar text (comment only)
+- `title_bar_height` (optional, default 30): Title bar height
+- `title_bar_color` (optional, default `[70, 130, 180, 255]`): Title bar color
+- `bg_color` (optional, default `[50, 50, 50, 255]`): Content background
+- `border_color` (optional, default `[100, 100, 100, 255]`): Border color
+- `children` (optional, default []): Child commands in content area
+
+**Compiles to:**
+```
+# WINDOW: "Settings" at (200, 100) size=400x300
+HLINE 200 100 400 100 100 100       # Top border
+HLINE 200 399 400 100 100 100       # Bottom border
+VLINE 200 100 300 100 100 100       # Left border
+VLINE 599 100 300 100 100 100       # Right border
+RECT 201 101 398 30 70 130 180      # Title bar
+RECT 201 131 398 268 50 50 50       # Content background
+# Window content (N children)
+# ... child commands with relative positioning
+```
+
+**Example with VSTACK children:**
+```json
+{
+  "op": "WINDOW",
+  "x": 200,
+  "y": 100,
+  "w": 400,
+  "h": 400,
+  "title": "PXOS Control Panel",
+  "children": [
+    {
+      "op": "VSTACK",
+      "x": 0,
+      "y": 0,
+      "spacing": 15,
+      "children": [
+        {"op": "BUTTON", "w": 200, "h": 40, "text": "Settings"},
+        {"op": "BUTTON", "w": 200, "h": 40, "text": "Display"},
+        {"op": "BUTTON", "w": 200, "h": 40, "text": "Network"}
+      ]
+    }
+  ]
+}
+```
+
+**Child Positioning:**
+- Children use **relative coordinates** within the window's content area
+- Content area has 10px padding from window edges
+- Child `x`, `y` are relative to content area top-left
+- Layout operations (HSTACK/VSTACK) work inside windows
+
+### Composing Widgets with Layouts
+
+Widgets work seamlessly with v0.2 layout operations:
+
+**Example: Vertical menu with buttons**
+```json
+{
+  "op": "VSTACK",
+  "x": 50,
+  "y": 50,
+  "spacing": 10,
+  "children": [
+    {"op": "BUTTON", "w": 200, "h": 40, "text": "New"},
+    {"op": "BUTTON", "w": 200, "h": 40, "text": "Open"},
+    {"op": "BUTTON", "w": 200, "h": 40, "text": "Save"},
+    {"op": "LABEL", "w": 200, "h": 20, "text": "Ready", "color": [100, 200, 100]}
+  ]
+}
+```
+
+**Example: Horizontal toolbar**
+```json
+{
+  "op": "HSTACK",
+  "x": 10,
+  "y": 10,
+  "spacing": 5,
+  "children": [
+    {"op": "BUTTON", "w": 80, "h": 30, "text": "File"},
+    {"op": "BUTTON", "w": 80, "h": 30, "text": "Edit"},
+    {"op": "BUTTON", "w": 80, "h": 30, "text": "View"}
+  ]
+}
+```
+
+### Widget Compatibility
+
+- ✅ All v0.1 operations still work
+- ✅ All v0.2 layout operations still work
+- ✅ Widgets can be used inside HSTACK/VSTACK
+- ✅ Widgets compile down to PXTERM v1 primitives (RECT, HLINE, VLINE)
+- ✅ PXTERM v1 remains frozen (unchanged)
+- ✅ Shader remains frozen (unchanged)
+- ✅ Text rendering deferred to future update
+
 ## Future Extensions
 
 Potential future operations (v0.3+):
@@ -465,6 +690,16 @@ Potential future operations (v0.3+):
 5. **Extend carefully** - Add ops only when needed
 
 ## Version History
+
+- **v0.3** (2025-11-14) - UI Widgets
+  - Added LABEL widget (text placeholder)
+  - Added BUTTON widget (border + background)
+  - Added WINDOW widget (frame + title bar + children)
+  - Widgets compile to PXTERM v1 primitives
+  - HSTACK/VSTACK now handle widget children
+  - Text rendering deferred to future update
+  - Backward compatible with v0.1 and v0.2
+  - PXTERM v1 and shader remain frozen
 
 - **v0.2** (2025-11-14) - Layout operations
   - Added HSTACK (horizontal stack with automatic x-positioning)
