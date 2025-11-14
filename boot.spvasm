@@ -1,0 +1,21 @@
+; boot.spvasm - "Hello, World!" for pxOS in SPIR-V
+;
+; This program demonstrates the use of our custom SYS_PRINT syscall.
+
+; --- Header ---
+; All SPIR-V modules must start with a header, though our assembler doesn't enforce it yet.
+; We define capabilities and entry points.
+OpCapability 1 ; Shader
+OpExtInstImport %1 "PXOS.syscalls"
+OpEntryPoint 1 %4 "main"
+
+; --- Types ---
+OpTypeVoid %2
+OpTypeFunction %3 %2
+
+; --- Main Function ---
+OpFunction %2 %4 0 %3
+    ; Execute our custom syscall
+    OpExtInst %2 %1 SYS_PRINT "Hello, World from SPIR-V!"
+    OpReturn
+OpFunctionEnd
