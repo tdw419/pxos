@@ -1,0 +1,26 @@
+======================================================================
+PARADISE MODE — Sustained Evolution Experiment
+======================================================================
+
+Environment: Resource-rich, low selection pressure
+Goal: Observe drift, mutation accumulation, lineage divergence
+Duration: 50,000 cycles
+
+Creating paradise world...
+  Initial food: 79700.0
+  Food regeneration: 0.05 per pixel per cycle
+
+Genome: 36 bytes
+Spawning 5 founder organisms...
+
+======================================================================
+EVOLUTION IN PARADISE
+======================================================================
+
+[  2501] Pop: 63 | B:   59 D:    0 | AvgE:    400 | MaxKids:  3 | Diversity: 1 |   54c/s | ETA:14.6m
+[  5001] Pop: 59 | B:   59 D:    4 | AvgE:    386 | MaxKids:  3 | Diversity: 1 |   55c/s | ETA:13.7m
+[  7501] Pop: 59 | B:   59 D:    4 | AvgE:    346 | MaxKids:  3 | Diversity: 1 |   55c/s | ETA:12.8m
+[ 10001] Pop: 42 | B:   59 D:   21 | AvgE:    449 | MaxKids:  3 | Diversity: 1 |   56c/s | ETA:12.0m
+[ 12501] Pop: 42 | B:   59 D:   21 | AvgE:    414 | MaxKids:  3 | Diversity: 1 |   56c/s | ETA:11.2m
+[ 15001] Pop: 41 | B:   59 D:   22 | AvgE:    389 | MaxKids:  3 | Diversity: 1 |   56c/s | ETA:10.5m
+[ 17501] Pop: 25 | B:   59 D:   38 | AvgE:    606 | MaxKids:  3 | Diversity: 1 |   56c/s | ETA:9.7m
