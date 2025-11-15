@@ -37,6 +37,8 @@ class Assembler:
         # Phase 6: Glyph syscalls
         'SYS_WRITE_GLYPH': 102,
         'SYS_READ_GLYPH': 103,
+        # Phase 7: Reproduction
+        'SYS_SPAWN': 104,
     }
 
     REGS = {f'R{i}': i for i in range(8)}
@@ -95,7 +97,7 @@ class Assembler:
         elif op in ('JMP', 'JZ'):
             return 2  # opcode(1) + offset(1)
         elif op in ('PLOT', 'HALT', 'NOP', 'SYS_EMIT_PHEROMONE', 'SYS_SENSE_PHEROMONE',
-                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH'):
+                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH', 'SYS_SPAWN'):
             return 1  # opcode only (uses registers)
         else:
             raise AssemblerError(f"Unknown instruction: {op}")
@@ -189,7 +191,7 @@ class Assembler:
             self.pc += 2
 
         elif op in ('SYS_EMIT_PHEROMONE', 'SYS_SENSE_PHEROMONE',
-                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH'):
+                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH', 'SYS_SPAWN'):
             # Simple syscalls - just emit opcode (uses registers)
             self.code.append(self.OPCODES[op])
             self.pc += 1

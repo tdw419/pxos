@@ -82,6 +82,9 @@ class PxVM:
     OP_SYS_WRITE_GLYPH = 102  # R0=x, R1=y, R2=glyph_id (0-15)
     OP_SYS_READ_GLYPH = 103   # R0=x, R1=y -> R0=glyph_id
 
+    # Syscalls - Reproduction (Phase 7)
+    OP_SYS_SPAWN = 104  # R1=child_x, R2=child_y -> R0=child_pid
+
     def __init__(self, width: int = 1024, height: int = 1024):
         self.width = width
         self.height = height
@@ -105,6 +108,43 @@ class PxVM:
         self.kernels.append(kernel)
         pid = self.next_pid
         self.next_pid += 1
+        return pid
+
+    def spawn_child(self, parent: Kernel, child_x: int, child_y: int) -> int:
+        """
+        Create a child kernel by cloning parent's memory.
+
+        Args:
+            parent: Parent kernel to clone from
+            child_x: X position for child
+            child_y: Y position for child
+
+        Returns:
+            Child PID (or 0 on failure)
+        """
+        MAX_KERNELS = 64
+        if len(self.kernels) >= MAX_KERNELS:
+            return 0  # Failure - too many kernels
+
+        # Create child with full memory copy
+        child = Kernel(self.next_pid, bytes(parent.memory), parent.color)
+
+        # Reset execution state
+        child.pc = 0
+        child.halted = False
+        child.cycles = 0
+        child.zero_flag = False
+
+        # Copy parent's registers, then set position
+        child.regs = parent.regs.copy()
+        child.regs[0] = child_x % self.width
+        child.regs[1] = child_y % self.height
+
+        # Add to scheduler
+        self.kernels.append(child)
+        pid = self.next_pid
+        self.next_pid += 1
+
         return pid
 
     def step(self):
@@ -216,6 +256,16 @@ class PxVM:
                 x = kernel.regs[0] % self.width
                 y = kernel.regs[1] % self.height
                 kernel.regs[0] = self.glyphs[y, x]
+
+            # Reproduction syscalls
+            elif opcode == self.OP_SYS_SPAWN:
+                # R1 = child x position
+                # R2 = child y position
+                # Returns child PID in R0 (0 if failed)
+                child_x = kernel.regs[1]
+                child_y = kernel.regs[2]
+                child_pid = self.spawn_child(kernel, child_x, child_y)
+                kernel.regs[0] = child_pid
 
             else:
                 # Unknown opcode - treat as NOP
