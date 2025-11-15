@@ -19,6 +19,13 @@ bootstrap_god.png
 god_pixel_registry.json
 compressed_*.bin
 
+# Project Boot Pixel registry and blobs
+project_boot_registry.json
+project_blobs/
+
+# Test outputs from compilers
+output.pxi.png
+
 # User-generated God Pixels (keep god.png as example)
 # god.png
 
