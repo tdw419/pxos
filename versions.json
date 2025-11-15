@@ -1,0 +1,10 @@
+{
+  "current": "v1.2",
+  "history": [
+    { "id": 1, "version": "v0.1", "file": "kernel_v0.1.bin", "parent": null, "date": "2025-11-15T12:00:00Z" },
+    { "id": 2, "version": "v0.3", "file": "kernel_v0.3.bin", "parent": 1, "date": "2025-11-15T18:00:00Z" },
+    { "id": 7, "version": "v1.0", "file": "kernel_v1.0.bin", "parent": 5, "date": "2025-11-16T02:11:00Z" },
+    { "id": 9, "version": "v1.2", "file": "kernel_v1.2.bin", "parent": 8, "date": "2025-11-16T05:30:00Z" }
+  ],
+  "latest": 9
+}
