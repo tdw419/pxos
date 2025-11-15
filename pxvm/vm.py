@@ -21,7 +21,7 @@ import numpy as np
 class Kernel:
     """A single kernel (process) running in the VM"""
 
-    def __init__(self, pid: int, code: bytes, color: int = 0x00FF00):
+    def __init__(self, pid: int, code: bytes, color: int = 0x00FF00, initial_energy: float = 1000.0):
         self.pid = pid
         self.color = color  # Default color for this kernel
         self.pc = 0  # Program counter
@@ -29,6 +29,12 @@ class Kernel:
         self.zero_flag = False
         self.halted = False
         self.cycles = 0
+
+        # Evolution: Energy system
+        self.energy = initial_energy
+        self.total_energy_consumed = 0.0
+        self.total_energy_gained = 0.0
+        self.children_count = 0
 
         # 64KB memory
         self.memory = bytearray(64 * 1024)
@@ -85,7 +91,13 @@ class PxVM:
     # Syscalls - Reproduction (Phase 7)
     OP_SYS_SPAWN = 104  # R1=child_x, R2=child_y -> R0=child_pid
 
-    def __init__(self, width: int = 1024, height: int = 1024):
+    # Syscalls - Evolution (Phase 8)
+    OP_SYS_EAT = 105  # R0=x, R1=y -> R0=energy_gained
+
+    def __init__(self, width: int = 1024, height: int = 1024,
+                 mutation_rate: float = 0.001,
+                 energy_per_cycle: float = 0.1,
+                 spawn_energy_cost: float = 0.5):
         self.width = width
         self.height = height
         self.framebuffer = np.zeros((height, width, 3), dtype=np.uint8)
@@ -98,9 +110,21 @@ class PxVM:
         # Phase 6: Glyph layer (symbolic communication)
         self.glyphs = np.zeros((height, width), dtype=np.uint8)  # 0-15 glyph IDs
 
+        # Phase 8: Evolution - Food layer and parameters
+        self.food = np.zeros((height, width), dtype=np.float32)
+        self.food_regen_rate = 0.01  # Food regenerates slowly
+        self.food_max = 100.0
+        self.mutation_rate = mutation_rate  # Probability per byte
+        self.energy_per_cycle = energy_per_cycle
+        self.spawn_energy_cost = spawn_energy_cost  # Fraction of parent energy
+
         self.kernels: List[Kernel] = []
         self.next_pid = 1
         self.cycle = 0
+
+        # Statistics
+        self.total_births = 0
+        self.total_deaths = 0
 
     def spawn_kernel(self, code: bytes, color: int = 0x00FF00) -> int:
         """Create a new kernel and return its PID"""
@@ -112,7 +136,7 @@ class PxVM:
 
     def spawn_child(self, parent: Kernel, child_x: int, child_y: int) -> int:
         """
-        Create a child kernel by cloning parent's memory.
+        Create a child kernel by cloning parent's memory with mutation.
 
         Args:
             parent: Parent kernel to clone from
@@ -126,8 +150,32 @@ class PxVM:
         if len(self.kernels) >= MAX_KERNELS:
             return 0  # Failure - too many kernels
 
+        # Check energy cost
+        energy_cost = parent.energy * self.spawn_energy_cost
+        if parent.energy < energy_cost:
+            return 0  # Not enough energy to spawn
+
+        # Deduct energy from parent
+        parent.energy -= energy_cost
+        parent.total_energy_consumed += energy_cost
+        parent.children_count += 1
+
         # Create child with full memory copy
-        child = Kernel(self.next_pid, bytes(parent.memory), parent.color)
+        child_memory = bytearray(parent.memory)
+
+        # MUTATION: Introduce random bit-flips (Tierra-style copy errors)
+        import random
+        mutations_applied = 0
+        for i in range(len(child_memory)):
+            if random.random() < self.mutation_rate:
+                # Flip a random bit in this byte
+                bit_to_flip = random.randint(0, 7)
+                child_memory[i] ^= (1 << bit_to_flip)
+                mutations_applied += 1
+
+        # Create child kernel
+        child_energy = parent.energy * 0.5  # Child gets half of parent's remaining energy
+        child = Kernel(self.next_pid, bytes(child_memory), parent.color, child_energy)
 
         # Reset execution state
         child.pc = 0
@@ -144,6 +192,7 @@ class PxVM:
         self.kernels.append(child)
         pid = self.next_pid
         self.next_pid += 1
+        self.total_births += 1
 
         return pid
 
@@ -164,6 +213,16 @@ class PxVM:
             opcode = kernel.read_byte(kernel.pc)
             kernel.pc += 1
             kernel.cycles += 1
+
+            # Energy depletion (every instruction costs energy)
+            kernel.energy -= self.energy_per_cycle
+            kernel.total_energy_consumed += self.energy_per_cycle
+
+            # Death by starvation
+            if kernel.energy <= 0:
+                kernel.halted = True
+                self.total_deaths += 1
+                continue
 
             # Execute
             if opcode == self.OP_HALT:
@@ -267,12 +326,33 @@ class PxVM:
                 child_pid = self.spawn_child(kernel, child_x, child_y)
                 kernel.regs[0] = child_pid
 
+            # Evolution syscalls
+            elif opcode == self.OP_SYS_EAT:
+                # R0 = x position to eat from
+                # R1 = y position to eat from
+                # Returns energy gained in R0
+                x = kernel.regs[0] % self.width
+                y = kernel.regs[1] % self.height
+                food_available = self.food[y, x]
+                if food_available > 0:
+                    # Eat all available food at this location
+                    energy_gained = food_available
+                    kernel.energy += energy_gained
+                    kernel.total_energy_gained += energy_gained
+                    self.food[y, x] = 0  # Food consumed
+                    kernel.regs[0] = int(energy_gained)
+                else:
+                    kernel.regs[0] = 0  # No food here
+
             else:
                 # Unknown opcode - treat as NOP
                 pass
 
         # Update pheromone field (decay and diffusion)
         self._update_pheromones()
+
+        # Update food (regeneration)
+        self._update_food()
 
         self.cycle += 1
 
@@ -300,6 +380,21 @@ class PxVM:
 
         # Clamp to valid range
         self.pheromone = np.clip(self.pheromone, 0, 255)
+
+    def _update_food(self):
+        """Update food field: slow regeneration"""
+        # Food regenerates slowly at all locations
+        self.food += self.food_regen_rate
+        # Clamp to max
+        self.food = np.clip(self.food, 0, self.food_max)
+
+    def seed_food(self, count: int = 100, amount: float = 50.0):
+        """Seed random food locations (useful for initial setup)"""
+        import random
+        for _ in range(count):
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            self.food[y, x] = amount
 
     def alive_count(self) -> int:
         """Return number of non-halted kernels"""

@@ -2,7 +2,9 @@
 
 A digital ecosystem where multiple "kernels" (organisms) execute in parallel, sharing a common world and communicating through chemical signals and symbolic language.
 
-**Version:** 0.7.0
+**Now with full Darwinian evolution: mutation, hunger, and natural selection.**
+
+**Version:** 0.8.0 (Evolution Release)
 **Status:** Working and tested
 **Python:** 3.6+
 
@@ -26,13 +28,14 @@ A digital ecosystem where multiple "kernels" (organisms) execute in parallel, sh
 pxvm is a virtual machine designed for artificial life experiments. Key features:
 
 - **Multi-kernel execution**: Up to 64 kernels run in parallel
-- **Shared environment**: Common 1024×1024 framebuffer, pheromone field, and glyph layer
+- **Shared environment**: Common 1024×1024 framebuffer, pheromone field, glyph layer, and food layer
 - **Chemical communication**: Kernels emit and sense pheromones
 - **Symbolic communication**: 16 primitive glyphs for written language
-- **Reproduction**: Kernels can spawn children (full memory cloning)
-- **Simple ISA**: 9 core instructions + 5 syscalls
+- **Reproduction**: Kernels can spawn children (full memory cloning with mutation)
+- **Evolution**: Mutation during reproduction, energy/hunger system, death by starvation
+- **Simple ISA**: 9 core instructions + 6 syscalls
 
-**What makes it special:** This isn't just a VM - it's a foundation for digital evolution, collective intelligence, and emergent behavior.
+**What makes it special:** This isn't just a VM - it's a complete platform for **open-ended digital evolution**, combining Tierra-style mutation with Avida-style spatial structure and rich communication. Organisms have names, write poetry, form families, and evolve under natural selection.
 
 ---
 
@@ -52,6 +55,7 @@ python demo_two_kernels.py    # Parallel execution
 python demo_pheromones.py     # Chemical communication
 python demo_glyphs.py         # Symbolic communication
 python demo_spawn.py          # Reproduction
+python demo_evolution.py      # EVOLUTION: Mutation + hunger + death
 ```
 
 ### Hello World
@@ -174,11 +178,57 @@ See `pxvm/glyphs.py` for complete definitions.
 | 104 | `SYS_SPAWN` | R1=child_x, R2=child_y → R0=child_pid | Clone memory, create child |
 
 **Spawn behavior:**
-- Child receives full 64KB memory copy from parent
+- Child receives full 64KB memory copy from parent **with mutation**
 - Child PC reset to 0
 - Child position set to (R1, R2)
 - Parent receives child PID in R0 (0 if failed)
+- Spawning costs 50% of parent's energy (configurable)
+- Child receives 50% of parent's remaining energy
 - Limit: 64 kernels total
+
+### Evolution (Phase 8)
+
+| Opcode | Mnemonic | Args | Description |
+|--------|----------|------|-------------|
+| 105 | `SYS_EAT` | R0=x, R1=y → R0=energy_gained | Consume food at location |
+
+**Evolution mechanics:**
+
+1. **Mutation** (Tierra-style copy errors)
+   - During `SYS_SPAWN`, child memory is mutated
+   - Random bit-flips with configurable rate (default: 0.001 = 0.1% per byte)
+   - Average ~65 mutations per 64KB child
+   - Creates heritable genetic variation
+
+2. **Energy/Hunger**
+   - Each kernel has an energy level (starts at 1000.0)
+   - Every instruction costs energy (default: 0.1 per cycle)
+   - Kernels gain energy by eating food: `SYS_EAT`
+   - Food regenerates slowly across the world (default: 0.01 per cycle per location)
+
+3. **Death**
+   - When energy ≤ 0, kernel halts permanently (starvation)
+   - Removed from active population
+   - Creates selection pressure for efficient code
+
+4. **Natural Selection**
+   - Organisms that find food efficiently survive longer
+   - Survivors reproduce more (more children)
+   - Wasteful organisms die before reproducing
+   - Mutations that improve fitness spread through the population
+
+**Configure evolution:**
+
+```python
+vm = PxVM(
+    mutation_rate=0.001,       # 0.1% per byte
+    energy_per_cycle=0.1,      # Cost of living
+    spawn_energy_cost=0.5      # 50% of parent energy
+)
+vm.seed_food(count=200, amount=50.0)  # Initial food distribution
+```
+
+**This is real Darwinian evolution:** heritable variation, differential reproduction, and competition for limited resources.
 
 ---
 

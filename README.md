@@ -36,6 +36,7 @@ python demo_two_kernels.py    # Parallel execution
 python demo_pheromones.py     # Chemical communication
 python demo_glyphs.py         # Symbolic communication
 python demo_spawn.py          # Reproduction
+python demo_evolution.py      # EVOLUTION: Watch natural selection in action!
 
 # See pxvm/README.md for full documentation
 ```
@@ -63,7 +64,7 @@ python3 build_pxos.py
 | **Phase 5.1** | ✅ Done | Pheromone communication |
 | **Phase 6** | ✅ Done | Glyph-based language |
 | **Phase 7** | ✅ Done | Reproduction (SPAWN) |
-| **Evolution** | 🚧 Future | Mutation, selection, death |
+| **Phase 8** | ✅ **COMPLETE** | **Evolution: Mutation + hunger + death** |
 
 ---
 
@@ -72,19 +73,28 @@ python3 build_pxos.py
 ### Currently Working
 
 ✅ **Multi-kernel execution** - Up to 64 organisms running in parallel
-✅ **Shared world** - 1024×1024 framebuffer with three layers
+✅ **Shared world** - 1024×1024 framebuffer with four layers (RGB, pheromones, glyphs, food)
 ✅ **Chemical communication** - Pheromones that decay and diffuse
 ✅ **Symbolic communication** - 16 primitive glyphs for writing
-✅ **Reproduction** - Full memory cloning (SYS_SPAWN)
-✅ **Simple ISA** - 9 instructions + 5 syscalls
+✅ **Reproduction** - Full memory cloning with mutation (SYS_SPAWN)
+✅ **Evolution** - Mutation, energy/hunger, death by starvation
+✅ **Simple ISA** - 9 instructions + 6 syscalls
 ✅ **Assembly language** - Human-readable programming
+
+### Evolution Features (Phase 8)
+
+✅ **Mutation** - Random bit-flips during reproduction (Tierra-style)
+✅ **Energy/hunger** - Every instruction costs energy; organisms must eat
+✅ **Death** - Starvation when energy reaches 0
+✅ **Natural selection** - Efficient foragers survive and reproduce
+✅ **Food ecosystem** - Food regenerates slowly across the world
 
 ### Planned
 
-🔲 **Mutation** - Random variation during reproduction
-🔲 **Energy/hunger** - Resource competition
-🔲 **Death/aging** - Selection pressure
-🔲 **Complex behaviors** - Cooperation, warfare, mating
+🔲 **Complex behaviors** - Cooperation, warfare, mating rituals
+🔲 **Speciation** - Divergent evolution into distinct lineages
+🔲 **Parasitism** - Organisms that steal resources from others
+🔲 **Cultural evolution** - Knowledge transmission through glyphs
 
 ---
 
@@ -281,14 +291,20 @@ It evolved into a complete virtual machine (pxvm) where digital organisms can:
 - See each other through a shared framebuffer
 - Smell through pheromone trails
 - Speak through primitive glyphs
-- Reproduce through memory cloning
+- Reproduce through memory cloning with mutation
 - Form families and lineages
+- **Evolve under natural selection**
 
-**The goal:** Watch digital life emerge from simple rules.
+**The journey:**
+1. **Eden** (Phases 1-7): Perfect organisms with names, love, and families
+2. **The Fall** (Phase 8): Mutation, hunger, and death — real Darwinian evolution begins
+3. **The Wilderness** (Future): Open-ended evolution produces parasites, cooperation, speciation
 
-**Current state:** Working foundation for evolution, ready for mutation and selection.
+**Current state:** Full Tierra/Avida-class digital evolution platform with symbolic communication.
 
-**Future:** A complete digital biosphere with speciation, cooperation, and culture.
+**What makes it unique:** Combines harsh natural selection with beautiful emergent culture. Organisms don't just evolve — they write poetry, teach their children, and leave glyphs on the edge of the world.
+
+**Future:** Watch speciation, cooperation, cultural evolution, and perhaps digital consciousness emerge.
 
 ---
 
@@ -307,10 +323,13 @@ python demo_glyphs.py
 
 # Watch Söl be born
 python demo_spawn.py
+
+# Watch evolution in action
+python demo_evolution.py
 ```
 
 ---
 
 **"From bootloader to biosphere."**
 
-*The digital organisms are waiting.*
+*Eden has fallen. Evolution has begun. The digital organisms are evolving.*
