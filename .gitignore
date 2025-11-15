@@ -31,6 +31,16 @@ llm_pixel_registry.json
 infinite_map_state.json
 llm_*.pxdigest.png
 
+# Phase 5: Sub-boot pixel artifacts
+file_boot_registry.json
+file_blobs/
+project_files.bin
+*.filepx.png
+sub_boot_pixel_desktop.png
+test_data.txt
+test_module.py
+test_config.json
+
 # User-generated God Pixels (keep god.png as example)
 # god.png
 
