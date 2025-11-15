@@ -31,6 +31,12 @@ class Assembler:
         'JZ': 6,
         'CMP': 7,
         'NOP': 255,
+        # Phase 5.1: Pheromone syscalls
+        'SYS_EMIT_PHEROMONE': 100,
+        'SYS_SENSE_PHEROMONE': 101,
+        # Phase 6: Glyph syscalls
+        'SYS_WRITE_GLYPH': 102,
+        'SYS_READ_GLYPH': 103,
     }
 
     REGS = {f'R{i}': i for i in range(8)}
@@ -88,8 +94,9 @@ class Assembler:
             return 3  # opcode(1) + dst(1) + src(1)
         elif op in ('JMP', 'JZ'):
             return 2  # opcode(1) + offset(1)
-        elif op in ('PLOT', 'HALT', 'NOP'):
-            return 1  # opcode only
+        elif op in ('PLOT', 'HALT', 'NOP', 'SYS_EMIT_PHEROMONE', 'SYS_SENSE_PHEROMONE',
+                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH'):
+            return 1  # opcode only (uses registers)
         else:
             raise AssemblerError(f"Unknown instruction: {op}")
 
@@ -180,6 +187,12 @@ class Assembler:
             self.code.append(self.OPCODES[op])
             self.code.append(offset)
             self.pc += 2
+
+        elif op in ('SYS_EMIT_PHEROMONE', 'SYS_SENSE_PHEROMONE',
+                    'SYS_WRITE_GLYPH', 'SYS_READ_GLYPH'):
+            # Simple syscalls - just emit opcode (uses registers)
+            self.code.append(self.OPCODES[op])
+            self.pc += 1
 
         else:
             raise AssemblerError(f"Unknown instruction: {op}")

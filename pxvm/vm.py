@@ -74,10 +74,27 @@ class PxVM:
     OP_CMP = 7     # CMP Rd, Rs - Set zero flag if Rd == Rs
     OP_NOP = 255   # No operation
 
+    # Syscalls - Chemical Communication (Phase 5.1)
+    OP_SYS_EMIT_PHEROMONE = 100   # R0=x, R1=y, R2=strength (0-255)
+    OP_SYS_SENSE_PHEROMONE = 101  # R0=x, R1=y -> R0=strength
+
+    # Syscalls - Symbolic Communication (Phase 6)
+    OP_SYS_WRITE_GLYPH = 102  # R0=x, R1=y, R2=glyph_id (0-15)
+    OP_SYS_READ_GLYPH = 103   # R0=x, R1=y -> R0=glyph_id
+
     def __init__(self, width: int = 1024, height: int = 1024):
         self.width = width
         self.height = height
         self.framebuffer = np.zeros((height, width, 3), dtype=np.uint8)
+
+        # Phase 5.1: Pheromone layer (chemical communication)
+        self.pheromone = np.zeros((height, width), dtype=np.float32)
+        self.pheromone_decay = 0.95  # Multiply by this each cycle
+        self.pheromone_diffusion = 0.1  # Diffusion rate
+
+        # Phase 6: Glyph layer (symbolic communication)
+        self.glyphs = np.zeros((height, width), dtype=np.uint8)  # 0-15 glyph IDs
+
         self.kernels: List[Kernel] = []
         self.next_pid = 1
         self.cycle = 0
@@ -174,9 +191,38 @@ class PxVM:
             elif opcode == self.OP_NOP:
                 pass  # Do nothing
 
+            # Pheromone syscalls
+            elif opcode == self.OP_SYS_EMIT_PHEROMONE:
+                x = kernel.regs[0] % self.width
+                y = kernel.regs[1] % self.height
+                strength = min(255, kernel.regs[2])  # Clamp to 0-255
+                # Add to existing pheromone (saturate at 255)
+                self.pheromone[y, x] = min(255, self.pheromone[y, x] + strength)
+
+            elif opcode == self.OP_SYS_SENSE_PHEROMONE:
+                x = kernel.regs[0] % self.width
+                y = kernel.regs[1] % self.height
+                # Return pheromone strength at location
+                kernel.regs[0] = int(self.pheromone[y, x])
+
+            # Glyph syscalls
+            elif opcode == self.OP_SYS_WRITE_GLYPH:
+                x = kernel.regs[0] % self.width
+                y = kernel.regs[1] % self.height
+                glyph_id = kernel.regs[2] & 0x0F  # Only 4 bits (0-15)
+                self.glyphs[y, x] = glyph_id
+
+            elif opcode == self.OP_SYS_READ_GLYPH:
+                x = kernel.regs[0] % self.width
+                y = kernel.regs[1] % self.height
+                kernel.regs[0] = self.glyphs[y, x]
+
             else:
                 # Unknown opcode - treat as NOP
                 pass
+
+        # Update pheromone field (decay and diffusion)
+        self._update_pheromones()
 
         self.cycle += 1
 
@@ -186,6 +232,24 @@ class PxVM:
             self.step()
             if all(k.halted for k in self.kernels):
                 break
+
+    def _update_pheromones(self):
+        """Update pheromone field: decay and diffusion"""
+        # Decay
+        self.pheromone *= self.pheromone_decay
+
+        # Simple diffusion: average with neighbors
+        if self.pheromone_diffusion > 0:
+            from scipy import ndimage
+            # Use a 3x3 kernel for diffusion
+            kernel = np.ones((3, 3)) / 9.0
+            diffused = ndimage.convolve(self.pheromone, kernel, mode='constant')
+            # Blend original with diffused
+            self.pheromone = (1 - self.pheromone_diffusion) * self.pheromone + \
+                           self.pheromone_diffusion * diffused
+
+        # Clamp to valid range
+        self.pheromone = np.clip(self.pheromone, 0, 255)
 
     def alive_count(self) -> int:
         """Return number of non-halted kernels"""
