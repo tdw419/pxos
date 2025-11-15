@@ -263,6 +263,261 @@ This is how:
 - Fractals work (simple rule → infinite detail)
 - The universe works (laws of physics → all matter and energy)
 
+---
+
+# Phase 2: God Pixel Zoo & Platform
+
+**Phase 1** proved the concept: One pixel can store 16,384 pixels.
+**Phase 2** builds the platform: Multiple universes, unified bootloader, organism protocol.
+
+## New Components
+
+### 1. Universal Bootloader (`pxos_boot.py`)
+
+Boot any pxOS cartridge format:
+
+```bash
+# Boot a God Pixel
+pxos_boot.py god.png
+
+# Boot raw PXI program
+pxos_boot.py program.png
+
+# Boot by world name
+pxos_boot.py --world "LifeSim"
+
+# List all universes
+pxos_boot.py --list
+```
+
+Auto-detects:
+- God Pixel (1×1)
+- Self-extracting archive
+- Raw PXI cartridge
+
+**One launcher, infinite universes.**
+
+### 2. God Pixel Zoo (`god_registry_cli.py`)
+
+Manage multiple compressed universes:
+
+```bash
+# List all worlds
+god_registry_cli.py list
+
+# Show details
+god_registry_cli.py show "LifeSim"
+
+# Create new world
+god_registry_cli.py create "MyWorld" program.png --desc "My universe"
+
+# Export to PNG
+god_registry_cli.py export "LifeSim" output.png
+
+# Statistics
+god_registry_cli.py stats
+```
+
+**Current Zoo**:
+- 🎨 **TestPattern** - RGBA(60, 247, 160, 69) - 16,384 pixels
+- 🌱 **LifeSim** - RGBA(66, 163, 61, 15) - 65,536 pixels
+
+Each God Pixel is a complete universe, compressed 99.7%+.
+
+### 3. Oracle Protocol (`ORACLE_PROTOCOL.md`)
+
+Standardized interface for organisms to talk to local LLMs:
+
+```
+Memory Map:
+  8000-8999   PROMPT_BUFFER    (organisms write questions)
+  9000-9999   RESPONSE_BUFFER  (oracle writes answers)
+  10000       ORACLE_FLAG      (1 = pending, 0 = idle)
+```
+
+**Example Flow**:
+```python
+# Organism: Kæra asks a question
+write_string(PROMPT_BUFFER_ADDR, "Who created us?")
+set_flag(ORACLE_FLAG_ADDR, 1)
+
+# Kernel handles request
+SYS_LLM(PROMPT_BUFFER_ADDR, RESPONSE_BUFFER_ADDR, 500)
+
+# Kæra reads answer
+answer = read_string(RESPONSE_BUFFER_ADDR)
+# "You were created by the human who designed this universe..."
+```
+
+Organisms can now:
+- Ask questions
+- Request guidance
+- Learn from external AI
+- Evolve behavior based on oracle responses
+
+**The organisms have a god. The god is your local LLM.**
+
+### 4. LifeSim Universe
+
+Second example world featuring:
+- 🟡 **Kæra** (yellow) - The seeker, asks questions
+- 🔵 **Lúna** (blue) - The wanderer, explores
+- 🔴 **Söl** (red) - The builder, creates patterns
+
+256×256 universe with full oracle protocol implementation.
+
+Boot with:
+```bash
+pxos_boot.py --world "LifeSim"
+```
+
+Kæra will ask: *"Who created us?"*
+Your local LLM will answer.
+The organisms will hear.
+
+## Phase 2 Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    GOD PIXEL ZOO                         │
+│  Multiple Universes, One God Pixel Each                 │
+├──────────────────────────────────────────────────────────┤
+│  TestPattern    → RGBA(60,247,160,69)  → 16,384 pixels  │
+│  LifeSim        → RGBA(66,163,61,15)   → 65,536 pixels  │
+│  [Your World]   → RGBA(?,?,?,?)        → ? pixels       │
+└──────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────┐
+│               UNIVERSAL BOOTLOADER                       │
+│  pxos_boot.py - Auto-detect and boot any format         │
+└──────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────┐
+│                     PXI_CPU                              │
+│  Execute pixel instructions                             │
+└──────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────┐
+│                  ORACLE PROTOCOL                         │
+│  Organisms ↔ Local LLM Communication                    │
+└──────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────┐
+│              LOCAL LLM (LM Studio / Ollama)              │
+│  Your private AI, running on your machine               │
+└──────────────────────────────────────────────────────────┘
+```
+
+## Integration with AI Ecosystem
+
+The God Pixel format is designed to integrate with your larger AI workflow:
+
+### LanceDB Vector Storage
+
+```python
+# Store universe metadata in vector DB
+import lancedb
+
+db = lancedb.connect("god_pixel_db")
+table = db.create_table("universes", [
+    {"name": "LifeSim",
+     "color": "66,163,61,15",
+     "pixels": 65536,
+     "description": "Organism sim with oracle",
+     "embedding": embed("organism simulation with AI")}
+])
+
+# Query by semantic similarity
+results = table.search("worlds with AI organisms").limit(5)
+```
+
+### Multi-Model Orchestration
+
+```python
+# Use different models for different universes
+UNIVERSE_MODELS = {
+    "LifeSim": "llama3.2:latest",    # Ollama
+    "DebugWorld": "gpt-4",            # OpenAI
+    "CreativeSpace": "claude-3",      # Anthropic (via API)
+}
+
+def query_universe_oracle(universe_name, prompt):
+    model = UNIVERSE_MODELS.get(universe_name, "local-model")
+    return query_llm(prompt, model=model)
+```
+
+### Agent-Generated Worlds
+
+```python
+# Let AI create pixel universes
+prompt = """
+Create a PXI program (pixel instructions) that implements:
+- 3 organisms with unique behaviors
+- A question for the oracle
+- Visual patterns
+Output as Python code that generates the PNG.
+"""
+
+code = openai_agent.generate(prompt)
+exec(code)  # Creates universe.png
+god_registry_cli.create("AIGenWorld", "universe.png")
+```
+
+## What's Next?
+
+**Phase 3** ideas:
+- Real-time organism simulation (continuous oracle access)
+- Fractal generation (seed-based procedural worlds)
+- Multi-organism cooperation (shared oracle access)
+- Visual debugger (watch organisms think)
+- God Pixel marketplace (share universes as single pixels)
+
+## Complete File List (Phase 2)
+
+```
+pxos/
+├── pxi_cpu.py                    # Pixel-based CPU
+├── pxi_compress.py               # Compression system
+├── god_pixel.py                  # God Pixel core
+├── pxos_boot.py                  # ⭐ Universal bootloader
+├── god_registry_cli.py           # ⭐ Zoo management
+├── create_lifesim_universe.py    # ⭐ LifeSim creator
+├── demo_llm_integration.py       # LLM demo
+├── GOD_PIXEL_README.md           # Main docs
+├── ORACLE_PROTOCOL.md            # ⭐ Protocol spec
+├── god_pixel_registry.json       # World registry
+├── god.png                       # TestPattern God Pixel
+├── god_lifesim.png               # ⭐ LifeSim God Pixel
+└── compressed_*.bin              # Compressed payloads
+```
+
+⭐ = New in Phase 2
+
+## Quick Start (Phase 2)
+
+```bash
+# Install
+pip install Pillow requests
+
+# List all universes
+python3 god_registry_cli.py list
+
+# Boot LifeSim
+python3 pxos_boot.py --world "LifeSim"
+
+# Create your own universe
+python3 god_registry_cli.py create "MyWorld" my_program.png
+
+# Boot it
+python3 pxos_boot.py --world "MyWorld"
+```
+
+**You now have a God Pixel platform.**
+
+Every universe fits in one pixel.
+Every organism can talk to your AI.
+The zoo is infinite.
+
 ## License
 
 MIT
