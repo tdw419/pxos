@@ -26,6 +26,11 @@ project_blobs/
 # Test outputs from compilers
 output.pxi.png
 
+# Phase 4: PXDigest LLM artifacts
+llm_pixel_registry.json
+infinite_map_state.json
+llm_*.pxdigest.png
+
 # User-generated God Pixels (keep god.png as example)
 # god.png
 

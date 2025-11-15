@@ -157,24 +157,29 @@ class PXICPU:
                 print(char, end='', flush=True)
 
         elif opcode == OP_SYS_LLM:
-            # SYS_LLM: R0=prompt_addr, R1=output_addr, R2=max_len
+            # SYS_LLM: R0=prompt_addr, R1=output_addr, R2=max_len, R3=model_id (optional)
             self._syscall_llm()
 
         self.pc += 1
         return True
 
     def _syscall_llm(self):
-        """Call local LLM via HTTP"""
+        """Call local LLM via HTTP with optional model selection"""
         prompt_addr = self.regs[0]
         output_addr = self.regs[1]
         max_len = self.regs[2] if self.regs[2] > 0 else 1024
+        model_id = self.regs[3] if self.regs[3] > 0 else None  # Optional model selection
 
         # Read prompt string from image (using G channel as ASCII)
         prompt = self.read_string(prompt_addr)
 
         if prompt:
             print(f"\n[SYS_LLM] Prompt: {prompt[:50]}...")
-            response = query_local_llm(prompt)
+            if model_id:
+                print(f"[SYS_LLM] Model ID: 0x{model_id:08X}")
+                response = query_local_llm_via_digest(prompt, model_id, max_len)
+            else:
+                response = query_local_llm(prompt)
             print(f"[SYS_LLM] Response: {response[:50]}...")
             written = self.write_string(output_addr, response, max_len)
             self.regs[0] = written
@@ -249,6 +254,57 @@ def query_local_llm(prompt: str, port: int = 1234, model: str = "local-model") -
         )
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"[LLM error: {e}]"
+
+
+def query_local_llm_via_digest(prompt: str, model_id: int, max_tokens: int = 512) -> str:
+    """
+    Query local LLM via PXDigest model ID
+
+    Looks up model configuration in llm_pixel_registry.json and calls appropriate backend.
+    """
+    import json
+    from pathlib import Path
+
+    registry_path = Path("llm_pixel_registry.json")
+
+    if not registry_path.exists():
+        return "[Error: LLM pixel registry not found]"
+
+    try:
+        with open(registry_path, 'r') as f:
+            registry = json.load(f)
+
+        model_config = registry.get(str(model_id))
+        if not model_config:
+            return f"[Error: Model ID 0x{model_id:08X} not found in registry]"
+
+        endpoint = model_config.get("endpoint")
+        model_name = model_config.get("model_name", "local-model")
+        temperature = model_config.get("temperature", 0.7)
+        system_prompt = model_config.get("system_prompt")
+
+        # Build messages
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        # Call the model
+        r = requests.post(
+            endpoint,
+            json={
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            },
+            timeout=30
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+
     except Exception as e:
         return f"[LLM error: {e}]"
 
