@@ -20,6 +20,10 @@ OP_ADD      = 0x20  # R[arg1] = R[arg2] + R[arg3]
 OP_SUB      = 0x21  # R[arg1] = R[arg2] - R[arg3]
 OP_JMP      = 0x30  # Jump to pixel address
 OP_JNZ      = 0x31  # Jump if R[arg1] != 0
+OP_CALL     = 0x32  # Call function: push PC, jump to address
+OP_RET      = 0x33  # Return from function: pop PC
+OP_PUSH     = 0x34  # Push R[arg1] to stack
+OP_POP      = 0x35  # Pop stack to R[arg1]
 OP_DRAW     = 0x40  # Draw pixel at (R[arg1], R[arg2]) with color R[arg3]
 OP_PRINT    = 0x41  # Print character R[arg1] to screen buffer
 OP_SYS_LLM  = 0xC8  # Call local LLM: R0=prompt_addr, R1=output_addr, R2=max_len
@@ -42,6 +46,7 @@ class PXICPU:
         self.width, self.height = self.pxi_image.size
         self.frame = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
         self.screen_buffer = ""  # Text output buffer
+        self.stack = []  # Call stack for CALL/RET
 
     def _pc_to_xy(self, pc: int) -> Tuple[int, int]:
         """Convert linear PC to (x, y) coordinates"""
@@ -108,6 +113,33 @@ class PXICPU:
             if arg1 < 16 and self.regs[arg1] != 0:
                 self.pc = arg2 * 256 + arg3
                 return True
+
+        elif opcode == OP_CALL:
+            # CALL address: push return address, jump
+            return_addr = self.pc + 1
+            self.stack.append(return_addr)
+            self.pc = arg2 * 256 + arg3
+            return True
+
+        elif opcode == OP_RET:
+            # RET: pop return address, jump back
+            if self.stack:
+                self.pc = self.stack.pop()
+                return True
+            else:
+                # Stack underflow - halt
+                self.halted = True
+                return False
+
+        elif opcode == OP_PUSH:
+            # PUSH R[arg1]
+            if arg1 < 16:
+                self.stack.append(self.regs[arg1])
+
+        elif opcode == OP_POP:
+            # POP to R[arg1]
+            if arg1 < 16 and self.stack:
+                self.regs[arg1] = self.stack.pop()
 
         elif opcode == OP_DRAW:
             # DRAW pixel at (R[arg1], R[arg2]) with color R[arg3]
