@@ -1,0 +1,14 @@
+{
+  "60,247,160,69": {
+    "name": "pxOS Chat Kernel",
+    "size": [64, 64],
+    "description": "LLM-capable pxOS base",
+    "blob": "compressed_pxos_chat.bin"
+  },
+  "12,34,56,78": {
+    "name": "LifeSim v0.1",
+    "size": [128, 128],
+    "description": "Organism world for Kæra/Lúna/Söl",
+    "blob": "compressed_life.bin"
+  }
+}

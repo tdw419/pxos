@@ -1,0 +1,50 @@
+{
+  "4182940111": {
+    "name": "pxOS Self-Hosting",
+    "description": "The first self-hosting version of pxOS",
+    "root": "/app",
+    "blob": "project_blobs/f95299cf.bin",
+    "pixel": [
+      249,
+      82,
+      153,
+      207
+    ]
+  },
+  "2480459663": {
+    "name": "pxOS Self-Hosting v2",
+    "description": "The second self-hosting version of pxOS",
+    "root": "/app",
+    "blob": "project_blobs/93d8cf8f.bin",
+    "pixel": [
+      147,
+      216,
+      207,
+      143
+    ]
+  },
+  "3959672983": {
+    "name": "pxOS Self-Hosting v2",
+    "description": "The second self-hosting version of pxOS",
+    "root": "/app",
+    "blob": "project_blobs/ec03d097.bin",
+    "pixel": [
+      236,
+      3,
+      208,
+      151
+    ]
+  },
+  "217421742": {
+    "name": "pxOS Self-Hosting v2",
+    "description": "The second self-hosting version of pxOS",
+    "root": "/app",
+    "blob": "project_blobs/0cf597ae.bin",
+    "pixel": [
+      12,
+      245,
+      151,
+      174
+    ]
+  }
+}
