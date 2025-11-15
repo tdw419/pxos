@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "description": "pxOS Boot Sequence - LLM-first design",
+  "comment": "This defines the order in which modules load during pxOS boot",
+
+  "sequence": [
+    {
+      "stage": 0,
+      "name": "Pixel BIOS",
+      "path": "/boot/00_bios",
+      "required": true,
+      "description": "Minimal bootstrap: verify integrity, mount PixelFS read-only, load kernel"
+    },
+    {
+      "stage": 1,
+      "name": "Core Kernel",
+      "path": "/boot/01_kernel",
+      "required": true,
+      "description": "Memory layout, PixelFS R/W, syscalls, logging infrastructure"
+    },
+    {
+      "stage": 2,
+      "name": "Safety/Policy Kernel",
+      "path": "/boot/02_policy",
+      "required": true,
+      "description": "Refusal logic, rate limiting, allowed operations, safety constraints"
+    },
+    {
+      "stage": 3,
+      "name": "LLM Control Plane",
+      "path": "/boot/03_llm_plane",
+      "required": true,
+      "description": "Discover PXDigest models, build routing table, high-level LLM APIs"
+    },
+    {
+      "stage": 4,
+      "name": "World Substrate",
+      "path": "/boot/04_world_substrate",
+      "required": true,
+      "description": "Infinite map, coordinate system, entity registry, scheduling"
+    },
+    {
+      "stage": 10,
+      "name": "System Shell (for LLMs)",
+      "path": "/boot/10_llm_shell",
+      "required": false,
+      "description": "Command language and API for LLM agents to control pxOS"
+    },
+    {
+      "stage": 11,
+      "name": "Human Shell (chat + map)",
+      "path": "/boot/11_human_shell",
+      "required": false,
+      "description": "Infinite map viewer, chat console, inspectors for humans"
+    },
+    {
+      "stage": 12,
+      "name": "Pixel REPL",
+      "path": "/boot/12_pixel_repl",
+      "required": false,
+      "description": "Interactive REPL where LLMs can propose and run pixel code"
+    },
+    {
+      "stage": 20,
+      "name": "Guardian",
+      "path": "/boot/20_guardian",
+      "required": false,
+      "description": "Watchdog/monitor for runaway behavior and system health"
+    }
+  ],
+
+  "notes": [
+    "Stages 0-4 are required for a minimal boot",
+    "Stages 10+ are optional shells and tools",
+    "LLM-first design: safety and control plane before UI",
+    "Each module should be loadable via SYS_BLOB and have a PXIM header"
+  ]
+}

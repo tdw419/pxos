@@ -41,6 +41,10 @@ test_data.txt
 test_module.py
 test_config.json
 
+# Phase 6: PixelFS + Boot Sequence artifacts
+pixelfs.json
+boot.log
+
 # User-generated God Pixels (keep god.png as example)
 # god.png
 
