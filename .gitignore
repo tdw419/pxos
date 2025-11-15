@@ -45,6 +45,10 @@ test_config.json
 pixelfs.json
 boot.log
 
+# Autonomous architect loop artifacts
+architect_state.json
+architect_loop.log
+
 # User-generated God Pixels (keep god.png as example)
 # god.png
 
