@@ -8,3 +8,7 @@ htmlcov/
 # Test data and caches
 pixel_storage/
 pixel_llm/data/
+
+# Pixel-native execution (generated)
+pixel_llm/pixel_src_storage/
+pixel_llm/pixel_manifest.json
