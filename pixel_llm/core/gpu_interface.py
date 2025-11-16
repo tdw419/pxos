@@ -701,6 +701,120 @@ class ReLUGPU:
         return result.reshape(original_shape)
 
 
+class AttentionGPU:
+    """
+    GPU-accelerated scaled dot-product attention.
+
+    Implements: Attention(Q, K, V) = softmax(Q @ K^T / sqrt(d_k)) @ V
+
+    This is the core mechanism of transformers.
+    Supports both bidirectional and causal (autoregressive) attention.
+    """
+
+    def __init__(self, device: Optional[GPUDevice] = None):
+        """
+        Initialize attention GPU operator.
+
+        Args:
+            device: GPU device (creates new one if None)
+        """
+        self.device = device or GPUDevice()
+
+        # Load shader
+        shader_path = Path(__file__).parent.parent / "gpu_kernels" / "attention.wgsl"
+        with open(shader_path, 'r') as f:
+            shader_code = f.read()
+
+        self.shader_module = self.device.create_shader_module(shader_code)
+
+        # Create pipeline for fused attention (efficient for small sequences)
+        self.pipeline_fused = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "single_head_attention_fused"
+            }
+        )
+
+    def compute(
+        self,
+        query: np.ndarray,
+        key: np.ndarray,
+        value: np.ndarray,
+        causal: bool = False
+    ) -> np.ndarray:
+        """
+        Compute scaled dot-product attention.
+
+        Args:
+            query: Query matrix (seq_len, d_k)
+            key: Key matrix (seq_len, d_k)
+            value: Value matrix (seq_len, d_v)
+            causal: If True, apply causal mask (for autoregressive generation)
+
+        Returns:
+            Attention output (seq_len, d_v)
+        """
+        assert query.ndim == 2, "Query must be 2D (seq_len, d_k)"
+        assert key.ndim == 2, "Key must be 2D (seq_len, d_k)"
+        assert value.ndim == 2, "Value must be 2D (seq_len, d_v)"
+
+        seq_len_q, d_k = query.shape
+        seq_len_k, d_k_key = key.shape
+        seq_len_v, d_v = value.shape
+
+        assert seq_len_q == seq_len_k == seq_len_v, "Sequence lengths must match"
+        assert d_k == d_k_key, "Query and key dimensions must match"
+        assert seq_len_q <= 256, "Current implementation limited to seq_len <= 256"
+
+        seq_len = seq_len_q
+
+        # Convert to float32
+        query = query.astype(np.float32)
+        key = key.astype(np.float32)
+        value = value.astype(np.float32)
+
+        # Create GPU buffers
+        buffer_query = self.device.create_buffer(query.flatten(), usage="storage")
+        buffer_key = self.device.create_buffer(key.flatten(), usage="storage")
+        buffer_value = self.device.create_buffer(value.flatten(), usage="storage")
+
+        # Output buffer
+        output = np.zeros((seq_len, d_v), dtype=np.float32)
+        buffer_output = self.device.create_buffer(output.flatten(), usage="storage_read_write")
+
+        # Metadata buffer
+        use_causal_mask = 1 if causal else 0
+        metadata = np.array([seq_len, d_k, d_v, use_causal_mask], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=self.pipeline_fused.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_query, "offset": 0, "size": buffer_query.size}},
+                {"binding": 1, "resource": {"buffer": buffer_key, "offset": 0, "size": buffer_key.size}},
+                {"binding": 2, "resource": {"buffer": buffer_value, "offset": 0, "size": buffer_value.size}},
+                {"binding": 3, "resource": {"buffer": buffer_output, "offset": 0, "size": buffer_output.size}},
+                {"binding": 4, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Execute attention (one workgroup per query position)
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(self.pipeline_fused)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(seq_len, 1, 1)  # One workgroup per query
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_output, seq_len * d_v, dtype=np.float32)
+
+        return result.reshape((seq_len, d_v))
+
+
 def is_gpu_available() -> bool:
     """Check if GPU compute is available"""
     if not WGPU_AVAILABLE:

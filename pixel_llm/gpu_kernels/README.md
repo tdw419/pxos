@@ -80,16 +80,39 @@ activated = gelu.compute(hidden_states)  # For FFN
 
 ---
 
+### `attention.wgsl` ✅ Complete
+**Purpose**: Scaled dot-product attention mechanism
+**What it does**: Implements Attention(Q, K, V) = softmax(Q @ K^T / sqrt(d_k)) @ V
+**Why it matters**: THE core mechanism of transformers (80% of what makes LLMs work)
+
+**Features**:
+- Scaled dot-product attention (numerically stable)
+- Causal masking for autoregressive generation
+- Fused kernel for efficiency (single GPU dispatch)
+- Supports both bidirectional (encoder) and causal (decoder) modes
+- Optimized for sequences up to 256 tokens
+
+**Usage**:
+```python
+from pixel_llm.core.gpu_interface import AttentionGPU
+
+attention = AttentionGPU()
+
+# Bidirectional attention (encoder-style)
+output = attention.compute(query, key, value, causal=False)
+
+# Causal attention (decoder-style, for generation)
+output = attention.compute(query, key, value, causal=True)
+```
+
+**Status**: ✅ Implemented, tested, working
+**Note**: Multi-head attention can be built by running multiple heads in parallel
+
+---
+
 ## Next Kernels (Roadmap)
 
-### `attention.wgsl` (Phase 2)
-**Purpose**: Multi-head attention mechanism
-**Features**:
-- Spatial neighborhood operations
-- Parallel head computation
-- Efficient softmax
-
-### `layer_norm.wgsl` (Phase 2)
+### `layer_norm.wgsl` (Phase 2.5)
 **Purpose**: Layer normalization
 
 ### `gelu.wgsl` (Phase 2)
@@ -225,7 +248,9 @@ The goal isn't just fast computation—it's **pixel-native** computation.
 - [x] Phase 1.1: Dot product (foundation)
 - [x] Phase 1.2: Matrix multiplication
 - [x] Phase 1.3: Activation functions
-- [ ] Phase 2: Attention mechanisms
-- [ ] Phase 3: Full inference pipeline
+- [x] Phase 2: Attention mechanism (scaled dot-product, causal masking)
+- [ ] Phase 2.5: Layer normalization
+- [ ] Phase 3: Transformer block assembly
+- [ ] Phase 4: Full inference pipeline
 
-**Current milestone**: All GPU primitives complete, ready for attention mechanism.
+**Current milestone**: Attention complete! The heart of transformers is beating on GPU pixels.
