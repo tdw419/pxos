@@ -18,7 +18,13 @@ from pathlib import Path
 from typing import List, Tuple, Optional, Set
 from dataclasses import dataclass
 import json
-from pixelfs import PixelFS
+
+# Use absolute import for archive compatibility
+try:
+    from pixel_llm.core.pixelfs import PixelFS
+except ImportError:
+    # Fallback for legacy relative imports
+    from pixelfs import PixelFS
 
 
 # Default region size (64x64 pixels)
