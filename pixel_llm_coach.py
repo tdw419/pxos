@@ -22,6 +22,7 @@ from dataclasses import dataclass
 sys.path.insert(0, str(Path(__file__).parent / "pixel_llm"))
 
 from core.task_queue import TaskQueue, Task, TaskStatus, AgentType, add_task, get_next_task, complete_task, fail_task
+from core.llm_agents import GeminiAgent, LocalLLMAgent
 
 
 # Phase definitions
@@ -242,6 +243,10 @@ class PixelLLMCoach:
         self.config_path = Path("pixel_llm/data/coach_config.json")
         self.load_config()
 
+        # Initialize LLM agents
+        self.gemini = GeminiAgent()
+        self.local_llm = LocalLLMAgent()
+
     def load_config(self):
         """Load coaching configuration"""
         if self.config_path.exists():
@@ -381,59 +386,192 @@ class PixelLLMCoach:
 
         print("\n" + "="*70 + "\n")
 
-    def run_coaching_loop(self, max_iterations: int = 100):
+    def coach_task(self, task: Task, max_attempts: int = 3) -> bool:
         """
-        Main coaching loop.
+        Coach implementation of a single task through iterative improvement.
 
-        This would integrate with:
-        - Local LLM (via llama.cpp or similar)
-        - Gemini API (for reviews)
+        Args:
+            task: Task to implement
+            max_attempts: Maximum coaching iterations
 
-        For now, it's a framework for the workflow.
+        Returns:
+            True if task completed successfully
+        """
+        print(f"\n{'='*70}")
+        print(f"🎓 COACHING: {task.title}")
+        print(f"   Phase: {task.phase}")
+        print(f"   File: {task.path}")
+        print(f"   Priority: {task.priority}/10")
+        print(f"{'='*70}\n")
+
+        # Check if agents are available
+        has_gemini = self.gemini.has_cli or self.gemini.api_key
+        has_local = self.local_llm.backend is not None
+
+        if not has_local:
+            print("⚠️  No local LLM available - cannot generate code")
+            print("   Install llama.cpp or ollama to enable code generation")
+            return False
+
+        if not has_gemini:
+            print("⚠️  No Gemini available - will skip reviews")
+
+        # Mark task as in progress
+        self.queue.start_task(task.id)
+
+        best_code = None
+        best_score = 0
+        feedback = None
+
+        # Iterative coaching loop
+        for iteration in range(1, max_attempts + 1):
+            print(f"\n--- Iteration {iteration}/{max_attempts} ---")
+
+            # Local LLM generates code
+            print("🤖 Local LLM generating code...")
+            code = self.local_llm.generate_code(
+                task=task.to_dict(),
+                feedback=feedback,
+                previous_code=best_code
+            )
+
+            if not code or len(code) < 100:
+                print(f"⚠️  Generated code too short ({len(code)} chars), skipping")
+                continue
+
+            print(f"✓ Generated {len(code):,} characters")
+
+            # Gemini reviews (if available)
+            if has_gemini:
+                print("🔍 Gemini reviewing code...")
+                score, new_feedback = self.gemini.review_code(
+                    code=code,
+                    task=task.to_dict(),
+                    iteration=iteration
+                )
+
+                print(f"📊 Score: {score}/10")
+
+                if score > best_score:
+                    best_score = score
+                    best_code = code
+
+                if score >= 8:
+                    print(f"✅ ACCEPTED - High quality implementation!")
+                    self._save_code(task.path, code)
+                    self.queue.complete_task(task.id, {
+                        "score": score,
+                        "iterations": iteration,
+                        "method": "coached"
+                    })
+                    return True
+
+                print(f"💬 Feedback: {new_feedback[:200]}...")
+                feedback = new_feedback
+
+            else:
+                # No review available - accept first reasonable attempt
+                print("⚠️  No Gemini review - accepting code")
+                self._save_code(task.path, code)
+                self.queue.complete_task(task.id, {
+                    "score": 7,
+                    "iterations": iteration,
+                    "method": "unreviewed"
+                })
+                return True
+
+        # Max iterations reached
+        if best_code:
+            print(f"\n⚠️  Max iterations reached. Saving best attempt (score: {best_score}/10)")
+            self._save_code(task.path, best_code)
+            self.queue.complete_task(task.id, {
+                "score": best_score,
+                "iterations": max_attempts,
+                "method": "partial"
+            })
+            return True
+        else:
+            print(f"\n❌ Failed to generate acceptable code")
+            self.queue.fail_task(task.id, "No acceptable code generated")
+            return False
+
+    def _save_code(self, path: str, code: str):
+        """Save generated code to file"""
+        filepath = Path(path)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(filepath, 'w') as f:
+            f.write(code)
+
+        print(f"💾 Saved: {filepath}")
+
+    def run_coaching_loop(self, max_tasks: int = 100, phase: Optional[str] = None):
+        """
+        Main coaching loop - processes tasks with Gemini + Local LLM.
+
+        Args:
+            max_tasks: Maximum number of tasks to process
+            phase: Optional phase filter (e.g., "1_storage")
         """
         print("\n" + "="*70)
         print("🚀 PIXEL-LLM COACHING LOOP")
         print("="*70)
-        print("\nThis system will:")
-        print("  1. Generate tasks for building pixel-native AI")
-        print("  2. Guide local LLM to implement components")
-        print("  3. Review and iterate on quality")
-        print("  4. Progress through 5 phases to pixel consciousness")
+
+        # Check agent availability
+        has_gemini = self.gemini.has_cli or self.gemini.api_key
+        has_local = self.local_llm.backend is not None
+
+        print(f"\n🤖 Local LLM: {self.local_llm.backend or '❌ Not available'}")
+        print(f"✨ Gemini: {'✅ Available' if has_gemini else '❌ Not available'}")
+
+        if not has_local:
+            print("\n❌ Cannot proceed without local LLM")
+            print("   Install: llama.cpp or ollama")
+            return
+
+        print(f"\n📋 Processing up to {max_tasks} tasks")
+        if phase:
+            print(f"   Filtering by phase: {phase}")
+
         print("\n" + "="*70)
 
-        for iteration in range(max_iterations):
-            print(f"\n--- Iteration {iteration + 1} ---")
+        tasks_processed = 0
+        tasks_completed = 0
 
+        for task_num in range(max_tasks):
             # Check phase completion
             if self.check_phase_completion():
-                print("🎉 All phases complete!")
+                print("\n🎉 Current phase complete!")
                 break
 
             # Get next task
             task = get_next_task("local_llm")
 
             if not task:
-                print("⏸️  No tasks available. Initialize a phase or all tasks complete.")
+                print("\n⏸️  No more tasks available")
                 break
 
-            print(f"\n📋 Task: {task.title}")
-            print(f"   Phase: {task.phase}")
-            print(f"   Path: {task.path}")
-            print(f"   Priority: {task.priority}/10")
+            # Filter by phase if specified
+            if phase and task.phase != phase:
+                print(f"⏭️  Skipping task (different phase): {task.title}")
+                continue
 
-            # In real implementation, this would:
-            # 1. Call local LLM to generate code
-            # 2. (Optional) Call Gemini to review
-            # 3. Save if approved
-            # 4. Mark complete or retry
+            # Coach this task
+            tasks_processed += 1
+            success = self.coach_task(task)
 
-            print("\n⚠️  Coaching loop is a framework.")
-            print("   Integrate with your LLM setup to auto-generate code.")
+            if success:
+                tasks_completed += 1
 
-            # For now, just mark pending
-            break
+            # Brief pause between tasks
+            time.sleep(1)
 
-        print("\n✓ Coaching loop finished")
+        print("\n" + "="*70)
+        print(f"✅ Coaching loop complete!")
+        print(f"   Processed: {tasks_processed} tasks")
+        print(f"   Completed: {tasks_completed} tasks")
+        print(f"   Success rate: {tasks_completed/tasks_processed*100:.0f}%" if tasks_processed > 0 else "")
+        print("="*70 + "\n")
 
 
 def main():
@@ -441,9 +579,10 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Pixel-LLM Coaching System")
-    parser.add_argument('command', choices=['init', 'status', 'run', 'next', 'demo'],
+    parser.add_argument('command', choices=['init', 'status', 'coach', 'next', 'demo', 'agents'],
                        help='Command to run')
     parser.add_argument('--phase', help='Phase ID (e.g., 1_storage)')
+    parser.add_argument('--max-tasks', type=int, default=10, help='Max tasks to process')
 
     args = parser.parse_args()
 
@@ -457,9 +596,31 @@ def main():
         # Show status
         coach.print_status()
 
-    elif args.command == 'run':
-        # Run coaching loop
-        coach.run_coaching_loop()
+    elif args.command == 'coach':
+        # Run coaching loop (the real one!)
+        coach.run_coaching_loop(max_tasks=args.max_tasks, phase=args.phase)
+
+    elif args.command == 'agents':
+        # Check agent status
+        print("\n" + "="*70)
+        print("🤖 LLM AGENTS STATUS")
+        print("="*70)
+
+        has_gemini = coach.gemini.has_cli or coach.gemini.api_key
+        has_local = coach.local_llm.backend is not None
+
+        print(f"\n🤖 Local LLM: {coach.local_llm.backend or '❌ Not configured'}")
+        if not has_local:
+            print("   Setup: Install llama.cpp or ollama")
+            print("   llama.cpp: https://github.com/ggerganov/llama.cpp")
+            print("   ollama: https://ollama.ai")
+
+        print(f"\n✨ Gemini: {'✅ Available' if has_gemini else '❌ Not configured'}")
+        if not has_gemini:
+            print("   Setup: Export GEMINI_API_KEY or install gemini-cli")
+            print("   Get key: https://aistudio.google.com/app/apikey")
+
+        print("\n" + "="*70 + "\n")
 
     elif args.command == 'next':
         # Show next task
