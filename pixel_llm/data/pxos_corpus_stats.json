@@ -1,0 +1,358 @@
+{
+  "total_files": 54,
+  "total_chars": 490860,
+  "total_lines": 17160,
+  "by_extension": {
+    ".md": {
+      "files": 21,
+      "chars": 205639,
+      "lines": 8138
+    },
+    ".py": {
+      "files": 23,
+      "chars": 246273,
+      "lines": 7838
+    },
+    ".json": {
+      "files": 5,
+      "chars": 15165,
+      "lines": 400
+    },
+    ".txt": {
+      "files": 4,
+      "chars": 17423,
+      "lines": 575
+    },
+    ".yaml": {
+      "files": 1,
+      "chars": 6360,
+      "lines": 209
+    }
+  },
+  "files": [
+    {
+      "path": "AUTONOMOUS_EVOLUTION_GUIDE.md",
+      "extension": ".md",
+      "chars": 15051,
+      "lines": 537
+    },
+    {
+      "path": "COACHING_SYSTEM_READY.md",
+      "extension": ".md",
+      "chars": 10346,
+      "lines": 427
+    },
+    {
+      "path": "EVOLUTION_SYSTEM_VALIDATED.md",
+      "extension": ".md",
+      "chars": 11176,
+      "lines": 410
+    },
+    {
+      "path": "EVOLUTION_WORKFLOW.md",
+      "extension": ".md",
+      "chars": 12087,
+      "lines": 545
+    },
+    {
+      "path": "GENESIS_SPEC.md",
+      "extension": ".md",
+      "chars": 8439,
+      "lines": 290
+    },
+    {
+      "path": "GETTING_STARTED.md",
+      "extension": ".md",
+      "chars": 7311,
+      "lines": 344
+    },
+    {
+      "path": "PHASE_0_COMPLETE.md",
+      "extension": ".md",
+      "chars": 9748,
+      "lines": 307
+    },
+    {
+      "path": "PHASE_0_QUICKSTART.md",
+      "extension": ".md",
+      "chars": 8577,
+      "lines": 351
+    },
+    {
+      "path": "PIXELLM_V0.md",
+      "extension": ".md",
+      "chars": 14646,
+      "lines": 602
+    },
+    {
+      "path": "PIXEL_LLM_PHASE1_COMPLETE.md",
+      "extension": ".md",
+      "chars": 6712,
+      "lines": 250
+    },
+    {
+      "path": "README.md",
+      "extension": ".md",
+      "chars": 7485,
+      "lines": 307
+    },
+    {
+      "path": "ROADMAP.md",
+      "extension": ".md",
+      "chars": 13153,
+      "lines": 391
+    },
+    {
+      "path": "SESSION_SUMMARY.md",
+      "extension": ".md",
+      "chars": 11815,
+      "lines": 448
+    },
+    {
+      "path": "WHATS_NEXT.md",
+      "extension": ".md",
+      "chars": 6406,
+      "lines": 280
+    },
+    {
+      "path": "pixel_llm/README.md",
+      "extension": ".md",
+      "chars": 4272,
+      "lines": 126
+    },
+    {
+      "path": "pixel_llm/core/cartridge_manager.py",
+      "extension": ".py",
+      "chars": 15385,
+      "lines": 474
+    },
+    {
+      "path": "pixel_llm/core/evolution_handler.py",
+      "extension": ".py",
+      "chars": 12374,
+      "lines": 376
+    },
+    {
+      "path": "pixel_llm/core/hypervisor.py",
+      "extension": ".py",
+      "chars": 12002,
+      "lines": 404
+    },
+    {
+      "path": "pixel_llm/core/infinite_map.py",
+      "extension": ".py",
+      "chars": 16512,
+      "lines": 533
+    },
+    {
+      "path": "pixel_llm/core/llm_agents.py",
+      "extension": ".py",
+      "chars": 16975,
+      "lines": 571
+    },
+    {
+      "path": "pixel_llm/core/model_to_pixels.py",
+      "extension": ".py",
+      "chars": 5325,
+      "lines": 192
+    },
+    {
+      "path": "pixel_llm/core/pixel_model_loader.py",
+      "extension": ".py",
+      "chars": 6512,
+      "lines": 219
+    },
+    {
+      "path": "pixel_llm/core/pixelfs.py",
+      "extension": ".py",
+      "chars": 13755,
+      "lines": 459
+    },
+    {
+      "path": "pixel_llm/core/pixellm_tool.py",
+      "extension": ".py",
+      "chars": 5458,
+      "lines": 209
+    },
+    {
+      "path": "pixel_llm/core/task_queue.py",
+      "extension": ".py",
+      "chars": 17007,
+      "lines": 562
+    },
+    {
+      "path": "pixel_llm/core/world_rebuilder.py",
+      "extension": ".py",
+      "chars": 16038,
+      "lines": 463
+    },
+    {
+      "path": "pixel_llm/data/coach_config.json",
+      "extension": ".json",
+      "chars": 56,
+      "lines": 1
+    },
+    {
+      "path": "pixel_llm/data/pxos_corpus_builder.py",
+      "extension": ".py",
+      "chars": 5779,
+      "lines": 228
+    },
+    {
+      "path": "pixel_llm/data/task_queue.json",
+      "extension": ".json",
+      "chars": 9557,
+      "lines": 219
+    },
+    {
+      "path": "pixel_llm/meta/cartridges.json",
+      "extension": ".json",
+      "chars": 2458,
+      "lines": 99
+    },
+    {
+      "path": "pixel_llm/models/pixellm_v0.meta.json",
+      "extension": ".json",
+      "chars": 1458,
+      "lines": 80
+    },
+    {
+      "path": "pixel_llm/models/pixellm_v0_train.py",
+      "extension": ".py",
+      "chars": 4241,
+      "lines": 146
+    },
+    {
+      "path": "pixel_llm/programs/pixellm_infer.py",
+      "extension": ".py",
+      "chars": 6525,
+      "lines": 237
+    },
+    {
+      "path": "pixel_llm/requirements.txt",
+      "extension": ".txt",
+      "chars": 29,
+      "lines": 3
+    },
+    {
+      "path": "pixel_llm/specs/pxi_llm_format.md",
+      "extension": ".md",
+      "chars": 8528,
+      "lines": 303
+    },
+    {
+      "path": "pixel_llm/tests/__init__.py",
+      "extension": ".py",
+      "chars": 205,
+      "lines": 10
+    },
+    {
+      "path": "pixel_llm/tests/genesis/__init__.py",
+      "extension": ".py",
+      "chars": 27,
+      "lines": 2
+    },
+    {
+      "path": "pixel_llm/tests/genesis/test_genesis_compliance.py",
+      "extension": ".py",
+      "chars": 11004,
+      "lines": 329
+    },
+    {
+      "path": "pixel_llm/tests/htmlcov/status.json",
+      "extension": ".json",
+      "chars": 1636,
+      "lines": 1
+    },
+    {
+      "path": "pixel_llm/tests/test_infinite_map.py",
+      "extension": ".py",
+      "chars": 13314,
+      "lines": 414
+    },
+    {
+      "path": "pixel_llm/tests/test_pixelfs_basic.py",
+      "extension": ".py",
+      "chars": 5648,
+      "lines": 189
+    },
+    {
+      "path": "pixel_llm/tests/test_task_queue.py",
+      "extension": ".py",
+      "chars": 17890,
+      "lines": 564
+    },
+    {
+      "path": "pixel_llm_coach.py",
+      "extension": ".py",
+      "chars": 27456,
+      "lines": 757
+    },
+    {
+      "path": "pxos-v1.0/DISTRIBUTION_GUIDE.md",
+      "extension": ".md",
+      "chars": 11150,
+      "lines": 513
+    },
+    {
+      "path": "pxos-v1.0/PACKAGE_SUMMARY.txt",
+      "extension": ".txt",
+      "chars": 4829,
+      "lines": 149
+    },
+    {
+      "path": "pxos-v1.0/README.md",
+      "extension": ".md",
+      "chars": 7485,
+      "lines": 307
+    },
+    {
+      "path": "pxos-v1.0/build_pxos.py",
+      "extension": ".py",
+      "chars": 6330,
+      "lines": 193
+    },
+    {
+      "path": "pxos-v1.0/docs/architecture.md",
+      "extension": ".md",
+      "chars": 8795,
+      "lines": 377
+    },
+    {
+      "path": "pxos-v1.0/docs/extensions.md",
+      "extension": ".md",
+      "chars": 12945,
+      "lines": 553
+    },
+    {
+      "path": "pxos-v1.0/docs/primitives.md",
+      "extension": ".md",
+      "chars": 9512,
+      "lines": 470
+    },
+    {
+      "path": "pxos-v1.0/examples/hello_world_module.txt",
+      "extension": ".txt",
+      "chars": 7442,
+      "lines": 279
+    },
+    {
+      "path": "pxos-v1.0/pxos_commands.txt",
+      "extension": ".txt",
+      "chars": 5123,
+      "lines": 144
+    },
+    {
+      "path": "pxos_shim.py",
+      "extension": ".py",
+      "chars": 10511,
+      "lines": 307
+    },
+    {
+      "path": "templates/pxos_world_template.yaml",
+      "extension": ".yaml",
+      "chars": 6360,
+      "lines": 209
+    }
+  ]
+}
