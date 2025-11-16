@@ -187,5 +187,33 @@
     "review_score": null,
     "review_feedback": null,
     "metadata": {}
+  },
+  "cb1486cd-295a-408d-8715-e77cf07fb187": {
+    "id": "cb1486cd-295a-408d-8715-e77cf07fb187",
+    "title": "Rebuild pxOS v1.1.0",
+    "description": "Rebuild entire pxOS system from Genesis specification.\n\nReason: Test of evolution system\n\nSteps:\n1. Create fresh workspace (/tmp/pxos_world_build_1.1.0)\n2. Load Genesis spec + world template\n3. Generate all core modules via LLM coaching\n4. Run tests and validate Genesis compliance\n5. Pack into cartridge: pxos_v1.1.0.pxa\n6. Register as experimental cartridge\n\nParent: pxos_v1_0_0.pxa\nTemplate: templates/pxos_world_template.yaml\n\nThis task must:\n- Satisfy all Genesis requirements\n- Pass all tests before promotion\n- Preserve evolution history",
+    "action": "world_rebuild",
+    "path": null,
+    "content": null,
+    "priority": 100,
+    "status": "pending",
+    "preferred_agent": "local_llm",
+    "phase": "evolution",
+    "dependencies": [],
+    "created_at": "2025-11-16T22:26:13.994984",
+    "started_at": null,
+    "completed_at": null,
+    "attempts": 0,
+    "max_attempts": 3,
+    "review_score": null,
+    "review_feedback": null,
+    "metadata": {
+      "target_version": "1.1.0",
+      "parent_cartridge": "pxos_v1_0_0.pxa",
+      "template_path": "templates/pxos_world_template.yaml",
+      "reason": "Test of evolution system",
+      "workspace": "/tmp/pxos_world_build_1.1.0",
+      "target_cartridge": "pxos_v1_1_0.pxa"
+    }
   }
 }
