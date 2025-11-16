@@ -256,6 +256,188 @@ class DotProductGPU:
         return float(result[0])
 
 
+class MatMulGPU:
+    """
+    GPU-accelerated matrix multiplication using tiled algorithm.
+
+    Implements C = A × B using shared memory optimization.
+    This is the foundation for all neural network operations.
+    """
+
+    def __init__(self, device: Optional[GPUDevice] = None):
+        """
+        Initialize matrix multiplication GPU operator.
+
+        Args:
+            device: GPU device (creates new one if None)
+        """
+        self.device = device or GPUDevice()
+
+        # Load shader
+        shader_path = Path(__file__).parent.parent / "gpu_kernels" / "matmul.wgsl"
+        with open(shader_path, 'r') as f:
+            shader_code = f.read()
+
+        self.shader_module = self.device.create_shader_module(shader_code)
+
+        # Create pipelines for different entry points
+        self.pipeline_tiled = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "matmul_tiled"
+            }
+        )
+
+        self.pipeline_square = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "matmul_square"
+            }
+        )
+
+        self.pipeline_matvec = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "matvec"
+            }
+        )
+
+    def compute(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """
+        Compute matrix multiplication: C = A × B
+
+        Args:
+            a: Matrix A (M × K)
+            b: Matrix B (K × N)
+
+        Returns:
+            Result matrix C (M × N)
+        """
+        assert a.ndim == 2 and b.ndim == 2, "Both inputs must be 2D matrices"
+        assert a.shape[1] == b.shape[0], f"Incompatible shapes: {a.shape} × {b.shape}"
+
+        M, K = a.shape
+        K2, N = b.shape
+
+        # Convert to float32
+        a = a.astype(np.float32)
+        b = b.astype(np.float32)
+
+        # Create GPU buffers
+        buffer_a = self.device.create_buffer(a.flatten(), usage="storage")
+        buffer_b = self.device.create_buffer(b.flatten(), usage="storage")
+
+        # Output buffer
+        c = np.zeros((M, N), dtype=np.float32)
+        buffer_c = self.device.create_buffer(c.flatten(), usage="storage_read_write")
+
+        # Metadata buffer
+        metadata = np.array([M, K, N], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Choose pipeline based on matrix shape
+        if M == N and M == K and M % 16 == 0:
+            # Use optimized square matrix kernel
+            pipeline = self.pipeline_square
+        else:
+            # Use general tiled kernel
+            pipeline = self.pipeline_tiled
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=pipeline.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_a, "offset": 0, "size": buffer_a.size}},
+                {"binding": 1, "resource": {"buffer": buffer_b, "offset": 0, "size": buffer_b.size}},
+                {"binding": 2, "resource": {"buffer": buffer_c, "offset": 0, "size": buffer_c.size}},
+                {"binding": 3, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Calculate workgroup dispatch size
+        # Each workgroup computes a 16×16 tile
+        workgroups_x = (N + 15) // 16
+        workgroups_y = (M + 15) // 16
+
+        # Execute matmul
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(pipeline)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(workgroups_x, workgroups_y, 1)
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_c, M * N, dtype=np.float32)
+
+        return result.reshape((M, N))
+
+    def matvec(self, a: np.ndarray, x: np.ndarray) -> np.ndarray:
+        """
+        Compute matrix-vector multiplication: y = A × x
+
+        Args:
+            a: Matrix A (M × N)
+            x: Vector x (N,)
+
+        Returns:
+            Result vector y (M,)
+        """
+        assert a.ndim == 2, "A must be a 2D matrix"
+        assert x.ndim == 1, "x must be a 1D vector"
+        assert a.shape[1] == x.shape[0], f"Incompatible shapes: {a.shape} × {x.shape}"
+
+        M, N = a.shape
+
+        # Convert to float32
+        a = a.astype(np.float32)
+        x = x.astype(np.float32)
+
+        # Create GPU buffers
+        buffer_a = self.device.create_buffer(a.flatten(), usage="storage")
+        buffer_x = self.device.create_buffer(x, usage="storage")
+
+        # Output buffer
+        y = np.zeros(M, dtype=np.float32)
+        buffer_y = self.device.create_buffer(y, usage="storage_read_write")
+
+        # Metadata buffer
+        metadata = np.array([M, N], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=self.pipeline_matvec.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_a, "offset": 0, "size": buffer_a.size}},
+                {"binding": 1, "resource": {"buffer": buffer_x, "offset": 0, "size": buffer_x.size}},
+                {"binding": 2, "resource": {"buffer": buffer_y, "offset": 0, "size": buffer_y.size}},
+                {"binding": 3, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Calculate workgroups
+        workgroups = (M + 255) // 256
+
+        # Execute matvec
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(self.pipeline_matvec)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(workgroups, 1, 1)
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_y, M, dtype=np.float32)
+
+        return result
+
+
 def is_gpu_available() -> bool:
     """Check if GPU compute is available"""
     if not WGPU_AVAILABLE:
