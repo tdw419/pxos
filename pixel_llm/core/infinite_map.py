@@ -221,20 +221,14 @@ class InfiniteMap:
 
         Returns:
             (tile_x, tile_y, local_x, local_y)
+
+        Note: Python's floor division and modulo already handle negative
+        coordinates correctly, so no special handling needed.
         """
         tile_x = px // self.tile_size
         tile_y = py // self.tile_size
         local_x = px % self.tile_size
         local_y = py % self.tile_size
-
-        # Handle negative coordinates
-        if px < 0 and local_x != 0:
-            tile_x -= 1
-            local_x = self.tile_size + local_x
-
-        if py < 0 and local_y != 0:
-            tile_y -= 1
-            local_y = self.tile_size + local_y
 
         return tile_x, tile_y, local_x, local_y
 
@@ -362,6 +356,10 @@ class InfiniteMap:
             source_is_pixels: If True, data is already pixel array
         """
         if not source_is_pixels:
+            # Handle empty data
+            if len(data) == 0:
+                return
+
             # Convert bytes to pixels
             # Each pixel stores 3 bytes (RGB)
             num_pixels = (len(data) + 2) // 3
