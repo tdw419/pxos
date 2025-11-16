@@ -59,19 +59,30 @@ class PixelVM:
     This VM proves pixels can be EXECUTABLE, not just storage.
     """
 
-    # Opcodes
+    # Opcodes (must match PIXEL_IR_SPEC.md)
     OP_PUSH = 0x01
     OP_POP = 0x02
     OP_ADD = 0x03
     OP_SUB = 0x04
     OP_MUL = 0x05
     OP_DIV = 0x06
+    OP_MOD = 0x07
     OP_PRINT = 0x10
-    OP_PRINT_STR = 0x11
-    OP_JMP = 0x20
-    OP_JZ = 0x21
-    OP_LOAD = 0x30
-    OP_STORE = 0x31
+    OP_DUP = 0x11
+    OP_SWAP = 0x12
+    OP_PRINT_STR = 0x13
+    OP_EQ = 0x20
+    OP_LT = 0x21
+    OP_GT = 0x22
+    OP_JMP = 0x30
+    OP_JZ = 0x31
+    OP_JNZ = 0x32
+    OP_CALL = 0x33
+    OP_RET = 0x34
+    OP_LOAD = 0x40
+    OP_STORE = 0x41
+    OP_HOST_CALL = 0x50
+    OP_NOP = 0xFE
     OP_HALT = 0xFF
 
     def __init__(self, debug: bool = False):
@@ -168,20 +179,60 @@ class PixelVM:
                 raise RuntimeError("Division by zero")
             self.stack.append(a // b)
 
+        elif opcode == self.OP_MOD:
+            if len(self.stack) < 2:
+                raise RuntimeError("Stack underflow on MOD")
+            b = self.stack.pop()
+            a = self.stack.pop()
+            if b == 0:
+                raise RuntimeError("Modulo by zero")
+            self.stack.append(a % b)
+
         elif opcode == self.OP_PRINT:
             if not self.stack:
                 raise RuntimeError("Stack underflow on PRINT")
             value = self.stack.pop()
             print(value)
 
+        elif opcode == self.OP_DUP:
+            if not self.stack:
+                raise RuntimeError("Stack underflow on DUP")
+            self.stack.append(self.stack[-1])
+
+        elif opcode == self.OP_SWAP:
+            if len(self.stack) < 2:
+                raise RuntimeError("Stack underflow on SWAP")
+            self.stack[-1], self.stack[-2] = self.stack[-2], self.stack[-1]
+
         elif opcode == self.OP_PRINT_STR:
-            length = self.read_uint16()
+            length = self.read_int32()  # Fixed: int32 not uint16
             if self.pc + length > len(self.program):
                 raise RuntimeError(f"String out of bounds at PC={self.pc}")
             string_bytes = self.program[self.pc:self.pc+length]
             self.pc += length
             text = string_bytes.decode('utf-8')
             print(text)
+
+        elif opcode == self.OP_EQ:
+            if len(self.stack) < 2:
+                raise RuntimeError("Stack underflow on EQ")
+            b = self.stack.pop()
+            a = self.stack.pop()
+            self.stack.append(1 if a == b else 0)
+
+        elif opcode == self.OP_LT:
+            if len(self.stack) < 2:
+                raise RuntimeError("Stack underflow on LT")
+            b = self.stack.pop()
+            a = self.stack.pop()
+            self.stack.append(1 if a < b else 0)
+
+        elif opcode == self.OP_GT:
+            if len(self.stack) < 2:
+                raise RuntimeError("Stack underflow on GT")
+            b = self.stack.pop()
+            a = self.stack.pop()
+            self.stack.append(1 if a > b else 0)
 
         elif opcode == self.OP_JMP:
             offset = self.read_int32()
@@ -194,6 +245,26 @@ class PixelVM:
             value = self.stack.pop()
             if value == 0:
                 self.pc = offset
+
+        elif opcode == self.OP_JNZ:
+            offset = self.read_int32()
+            if not self.stack:
+                raise RuntimeError("Stack underflow on JNZ")
+            value = self.stack.pop()
+            if value != 0:
+                self.pc = offset
+
+        elif opcode == self.OP_CALL:
+            offset = self.read_int32()
+            # Push return address
+            self.stack.append(self.pc)
+            self.pc = offset
+
+        elif opcode == self.OP_RET:
+            if not self.stack:
+                raise RuntimeError("Stack underflow on RET")
+            return_addr = self.stack.pop()
+            self.pc = return_addr
 
         elif opcode == self.OP_LOAD:
             addr = self.read_uint16()
@@ -210,11 +281,28 @@ class PixelVM:
             value = self.stack.pop()
             self.memory[addr] = value
 
+        elif opcode == self.OP_HOST_CALL:
+            host_id = self.read_byte()
+            self._execute_host_call(host_id)
+
+        elif opcode == self.OP_NOP:
+            pass  # No operation
+
         elif opcode == self.OP_HALT:
             self.halted = True
 
         else:
             raise RuntimeError(f"Unknown opcode: 0x{opcode:02x} at PC={self.pc-1}")
+
+    def _execute_host_call(self, host_id: int):
+        """Execute a host function call"""
+        if host_id == 0:  # print_stack
+            if not self.stack:
+                raise RuntimeError("Stack underflow on HOST_CALL[print_stack]")
+            value = self.stack.pop()
+            print(value)
+        else:
+            raise RuntimeError(f"Unknown host function: {host_id}")
 
     def run(self, max_instructions: int = 10000):
         """Run the program until HALT or max instructions"""
