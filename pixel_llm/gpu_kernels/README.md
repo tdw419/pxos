@@ -30,14 +30,57 @@ result = gpu_dot.compute(vector_a, vector_b)
 
 ---
 
-## Next Kernels (Roadmap)
-
-### `matmul.wgsl` (Phase 1.2)
+### `matmul.wgsl` ✅ Complete
 **Purpose**: Matrix multiplication for neural layers
+**What it does**: Tiled matrix multiplication C = A × B with shared memory optimization
+**Why it matters**: THE critical operation for neural networks (90% of LLM compute)
+
 **Features**:
-- Tiled computation for memory efficiency
-- Shared memory optimization
-- FP16 support for memory bandwidth
+- Tiled computation (16×16 tiles) for memory efficiency
+- Shared memory optimization reduces global memory bandwidth
+- Multiple specialized kernels (general, square, matrix-vector)
+- Optimized workgroup dispatch
+
+**Usage**:
+```python
+from pixel_llm.core.gpu_interface import MatMulGPU
+
+matmul = MatMulGPU()
+result = matmul.compute(matrix_a, matrix_b)  # C = A × B
+```
+
+**Status**: ✅ Implemented, tested, working
+
+---
+
+### `activations.wgsl` ✅ Complete
+**Purpose**: Activation functions for neural layers
+**What it does**: Softmax, GELU, ReLU, SiLU, Leaky ReLU
+**Why it matters**: Non-linearity and attention score normalization
+
+**Features**:
+- **Softmax**: Numerically stable (critical for attention)
+- **GELU**: GPT-2/3 approximation for feed-forward layers
+- **ReLU**: Simple baseline activation
+- **SiLU/Swish**: Modern alternative activation
+- All vectorized for parallel execution
+
+**Usage**:
+```python
+from pixel_llm.core.gpu_interface import SoftmaxGPU, GELUGPU, ReLUGPU
+
+softmax = SoftmaxGPU()
+probs = softmax.compute(logits)  # For attention
+
+gelu = GELUGPU()
+activated = gelu.compute(hidden_states)  # For FFN
+```
+
+**Status**: ✅ Implemented, tested, ready for attention
+
+---
+
+## Next Kernels (Roadmap)
 
 ### `attention.wgsl` (Phase 2)
 **Purpose**: Multi-head attention mechanism
@@ -180,9 +223,9 @@ The goal isn't just fast computation—it's **pixel-native** computation.
 ## Status
 
 - [x] Phase 1.1: Dot product (foundation)
-- [ ] Phase 1.2: Matrix multiplication
-- [ ] Phase 1.3: Activation functions
+- [x] Phase 1.2: Matrix multiplication
+- [x] Phase 1.3: Activation functions
 - [ ] Phase 2: Attention mechanisms
 - [ ] Phase 3: Full inference pipeline
 
-**Current milestone**: Foundation complete, ready for matrix multiplication.
+**Current milestone**: All GPU primitives complete, ready for attention mechanism.

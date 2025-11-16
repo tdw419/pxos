@@ -438,6 +438,269 @@ class MatMulGPU:
         return result
 
 
+class SoftmaxGPU:
+    """
+    GPU-accelerated softmax activation.
+
+    Converts logits to probabilities: softmax(x)_i = exp(x_i) / sum(exp(x))
+    Uses numerically stable algorithm with max subtraction.
+
+    Critical for attention mechanisms and output layers.
+    """
+
+    def __init__(self, device: Optional[GPUDevice] = None):
+        """
+        Initialize softmax GPU operator.
+
+        Args:
+            device: GPU device (creates new one if None)
+        """
+        self.device = device or GPUDevice()
+
+        # Load shader
+        shader_path = Path(__file__).parent.parent / "gpu_kernels" / "activations.wgsl"
+        with open(shader_path, 'r') as f:
+            shader_code = f.read()
+
+        self.shader_module = self.device.create_shader_module(shader_code)
+
+        # Create pipeline for combined softmax (works for vectors up to 256 elements)
+        self.pipeline = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "softmax_combined"
+            }
+        )
+
+    def compute(self, x: np.ndarray) -> np.ndarray:
+        """
+        Compute softmax activation.
+
+        Args:
+            x: Input vector (1D numpy array)
+
+        Returns:
+            Softmax probabilities (same shape as input)
+        """
+        assert x.ndim == 1, "Only 1D vectors supported"
+        assert len(x) <= 256, "Current implementation limited to 256 elements"
+
+        n = len(x)
+
+        # Convert to float32
+        x = x.astype(np.float32)
+
+        # Create GPU buffers
+        buffer_input = self.device.create_buffer(x, usage="storage")
+
+        # Output buffer
+        output = np.zeros(n, dtype=np.float32)
+        buffer_output = self.device.create_buffer(output, usage="storage_read_write")
+
+        # Metadata buffer (vector length)
+        metadata = np.array([n], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=self.pipeline.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_input, "offset": 0, "size": buffer_input.size}},
+                {"binding": 1, "resource": {"buffer": buffer_output, "offset": 0, "size": buffer_output.size}},
+                {"binding": 2, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Execute softmax
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(self.pipeline)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(1, 1, 1)  # Single workgroup for combined version
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_output, n, dtype=np.float32)
+
+        return result
+
+
+class GELUGPU:
+    """
+    GPU-accelerated GELU (Gaussian Error Linear Unit) activation.
+
+    GELU(x) ≈ 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
+
+    Used in GPT-2, GPT-3, and BERT feed-forward layers.
+    """
+
+    def __init__(self, device: Optional[GPUDevice] = None):
+        """
+        Initialize GELU GPU operator.
+
+        Args:
+            device: GPU device (creates new one if None)
+        """
+        self.device = device or GPUDevice()
+
+        # Load shader
+        shader_path = Path(__file__).parent.parent / "gpu_kernels" / "activations.wgsl"
+        with open(shader_path, 'r') as f:
+            shader_code = f.read()
+
+        self.shader_module = self.device.create_shader_module(shader_code)
+
+        # Create pipeline
+        self.pipeline = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "gelu"
+            }
+        )
+
+    def compute(self, x: np.ndarray) -> np.ndarray:
+        """
+        Compute GELU activation.
+
+        Args:
+            x: Input array (any shape, flattened internally)
+
+        Returns:
+            GELU output (same shape as input)
+        """
+        original_shape = x.shape
+        x_flat = x.flatten().astype(np.float32)
+        n = len(x_flat)
+
+        # Create GPU buffers
+        buffer_input = self.device.create_buffer(x_flat, usage="storage")
+
+        # Output buffer
+        output = np.zeros(n, dtype=np.float32)
+        buffer_output = self.device.create_buffer(output, usage="storage_read_write")
+
+        # Metadata buffer (vector length)
+        metadata = np.array([n], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=self.pipeline.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_input, "offset": 0, "size": buffer_input.size}},
+                {"binding": 1, "resource": {"buffer": buffer_output, "offset": 0, "size": buffer_output.size}},
+                {"binding": 2, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Calculate workgroups
+        workgroups = (n + 255) // 256
+
+        # Execute GELU
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(self.pipeline)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(workgroups, 1, 1)
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_output, n, dtype=np.float32)
+
+        return result.reshape(original_shape)
+
+
+class ReLUGPU:
+    """
+    GPU-accelerated ReLU (Rectified Linear Unit) activation.
+
+    ReLU(x) = max(0, x)
+
+    Simple but effective baseline activation.
+    """
+
+    def __init__(self, device: Optional[GPUDevice] = None):
+        """
+        Initialize ReLU GPU operator.
+
+        Args:
+            device: GPU device (creates new one if None)
+        """
+        self.device = device or GPUDevice()
+
+        # Load shader
+        shader_path = Path(__file__).parent.parent / "gpu_kernels" / "activations.wgsl"
+        with open(shader_path, 'r') as f:
+            shader_code = f.read()
+
+        self.shader_module = self.device.create_shader_module(shader_code)
+
+        # Create pipeline
+        self.pipeline = self.device.device.create_compute_pipeline(
+            layout=None,
+            compute={
+                "module": self.shader_module,
+                "entry_point": "relu"
+            }
+        )
+
+    def compute(self, x: np.ndarray) -> np.ndarray:
+        """
+        Compute ReLU activation.
+
+        Args:
+            x: Input array (any shape, flattened internally)
+
+        Returns:
+            ReLU output (same shape as input)
+        """
+        original_shape = x.shape
+        x_flat = x.flatten().astype(np.float32)
+        n = len(x_flat)
+
+        # Create GPU buffers
+        buffer_input = self.device.create_buffer(x_flat, usage="storage")
+
+        # Output buffer
+        output = np.zeros(n, dtype=np.float32)
+        buffer_output = self.device.create_buffer(output, usage="storage_read_write")
+
+        # Metadata buffer (vector length)
+        metadata = np.array([n], dtype=np.uint32)
+        buffer_metadata = self.device.create_buffer(metadata, usage="storage")
+
+        # Create bind group
+        bind_group = self.device.device.create_bind_group(
+            layout=self.pipeline.get_bind_group_layout(0),
+            entries=[
+                {"binding": 0, "resource": {"buffer": buffer_input, "offset": 0, "size": buffer_input.size}},
+                {"binding": 1, "resource": {"buffer": buffer_output, "offset": 0, "size": buffer_output.size}},
+                {"binding": 2, "resource": {"buffer": buffer_metadata, "offset": 0, "size": buffer_metadata.size}},
+            ]
+        )
+
+        # Calculate workgroups
+        workgroups = (n + 255) // 256
+
+        # Execute ReLU
+        command_encoder = self.device.device.create_command_encoder()
+        compute_pass = command_encoder.begin_compute_pass()
+        compute_pass.set_pipeline(self.pipeline)
+        compute_pass.set_bind_group(0, bind_group)
+        compute_pass.dispatch_workgroups(workgroups, 1, 1)
+        compute_pass.end()
+        self.device.device.queue.submit([command_encoder.finish()])
+
+        # Read result
+        result = self.device.read_buffer(buffer_output, n, dtype=np.float32)
+
+        return result.reshape(original_shape)
+
+
 def is_gpu_available() -> bool:
     """Check if GPU compute is available"""
     if not WGPU_AVAILABLE:
