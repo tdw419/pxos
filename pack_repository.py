@@ -40,9 +40,6 @@ def should_skip(path: Path) -> bool:
         'pixel_storage',
         'pixel_llm/data',
         'pixel_llm/pixel_src_storage',  # Don't pack the individual .pxi files
-        '.pyc',
-        '.pyo',
-        '.pyd',
         '.coverage',
     }
 
@@ -51,9 +48,11 @@ def should_skip(path: Path) -> bool:
         if part in skip_parts:
             return True
 
-    # Skip by extension
+    # Skip .pyc files EXCEPT those in the bytecode/ directory
     if path.suffix in {'.pyc', '.pyo', '.pyd'}:
-        return True
+        # Allow bytecode/ directory .pyc files
+        if 'bytecode' not in path.parts:
+            return True
 
     return False
 
@@ -95,6 +94,14 @@ def collect_files(root: Path) -> list:
             if should_skip(txt_file):
                 continue
             files.append(txt_file)
+
+    # Bytecode files (.pyc) from bytecode/ directory
+    bytecode_dir = root / "bytecode"
+    if bytecode_dir.exists():
+        for pyc_file in bytecode_dir.rglob("*.pyc"):
+            if should_skip(pyc_file):
+                continue
+            files.append(pyc_file)
 
     return sorted(files)
 
