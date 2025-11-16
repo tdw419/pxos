@@ -112,7 +112,7 @@ class InfiniteMap:
 
     def _world_to_region(self, x: int, y: int) -> Tuple[int, int, int, int]:
         """
-        Convert world coordinates to region coordinates
+        Convert world coordinates to region coordinates + local offset.
 
         Args:
             x, y: World coordinates
@@ -120,18 +120,15 @@ class InfiniteMap:
         Returns:
             (region_x, region_y, local_x, local_y)
         """
-        # Handle negative coordinates correctly
+        # Python's // and % handle negatives correctly for us!
+        # For x=-100, region_size=64:
+        #   -100 // 64 = -2  (floor division)
+        #   -100 % 64 = 28   (positive remainder)
+        # This means pixel -100 is in region -2 at local position 28 ✓
         rx = x // self.region_size
         ry = y // self.region_size
-
-        if x < 0 and x % self.region_size != 0:
-            rx -= 1
-
-        if y < 0 and y % self.region_size != 0:
-            ry -= 1
-
-        local_x = x - (rx * self.region_size)
-        local_y = y - (ry * self.region_size)
+        local_x = x % self.region_size
+        local_y = y % self.region_size
 
         return rx, ry, local_x, local_y
 

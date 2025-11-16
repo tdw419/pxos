@@ -4,3 +4,7 @@ __pycache__/
 .pytest_cache/
 htmlcov/
 *.pyi
+
+# Test data and caches
+pixel_storage/
+pixel_llm/data/
