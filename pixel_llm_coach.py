@@ -28,6 +28,93 @@ from core.llm_agents import GeminiAgent, LocalLLMAgent
 # Phase definitions
 PIXEL_LLM_PHASES = [
     {
+        "id": "0_stabilization",
+        "name": "Stabilization & Testing",
+        "description": "Make what exists solid, testable, and safe to iterate on",
+        "tasks": [
+            {
+                "title": "Unit tests for PixelFS",
+                "description": """Comprehensive test suite for PixelFS:
+                - Test round-trip write/read
+                - Header integrity validation
+                - Wrong magic/version error handling
+                - Checksum verification
+                - Memory-mapped access
+                - Edge cases (empty files, large files, corrupted data)
+                200+ lines with pytest fixtures""",
+                "action": "write_file",
+                "path": "pixel_llm/tests/test_pixelfs.py",
+                "priority": 10,
+                "test_command": "python3 -m pytest pixel_llm/tests/test_pixelfs.py -v"
+            },
+            {
+                "title": "Unit tests for InfiniteMap",
+                "description": """Comprehensive test suite for InfiniteMap:
+                - Test write_region / read_region
+                - Tile allocation and caching
+                - Spatial queries (neighbors, regions)
+                - Quadtree indexing
+                - Persistence and loading
+                - Large coordinate handling
+                200+ lines with pytest""",
+                "action": "write_file",
+                "path": "pixel_llm/tests/test_infinite_map.py",
+                "priority": 10,
+                "test_command": "python3 -m pytest pixel_llm/tests/test_infinite_map.py -v"
+            },
+            {
+                "title": "Unit tests for Task Queue",
+                "description": """Test suite for task management:
+                - Task creation and lifecycle
+                - Priority scheduling
+                - Phase filtering
+                - Dependency resolution
+                - Status transitions
+                150+ lines""",
+                "action": "write_file",
+                "path": "pixel_llm/tests/test_task_queue.py",
+                "priority": 9,
+                "test_command": "python3 -m pytest pixel_llm/tests/test_task_queue.py -v"
+            },
+            {
+                "title": "Test runner and CI config",
+                "description": """Setup testing infrastructure:
+                - Bash script to run all tests
+                - pytest configuration (pytest.ini)
+                - Coverage reporting setup
+                - CI/CD configuration (optional)
+                100+ lines of config and scripts""",
+                "action": "write_file",
+                "path": "pixel_llm/tests/run_tests.sh",
+                "priority": 8
+            },
+            {
+                "title": "Agent capability detection",
+                "description": """Harden LLM agent detection:
+                - Add is_available() method to both agents
+                - Improve error messages for missing backends
+                - Log exact commands/URLs used
+                - Better fallback handling
+                150+ lines of improvements""",
+                "action": "edit_file",
+                "path": "pixel_llm/core/llm_agents.py",
+                "priority": 9
+            },
+            {
+                "title": "Configuration system",
+                "description": """Explicit configuration management:
+                - JSON schema for config
+                - Example config file with all options
+                - Config validation and loading
+                - Environment variable support
+                200+ lines across multiple files""",
+                "action": "write_file",
+                "path": "pixel_llm/core/config.py",
+                "priority": 8
+            }
+        ]
+    },
+    {
         "id": "1_storage",
         "name": "Storage Infrastructure",
         "description": "Build PixelFS and Infinite Map for pixel-native storage",
