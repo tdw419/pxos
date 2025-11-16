@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "name": "pxOS",
+  "description": "Pixel-native operating system with bytecode hypervisor",
+
+  "entrypoints": {
+    "default": "pixel_llm.demos.simple_test:main",
+    "gpu": "pixel_llm.demos.gpu_dot_product_demo:main",
+    "test": "pixel_llm.tests.test_infinite_map:main"
+  },
+
+  "python_runtime": {
+    "min_version": "3.11",
+    "required_packages": {
+      "numpy": ">=1.24,<2.0"
+    },
+    "optional_packages": {
+      "wgpu": ">=0.28.0"
+    }
+  },
+
+  "modules": {
+    "pixel_llm.core.pixelfs": "pixel_llm/core/pixelfs.py",
+    "pixel_llm.core.pixel_vm": "pixel_llm/core/pixel_vm.py",
+    "pixel_llm.core.pixel_archive": "pixel_llm/core/pixel_archive.py",
+    "pixel_llm.core.hypervisor": "pixel_llm/core/hypervisor.py"
+  },
+
+  "bytecode_engines": {
+    "python": {
+      "enabled": true,
+      "loader": "pixel_llm.core.bytecode_loader"
+    },
+    "pixelvm": {
+      "enabled": true,
+      "loader": "pixel_llm.core.pixel_vm"
+    },
+    "wasm": {
+      "enabled": false,
+      "loader": "pixel_llm.core.wasm_loader"
+    }
+  }
+}

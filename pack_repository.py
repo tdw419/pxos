@@ -88,6 +88,11 @@ def collect_files(root: Path) -> list:
             continue
         files.append(json_file)
 
+    # Always include pxos_manifest.json if it exists
+    manifest_file = root / "pxos_manifest.json"
+    if manifest_file.exists():
+        files.append(manifest_file)
+
     # Text files at root
     for txt_pattern in ["*.txt", "*.cfg", "*.ini", ".gitignore", "LICENSE"]:
         for txt_file in root.glob(txt_pattern):

@@ -102,9 +102,26 @@ class PixelArchiveFinder(importlib.abc.MetaPathFinder):
     Instead of checking a manifest, it checks the archive's file list.
     """
 
-    def __init__(self, archive_path: str):
-        self.archive_path = archive_path
-        self.archive_reader = PixelArchiveReader(archive_path)
+    def __init__(self, archive_path: str = None, archive_reader: PixelArchiveReader = None):
+        """
+        Create finder from archive path or reader.
+
+        Args:
+            archive_path: Path to .pxa file (if loading from disk)
+            archive_reader: Existing reader (if already loaded)
+        """
+        if archive_path is None and archive_reader is None:
+            raise ValueError("Either archive_path or archive_reader must be provided")
+
+        if archive_reader is not None:
+            # Use provided reader
+            self.archive_reader = archive_reader
+            self.archive_path = getattr(archive_reader, 'archive_path', '<memory>')
+        else:
+            # Load from path
+            self.archive_path = archive_path
+            self.archive_reader = PixelArchiveReader(archive_path)
+
         self.debug = False
 
         # Build module index from archive files
@@ -212,6 +229,51 @@ def install_archive_importer(archive_path: Optional[str] = None, debug: bool = F
     print("     2. Standard .py files   ← fallback")
     print()
     print("  🔥 ONE FILE. ALL CODE. PURE SUBSTRATE.")
+    print()
+    print("=" * 70)
+    print()
+
+
+def install_archive_importer_from_reader(archive_reader: PixelArchiveReader, debug: bool = False):
+    """
+    Install the pixel archive import hook from an existing reader.
+
+    This is used by the hypervisor to install the importer from an in-memory archive.
+
+    Args:
+        archive_reader: PixelArchiveReader instance (already loaded)
+        debug: If True, print debug info for each import
+    """
+    global _archive_finder
+
+    if _archive_finder is not None:
+        print("⚠️  Pixel archive importer already installed")
+        return
+
+    # Create finder from reader
+    _archive_finder = PixelArchiveFinder(archive_reader=archive_reader)
+    _archive_finder.debug = debug
+
+    # Insert at the START of meta_path (highest priority)
+    sys.meta_path.insert(0, _archive_finder)
+
+    # Report
+    num_modules = len(_archive_finder.modules)
+    archive_size = _archive_finder.archive_reader.total_size
+
+    print("=" * 70)
+    print("✅ pxOS PIXEL ARCHIVE IMPORTER INSTALLED (from memory)")
+    print("=" * 70)
+    print()
+    print(f"  📦 {num_modules} modules available from archive")
+    print(f"  💾 Archive: <memory>")
+    print(f"  📊 Size: {archive_size:,} bytes")
+    print()
+    print("  🎯 Import priority:")
+    print("     1. Pixel archive (memory) ← FIRST")
+    print("     2. Standard .py files      ← fallback")
+    print()
+    print("  🔥 SELF-CONTAINED EXECUTION FROM PIXELS")
     print()
     print("=" * 70)
     print()

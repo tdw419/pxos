@@ -178,18 +178,47 @@ class PixelArchiveReader:
     Can extract files or provide direct access (virtual filesystem).
     """
 
-    def __init__(self, archive_path: str):
-        self.archive_path = archive_path
-        self.fs = PixelFS()
+    def __init__(self, archive_path: str = None, archive_bytes: bytes = None):
+        """
+        Create archive reader.
 
-        # Load archive
-        self.archive_bytes = self.fs.read(archive_path)
+        Args:
+            archive_path: Path to .pxa file (if loading from disk)
+            archive_bytes: Raw archive bytes (if loading from memory)
+        """
+        if archive_path is None and archive_bytes is None:
+            raise ValueError("Either archive_path or archive_bytes must be provided")
+
+        self.archive_path = archive_path
+
+        if archive_bytes is not None:
+            # Load from memory
+            self.archive_bytes = archive_bytes
+        else:
+            # Load from disk
+            self.fs = PixelFS()
+            self.archive_bytes = self.fs.read(archive_path)
 
         # Parse header
         self._parse_header()
 
         # Parse index
         self._parse_index()
+
+    @classmethod
+    def from_bytes(cls, archive_bytes: bytes):
+        """
+        Create reader from raw archive bytes.
+
+        This is useful for loading archives from pixels or memory.
+
+        Args:
+            archive_bytes: Raw .pxa archive bytes
+
+        Returns:
+            PixelArchiveReader instance
+        """
+        return cls(archive_bytes=archive_bytes)
 
     def _parse_header(self):
         """Parse archive header"""
