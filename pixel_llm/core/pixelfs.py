@@ -193,7 +193,13 @@ class PixelFS:
 
         print(f"PixelFS: Wrote {data_size:,} bytes as {width}x{height} pixel image")
         print(f"  File: {filepath}")
-        print(f"  Efficiency: {data_size / (width * height * 3) * 100:.1f}%")
+
+        # Calculate efficiency (avoid division by zero for empty files)
+        if width * height > 0:
+            efficiency = (data_size / (width * height * 3)) * 100
+            print(f"  Efficiency: {efficiency:.1f}%")
+        else:
+            print(f"  Efficiency: N/A (empty file)")
 
         return filepath
 
