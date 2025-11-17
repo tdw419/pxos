@@ -17,7 +17,10 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 
-from pxvm.core.opcodes import OP_HALT, OP_MATMUL, OP_ADD, OP_RELU, OP_DOT_RGB
+from pxvm.core.opcodes import OP_HALT, OP_MATMUL, OP_ADD, OP_RELU, OP_DOT
+
+# Legacy alias
+OP_DOT_RGB = OP_DOT
 from pxvm.core.interpreter import _read_shape
 
 

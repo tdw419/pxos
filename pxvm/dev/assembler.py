@@ -39,7 +39,10 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 from PIL import Image
 
-from pxvm.core.opcodes import OP_HALT, OP_MATMUL, OP_ADD, OP_RELU, OP_DOT_RGB
+from pxvm.core.opcodes import OP_HALT, OP_MATMUL, OP_ADD, OP_RELU, OP_DOT
+
+# Legacy alias
+OP_DOT_RGB = OP_DOT
 from pxvm.utils.layout import calculate_matrix_rows_quantized, write_quantized_matrix
 from pxvm.debug.constraints import validate_addressing_constraints, validate_matmul_structure
 

@@ -13,7 +13,10 @@ from typing import Optional
 
 import numpy as np
 
-from pxvm.core.opcodes import OP_HALT, OP_DOT_RGB, OP_ADD, OP_RELU, OP_MATMUL
+from pxvm.core.opcodes import OP_HALT, OP_ADD, OP_RELU, OP_MATMUL, OP_DOT
+
+# Legacy alias
+OP_DOT_RGB = OP_DOT
 
 
 def validate_matrix_header(

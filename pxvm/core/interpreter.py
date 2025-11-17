@@ -49,7 +49,13 @@ from typing import Tuple
 
 import numpy as np
 
-from .opcodes import OP_HALT, OP_DOT_RGB, OP_ADD, OP_RELU, OP_MATMUL
+from .opcodes import (
+    OP_HALT, OP_ADD, OP_RELU, OP_MATMUL, OP_DOT,
+    is_legacy_opcode, migrate_legacy_opcode
+)
+
+# Legacy alias
+OP_DOT_RGB = OP_DOT
 
 
 def _infer_vector_length(
@@ -328,10 +334,15 @@ def run_program(
         instr = img[pc_y, pc_x]
         opcode = int(instr[0])
 
+        # Auto-migrate legacy numeric opcodes to ASCII opcodes
+        if is_legacy_opcode(opcode):
+            opcode = migrate_legacy_opcode(opcode)
+
         if opcode == OP_HALT:
             break
 
-        if opcode == OP_DOT_RGB:
+        # OP_DOT_RGB and OP_DOT are the same operation (legacy vs ASCII name)
+        if opcode == OP_DOT_RGB or opcode == OP_DOT:
             _exec_dot_rgb(img, instr)
         elif opcode == OP_ADD:
             _exec_add(img, instr)

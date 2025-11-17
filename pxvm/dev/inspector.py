@@ -27,8 +27,16 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 from PIL import Image
 
-from pxvm.core.opcodes import OP_HALT, OP_DOT_RGB, OP_ADD, OP_RELU, OP_MATMUL
+from pxvm.core.opcodes import (
+    OP_HALT, OP_ADD, OP_RELU, OP_MATMUL, OP_DOT,
+    opcode_to_char, opcode_name, format_instruction,
+    is_legacy_opcode, migrate_legacy_opcode
+)
+
+# Legacy alias
+OP_DOT_RGB = OP_DOT
 from pxvm.core.interpreter import _read_shape
+from pxvm.visual.text_render import FontAtlas, create_text_image
 
 
 class PixelInspector:
@@ -139,6 +147,91 @@ class PixelInspector:
             print("=" * 70)
 
         return instructions
+
+    def visualize_instructions(self, output_path: Optional[Path] = None) -> None:
+        """
+        Render instruction row as visual text using font atlas.
+
+        This demonstrates the ASCII opcode design: instructions are both
+        executable machine code AND human-readable text.
+
+        Args:
+            output_path: Optional path to save visualization (defaults to program_visual.png)
+        """
+        print("=" * 70)
+        print(" VISUAL INSTRUCTION RENDERING (ASCII Opcodes)")
+        print("=" * 70)
+        print()
+
+        # Extract instruction row (row 0, R channel)
+        instr_row = self.img[0, :, 0]
+
+        # Convert to text, handling legacy opcodes
+        text_parts = []
+        readable_parts = []
+
+        for i in range(self.width):
+            opcode = int(instr_row[i])
+
+            if opcode == 0:  # End of instructions
+                break
+
+            # Migrate legacy opcodes if needed
+            if is_legacy_opcode(opcode):
+                print(f"  Note: Found legacy opcode {opcode}, migrating to ASCII")
+                opcode = migrate_legacy_opcode(opcode)
+
+            # Get character representation
+            char = opcode_to_char(opcode)
+            name = opcode_name(opcode)
+
+            text_parts.append(char)
+            readable_parts.append(name)
+
+        # Create visual text
+        visual_text = ''.join(text_parts)
+        readable_text = ' → '.join(readable_parts)
+
+        print(f"Visual (ASCII):  {visual_text}")
+        print(f"Readable:        {readable_text}")
+        print()
+
+        # Load font atlas
+        root = Path(__file__).resolve().parents[2]
+        font_png = root / "fonts" / "ascii_16x16.png"
+        font_json = root / "fonts" / "ascii_16x16.json"
+
+        if not font_png.exists():
+            print("WARNING: Font atlas not found, skipping image output")
+            print(f"  Run: python3 -m pxvm.visual.font_atlas")
+            print()
+            print("=" * 70)
+            return
+
+        # Render as image
+        font = FontAtlas(font_png, font_json)
+
+        # Create title + instructions image
+        full_text = f"PIXEL PROGRAM: {self.path.name}\n\nInstructions (ASCII):\n{visual_text}\n\nReadable:\n{readable_text}"
+
+        visual_img = create_text_image(
+            full_text,
+            font,
+            padding=20,
+            background=(20, 25, 35, 255),
+            text_color=(180, 220, 255)
+        )
+
+        # Save
+        if output_path is None:
+            output_path = self.path.parent / f"{self.path.stem}_visual.png"
+
+        Image.fromarray(visual_img).save(output_path)
+
+        print(f"Saved visual rendering: {output_path}")
+        print(f"  Image size: {visual_img.shape[1]}×{visual_img.shape[0]} RGBA")
+        print()
+        print("=" * 70)
 
     def matrix_info(self, row: int, name: Optional[str] = None) -> None:
         """
