@@ -8,7 +8,7 @@ Philosophy:
 
 Tools:
 - inspector: View program structure and data
-- assembler: Write programs in DSL, compile to pixels (future)
+- assembler: Write programs in DSL, compile to pixels
 - debugger: Step through execution with symbolic names (future)
 - diff: Compare programs semantically (future)
 - canvas: Render programs visually (future)
@@ -17,5 +17,6 @@ All tools work WITH pixels, never INSTEAD of pixels.
 """
 
 from .inspector import PixelInspector
+from .assembler import PixelAssembler
 
-__all__ = ["PixelInspector"]
+__all__ = ["PixelInspector", "PixelAssembler"]

@@ -170,7 +170,11 @@ def main():
 
     root = Path(__file__).resolve().parents[2]
     weights_path = root / "pixel_llm" / "models" / "pixellm_v0.npz"
-    program_path = root / "pixel_llm" / "programs" / "pixellm_forward.pxi"
+
+    # Try compiled version first (from assembler), then fallback to original
+    program_path = root / "pixel_llm" / "programs" / "pixellm_forward_compiled.pxi"
+    if not program_path.exists():
+        program_path = root / "pixel_llm" / "programs" / "pixellm_forward.pxi"
 
     # Verify files exist
     if not weights_path.exists():
@@ -180,8 +184,10 @@ def main():
 
     if not program_path.exists():
         print(f"❌ Program not found: {program_path}")
-        print("   Run: python3 -m pxvm.examples.encode_pixellm_forward")
+        print("   Run: python3 -m pxvm.dev.assembler")
         return
+
+    print(f"Using program: {program_path.name}")
 
     # Load weights
     print(f"Loading weights from: {weights_path}")
