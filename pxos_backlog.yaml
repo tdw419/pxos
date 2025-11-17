@@ -1,5 +1,5 @@
 version: 1
-current_focus: "Visual Text Rendering (v0.1.4)"
+current_focus: "Readable Pixel Assembly (v0.2.0)"
 tasks:
 - id: T001
   title: Validate pxVM accuracy vs numpy reference
@@ -214,3 +214,8 @@ log:
 - '2025-11-17T22:00Z: Created visual rendering system: font_atlas.py and text_render.py'
 - '2025-11-17T22:30Z: v0.1.4 COMPLETE - PNG in, PNG out pipeline achieved!'
 - '2025-11-17T22:30Z: Visual text rendering makes pxOS feel truly pixel-native'
+- '2025-11-17T23:00Z: Strategic insight: Opcodes should BE ASCII characters for self-documentation'
+- '2025-11-17T23:30Z: Redesigned opcode system: OP_MATMUL=''M'', OP_ADD=''A'', OP_RELU=''R'''
+- '2025-11-17T23:45Z: Added visual inspector with instruction rendering'
+- '2025-11-18T00:00Z: v0.2.0 COMPLETE - Readable Pixel Assembly achieved!'
+- '2025-11-18T00:00Z: Programs are now self-documenting: "MARMAH" vs [4,2,3,4,2,0]'
