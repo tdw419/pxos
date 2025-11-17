@@ -31,6 +31,9 @@ var<uniform> layout: ImageLayout;
 // Opcodes (must match pxvm/core/opcodes.py)
 const OP_HALT: u32 = 0u;
 const OP_DOT_RGB: u32 = 1u;
+const OP_ADD: u32 = 2u;
+const OP_RELU: u32 = 3u;
+const OP_MATMUL: u32 = 4u;  // Reserved for future
 
 // Access pixel at (x, y)
 fn pixel_at(x: u32, y: u32) -> vec4<u32> {
@@ -105,6 +108,56 @@ fn exec_dot_rgb(instr: vec4<u32>) {
     set_pixel(0u, row_out, result);
 }
 
+// Execute OP_ADD instruction (element-wise addition)
+fn exec_add(instr: vec4<u32>) {
+    let row_a = instr.g;      // ARG0
+    let row_b = instr.b;      // ARG1
+    let row_out = instr.a;    // ARG2
+
+    // Bounds check
+    if (row_a >= layout.height || row_b >= layout.height || row_out >= layout.height) {
+        return;  // Out of bounds, skip
+    }
+
+    // Infer vector length
+    let len = vector_length(row_a, row_b);
+
+    // Element-wise addition (R channel only)
+    for (var i: u32 = 0u; i < len; i = i + 1u) {
+        let a_r = pixel_at(i, row_a).r;
+        let b_r = pixel_at(i, row_b).r;
+        let sum_val = a_r + b_r;
+
+        // Clamp to uint8 range (0-255)
+        let clamped = min(255u, max(0u, sum_val));
+
+        // Write to output row
+        var result = pixel_at(i, row_out);
+        result.r = clamped;
+        // G, B, A remain unchanged
+        set_pixel(i, row_out, result);
+    }
+}
+
+// Execute OP_RELU instruction (in-place ReLU activation)
+fn exec_relu(instr: vec4<u32>) {
+    let row_data = instr.g;   // ARG0
+
+    // Bounds check
+    if (row_data >= layout.height) {
+        return;  // Out of bounds, skip
+    }
+
+    // Apply ReLU to all pixels in row (R channel)
+    // For uint8: ReLU(x) = max(x, 0) = x (since x >= 0)
+    // This structure becomes meaningful with signed/float support
+    for (var i: u32 = 0u; i < layout.width; i = i + 1u) {
+        var px = pixel_at(i, row_data);
+        px.r = max(0u, px.r);
+        set_pixel(i, row_data, px);
+    }
+}
+
 // Main interpreter entry point
 // Executes instruction pixels from row 0, left to right
 @compute @workgroup_size(1, 1, 1)
@@ -134,7 +187,12 @@ fn run_program() {
 
         if (opcode == OP_DOT_RGB) {
             exec_dot_rgb(instr);
+        } else if (opcode == OP_ADD) {
+            exec_add(instr);
+        } else if (opcode == OP_RELU) {
+            exec_relu(instr);
         }
+        // OP_MATMUL reserved for future
 
         // Advance PC
         pc_x = pc_x + 1u;

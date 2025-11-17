@@ -49,7 +49,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .opcodes import OP_HALT, OP_DOT_RGB
+from .opcodes import OP_HALT, OP_DOT_RGB, OP_ADD, OP_RELU, OP_MATMUL
 
 
 def _infer_vector_length(
@@ -112,6 +112,70 @@ def _exec_dot_rgb(
     # B and A can remain 0 for now
 
 
+def _exec_add(
+    img: np.ndarray,
+    instr: np.ndarray,
+) -> None:
+    """
+    Execute OP_ADD: element-wise addition.
+
+    instr: single RGBA uint8 pixel from row 0.
+    Format: (OP_ADD, row_a, row_b, row_out)
+    Semantics: row_out[i] = row_a[i] + row_b[i] for all i (R channel)
+    """
+    height, width, _ = img.shape
+
+    row_a = int(instr[1])    # G
+    row_b = int(instr[2])    # B
+    row_out = int(instr[3])  # A
+
+    if not (0 <= row_a < height and 0 <= row_b < height and 0 <= row_out < height):
+        return  # Out-of-bounds, skip
+
+    # Infer vector length
+    length = _infer_vector_length(img, row_a, row_b)
+
+    # Element-wise addition (R channel only)
+    for x in range(length):
+        a_r = int(img[row_a, x, 0])
+        b_r = int(img[row_b, x, 0])
+        sum_val = a_r + b_r
+
+        # Clamp to uint8 range
+        sum_val = min(255, max(0, sum_val))
+
+        img[row_out, x, 0] = sum_val
+        # G, B, A channels remain 0
+
+
+def _exec_relu(
+    img: np.ndarray,
+    instr: np.ndarray,
+) -> None:
+    """
+    Execute OP_RELU: in-place ReLU activation.
+
+    instr: single RGBA uint8 pixel from row 0.
+    Format: (OP_RELU, row_data, 0, 0)
+    Semantics: row_data[i] = max(row_data[i], 0) for all i (R channel, in-place)
+    """
+    height, width, _ = img.shape
+
+    row_data = int(instr[1])  # G
+
+    if not (0 <= row_data < height):
+        return  # Out-of-bounds, skip
+
+    # Apply ReLU to all non-zero pixels in row (R channel)
+    # Since we're using uint8, negative values don't exist, so this is a no-op
+    # But we keep the structure for future float support
+    for x in range(width):
+        val = int(img[row_data, x, 0])
+        # For uint8: ReLU(x) = max(x, 0) = x (since x >= 0)
+        # This becomes meaningful when we support signed/float values
+        img[row_data, x, 0] = max(0, val)
+
+
 def run_program(
     img: np.ndarray,
     max_steps: int = 1024,
@@ -146,6 +210,11 @@ def run_program(
 
         if opcode == OP_DOT_RGB:
             _exec_dot_rgb(img, instr)
+        elif opcode == OP_ADD:
+            _exec_add(img, instr)
+        elif opcode == OP_RELU:
+            _exec_relu(img, instr)
+        # OP_MATMUL deferred to later
 
         # NEXT instruction
         pc_x += 1

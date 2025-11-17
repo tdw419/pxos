@@ -2,21 +2,27 @@
 """
 pxvm/core/opcodes.py
 
-Opcode definitions for the minimal pxVM.
+Opcode definitions for pxVM.
 
-This first version only defines:
-
-- OP_HALT    (0)
-- OP_DOT_RGB (1)  # integer dot product over R-channel of two rows
+v0.0.1: OP_HALT, OP_DOT_RGB
+v0.0.2: OP_ADD, OP_RELU, OP_MATMUL
 """
 
-# Halt execution
+# Core control flow
 OP_HALT: int = 0
 
-# Integer dot-product over RGB row data (we use R channel only in v0)
-OP_DOT_RGB: int = 1
+# Vector operations (v0.0.1)
+OP_DOT_RGB: int = 1  # Integer dot product over R-channel of two rows
+
+# Neural network primitives (v0.0.2)
+OP_ADD: int = 2      # Element-wise addition: row_out = row_a + row_b
+OP_RELU: int = 3     # In-place ReLU: row[i] = max(row[i], 0)
+OP_MATMUL: int = 4   # Matrix multiply: out_row = in_row @ weight_matrix
 
 __all__ = [
     "OP_HALT",
     "OP_DOT_RGB",
+    "OP_ADD",
+    "OP_RELU",
+    "OP_MATMUL",
 ]
