@@ -176,6 +176,127 @@ def _exec_relu(
         img[row_data, x, 0] = max(0, val)
 
 
+def _read_shape(img: np.ndarray, row_start: int) -> tuple[int, int]:
+    """
+    Read matrix shape from header pixel at (0, row_start).
+
+    Header format: (cols_low, cols_high, rows_low, rows_high)
+    Returns: (cols, rows)
+    """
+    hdr = img[row_start, 0]
+    cols = int(hdr[0]) + (int(hdr[1]) << 8)
+    rows = int(hdr[2]) + (int(hdr[3]) << 8)
+    return cols, rows
+
+
+def _get_matrix_val(
+    img: np.ndarray,
+    row_start: int,
+    cols: int,
+    rows: int,
+    idx: int,
+) -> int:
+    """
+    Get value from flattened matrix data.
+
+    Data begins at column 1, row-major layout.
+    Wraps across image width, continues on subsequent rows.
+    """
+    width = img.shape[1]
+    stride = width - 1  # Column 0 is header
+
+    x = 1 + (idx % stride)
+    y = row_start + (idx // stride)
+
+    return int(img[y, x, 0])
+
+
+def _set_matrix_val(
+    img: np.ndarray,
+    row_start: int,
+    cols: int,
+    rows: int,
+    idx: int,
+    val: int,
+) -> None:
+    """
+    Set value in flattened matrix data.
+
+    Data begins at column 1, row-major layout.
+    Wraps across image width, continues on subsequent rows.
+    """
+    width = img.shape[1]
+    stride = width - 1  # Column 0 is header
+
+    x = 1 + (idx % stride)
+    y = row_start + (idx // stride)
+
+    img[y, x, 0] = val
+
+
+def _exec_matmul(
+    img: np.ndarray,
+    instr: np.ndarray,
+) -> None:
+    """
+    Execute OP_MATMUL: matrix multiply.
+
+    instr: single RGBA uint8 pixel from row 0.
+    Format: (OP_MATMUL, row_A_start, row_B_start, row_C_start)
+    Semantics: C = A @ B (matrix multiplication)
+
+    Matrix encoding:
+    - Header at (0, row_start): (cols_low, cols_high, rows_low, rows_high)
+    - Data starts at column 1, row-major flattened
+    """
+    height, width, _ = img.shape
+
+    row_a = int(instr[1])  # G
+    row_b = int(instr[2])  # B
+    row_c = int(instr[3])  # A
+
+    if not (0 <= row_a < height and 0 <= row_b < height and 0 <= row_c < height):
+        return  # Out-of-bounds, skip
+
+    # Read matrix shapes
+    cols_a, rows_a = _read_shape(img, row_a)  # A: M×K
+    cols_b, rows_b = _read_shape(img, row_b)  # B: K×N
+
+    K = cols_a  # Inner dimension
+    M = rows_a  # Output rows
+    N = cols_b  # Output cols
+
+    # Validate inner dimension
+    if rows_b != K:
+        return  # Invalid shapes for multiplication
+
+    # Write output shape header
+    img[row_c, 0, 0] = N & 0xFF         # cols_low
+    img[row_c, 0, 1] = (N >> 8) & 0xFF  # cols_high
+    img[row_c, 0, 2] = M & 0xFF         # rows_low
+    img[row_c, 0, 3] = (M >> 8) & 0xFF  # rows_high
+
+    # Compute C = A @ B
+    # C[m,n] = sum_k A[m,k] * B[k,n]
+    for m in range(M):
+        for n in range(N):
+            acc = 0
+            for k in range(K):
+                a_idx = m * K + k
+                b_idx = k * N + n
+
+                a_val = _get_matrix_val(img, row_a, K, M, a_idx)
+                b_val = _get_matrix_val(img, row_b, N, K, b_idx)
+
+                acc += a_val * b_val
+
+            # Clamp to uint8 range
+            acc = max(0, min(255, acc))
+
+            c_idx = m * N + n
+            _set_matrix_val(img, row_c, N, M, c_idx, acc)
+
+
 def run_program(
     img: np.ndarray,
     max_steps: int = 1024,
@@ -214,7 +335,8 @@ def run_program(
             _exec_add(img, instr)
         elif opcode == OP_RELU:
             _exec_relu(img, instr)
-        # OP_MATMUL deferred to later
+        elif opcode == OP_MATMUL:
+            _exec_matmul(img, instr)
 
         # NEXT instruction
         pc_x += 1

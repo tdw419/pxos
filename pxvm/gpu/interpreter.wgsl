@@ -158,6 +158,89 @@ fn exec_relu(instr: vec4<u32>) {
     }
 }
 
+// Read matrix shape from header pixel
+fn read_shape(row_start: u32) -> vec2<u32> {
+    let hdr = pixel_at(0u, row_start);
+    let cols = hdr.r | (hdr.g << 8u);
+    let rows = hdr.b | (hdr.a << 8u);
+    return vec2<u32>(cols, rows);
+}
+
+// Get value from flattened matrix data
+fn get_matrix_val(row_start: u32, idx: u32) -> u32 {
+    let stride = layout.width - 1u;  // Column 0 is header
+    let x = 1u + (idx % stride);
+    let y = row_start + (idx / stride);
+    return pixel_at(x, y).r;
+}
+
+// Set value in flattened matrix data
+fn set_matrix_val(row_start: u32, idx: u32, v: u32) {
+    let stride = layout.width - 1u;  // Column 0 is header
+    let x = 1u + (idx % stride);
+    let y = row_start + (idx / stride);
+    var p = pixel_at(x, y);
+    p.r = v;
+    set_pixel(x, y, p);
+}
+
+// Execute OP_MATMUL instruction (matrix multiply)
+fn exec_matmul(instr: vec4<u32>) {
+    let row_a = instr.g;  // ARG0 - A matrix row
+    let row_b = instr.b;  // ARG1 - B matrix row
+    let row_c = instr.a;  // ARG2 - C matrix row (output)
+
+    // Bounds check
+    if (row_a >= layout.height || row_b >= layout.height || row_c >= layout.height) {
+        return;  // Out of bounds, skip
+    }
+
+    // Read matrix shapes
+    let a_shape = read_shape(row_a);  // (cols, rows) = (K, M)
+    let b_shape = read_shape(row_b);  // (cols, rows) = (N, K)
+
+    let K = a_shape.x;  // Inner dimension
+    let M = a_shape.y;  // Output rows
+    let N = b_shape.x;  // Output cols
+
+    // Validate inner dimension
+    if (b_shape.y != K) {
+        return;  // Invalid shapes for multiplication
+    }
+
+    // Write output shape header at row_c
+    var hdr = pixel_at(0u, row_c);
+    hdr.r = N & 0xFFu;         // cols_low
+    hdr.g = (N >> 8u) & 0xFFu; // cols_high
+    hdr.b = M & 0xFFu;         // rows_low
+    hdr.a = (M >> 8u) & 0xFFu; // rows_high
+    set_pixel(0u, row_c, hdr);
+
+    // Compute C = A @ B
+    // C[m,n] = sum_k A[m,k] * B[k,n]
+    for (var m: u32 = 0u; m < M; m = m + 1u) {
+        for (var n: u32 = 0u; n < N; n = n + 1u) {
+            var acc: u32 = 0u;
+
+            for (var k: u32 = 0u; k < K; k = k + 1u) {
+                let a_idx = m * K + k;
+                let b_idx = k * N + n;
+
+                let a_val = get_matrix_val(row_a, a_idx);
+                let b_val = get_matrix_val(row_b, b_idx);
+
+                acc = acc + (a_val * b_val);
+            }
+
+            // Clamp to uint8 range
+            let clamped = min(acc, 255u);
+
+            let c_idx = m * N + n;
+            set_matrix_val(row_c, c_idx, clamped);
+        }
+    }
+}
+
 // Main interpreter entry point
 // Executes instruction pixels from row 0, left to right
 @compute @workgroup_size(1, 1, 1)
@@ -191,8 +274,9 @@ fn run_program() {
             exec_add(instr);
         } else if (opcode == OP_RELU) {
             exec_relu(instr);
+        } else if (opcode == OP_MATMUL) {
+            exec_matmul(instr);
         }
-        // OP_MATMUL reserved for future
 
         // Advance PC
         pc_x = pc_x + 1u;
