@@ -1,3 +1,111 @@
+#!/usr/bin/env python3
+"""
+pixel_llm/build_corpus.py
+
+Build training corpus for Pixel-LLM from multiple sources.
+
+This script merges text files from raw/ directory into a single
+clean corpus for training.
+
+Usage:
+    # Place .txt files in pixel_llm/data/raw/
+    python3 pixel_llm/build_corpus.py
+
+    # Result: pixel_llm/data/pxos_corpus.txt
+"""
+
+from pathlib import Path
+import re
+
+
+def clean_text(text: str) -> str:
+    """
+    Clean and normalize text.
+
+    - Normalize line endings
+    - Collapse multiple blank lines
+    - Strip trailing whitespace
+    """
+    # Normalize line endings
+    text = text.replace('\r\n', '\n')
+
+    # Collapse multiple blank lines (keep max 2)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # Strip trailing whitespace on each line
+    lines = [line.rstrip() for line in text.split('\n')]
+    text = '\n'.join(lines)
+
+    return text.strip() + '\n\n'
+
+
+def build_corpus(
+    raw_dir: Path = Path("pixel_llm/data/raw"),
+    output_path: Path = Path("pixel_llm/data/pxos_corpus.txt")
+):
+    """
+    Build corpus from raw text files.
+
+    Args:
+        raw_dir: Directory containing .txt files
+        output_path: Output corpus file
+    """
+    print("=" * 70)
+    print(" BUILDING TRAINING CORPUS")
+    print("=" * 70)
+    print()
+
+    # Ensure directories exist
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Collect all .txt files
+    txt_files = sorted(raw_dir.glob("*.txt"))
+
+    if not txt_files:
+        print(f"WARNING: No .txt files found in {raw_dir}")
+        print("Creating a minimal corpus from defaults...")
+        # We'll create a default corpus below
+        txt_files = []
+
+    # Merge files
+    parts = []
+    total_chars = 0
+
+    for txt_file in txt_files:
+        print(f"Reading: {txt_file.name}")
+        try:
+            content = txt_file.read_text(encoding='utf-8', errors='ignore')
+            cleaned = clean_text(content)
+            parts.append(cleaned)
+            total_chars += len(cleaned)
+            print(f"  Added {len(cleaned):,} chars")
+        except Exception as e:
+            print(f"  ERROR: {e}")
+
+    # If no files, create default corpus from pxOS concepts
+    if not parts:
+        print("\nCreating default pxOS corpus...")
+        default_corpus = create_default_corpus()
+        parts.append(default_corpus)
+        total_chars = len(default_corpus)
+
+    # Write combined corpus
+    final_corpus = ''.join(parts)
+    output_path.write_text(final_corpus, encoding='utf-8')
+
+    print()
+    print(f"Corpus written: {output_path}")
+    print(f"  Total size: {len(final_corpus):,} characters")
+    print(f"  Total files: {len(txt_files)} source files")
+    print()
+    print("=" * 70)
+    print()
+
+
+def create_default_corpus() -> str:
+    """Create a default corpus about pxOS and computing concepts."""
+    return """
 Pixel Operating System
 
 pxOS is a pixel-native operating system where programs are stored as PNG images.
@@ -129,3 +237,16 @@ Discussion happens in the open. Transparency enables contribution.
 Versioning tracks evolution over time. Semantic versions mark compatibility boundaries.
 Tags capture milestone releases. Branches explore alternatives. Git history preserves
 development narrative. Version control is infrastructure.
+
+""".strip()
+
+
+def main():
+    """Build corpus from command line."""
+    build_corpus()
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

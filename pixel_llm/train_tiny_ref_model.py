@@ -25,38 +25,18 @@ import numpy as np
 from pathlib import Path
 from typing import List, Tuple
 
-# Training hyperparameters
-HIDDEN_DIM = 128
-LEARNING_RATE = 0.01
-EPOCHS = 100
-BATCH_SIZE = 32
-SEQUENCE_LENGTH = 20
+# Training hyperparameters (v0.4.0 - Production Model)
+HIDDEN_DIM = 256          # Increased from 128 for better capacity
+BASE_LEARNING_RATE = 0.003  # Starting LR
+MIN_LEARNING_RATE = 0.0003  # Minimum LR after decay
+LR_DECAY_STEPS = 100      # Decay every N epochs
+LR_DECAY_GAMMA = 0.7      # Multiply LR by this factor
+EPOCHS = 500              # Longer training for better quality
+BATCH_SIZE = 64           # Bigger batches
+SEQUENCE_LENGTH = 40      # Longer context for better patterns
 
-# Simple training corpus - famous quotes and simple sentences
-TRAINING_CORPUS = """
-The meaning of life is to find your gift.
-The purpose of life is to give it away.
-To be or not to be, that is the question.
-All the world is a stage.
-Knowledge is power.
-Time is money.
-Practice makes perfect.
-Actions speak louder than words.
-Where there is a will, there is a way.
-The early bird catches the worm.
-Better late than never.
-A journey of a thousand miles begins with a single step.
-Hope for the best, prepare for the worst.
-When in Rome, do as the Romans do.
-The pen is mightier than the sword.
-All good things come to those who wait.
-Fortune favors the bold.
-The best time to plant a tree was twenty years ago.
-The second best time is now.
-You miss one hundred percent of the shots you do not take.
-Life is what happens when you are busy making other plans.
-In the end, we only regret the chances we did not take.
-"""
+# Default corpus path
+DEFAULT_CORPUS_PATH = Path(__file__).parent / "data" / "pxos_corpus.txt"
 
 # Character vocabulary (same as generate_text.py)
 VOCAB = list(" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,;:!?'-\n")
@@ -234,29 +214,35 @@ def backward_pass(
 def train_model(
     corpus: str,
     hidden_dim: int = HIDDEN_DIM,
-    learning_rate: float = LEARNING_RATE,
+    base_lr: float = BASE_LEARNING_RATE,
+    min_lr: float = MIN_LEARNING_RATE,
+    lr_decay_steps: int = LR_DECAY_STEPS,
+    lr_decay_gamma: float = LR_DECAY_GAMMA,
     epochs: int = EPOCHS,
     batch_size: int = BATCH_SIZE,
     seq_len: int = SEQUENCE_LENGTH
 ):
     """
-    Train a tiny character-level language model.
+    Train a character-level language model (v0.4.0 - Production Model).
 
     Args:
         corpus: Training text
         hidden_dim: Hidden layer dimension
-        learning_rate: Learning rate for SGD
+        base_lr: Base learning rate (will decay)
+        min_lr: Minimum learning rate after decay
+        lr_decay_steps: Decay LR every N epochs
+        lr_decay_gamma: Multiply LR by this factor on decay
         epochs: Number of training epochs
         batch_size: Batch size
         seq_len: Sequence length for context
     """
     print("=" * 70)
-    print(" TRAINING TINY REFERENCE MODEL")
+    print(" TRAINING PRODUCTION MODEL (v0.4.0)")
     print("=" * 70)
     print()
     print(f"Hidden dim: {hidden_dim}")
     print(f"Vocab size: {VOCAB_SIZE}")
-    print(f"Learning rate: {learning_rate}")
+    print(f"Base LR: {base_lr} → {min_lr}")
     print(f"Epochs: {epochs}")
     print(f"Batch size: {batch_size}")
     print(f"Sequence length: {seq_len}")
@@ -290,9 +276,11 @@ def train_model(
     print(f"  b_out: {b_out.shape}")
     print()
 
-    # Training loop
+    # Training loop with LR decay
     print("Training...")
     print("-" * 70)
+
+    learning_rate = base_lr
 
     for epoch in range(epochs):
         # Shuffle sequences
@@ -342,8 +330,16 @@ def train_model(
 
         avg_loss = total_loss / num_batches
 
-        if (epoch + 1) % 10 == 0:
-            print(f"Epoch {epoch+1:3d}/{epochs} - Loss: {avg_loss:.4f}")
+        # Learning rate decay
+        if (epoch + 1) % lr_decay_steps == 0:
+            old_lr = learning_rate
+            learning_rate = max(min_lr, learning_rate * lr_decay_gamma)
+            if old_lr != learning_rate:
+                print(f"Epoch {epoch+1:3d}/{epochs} - Loss: {avg_loss:.4f} - LR: {learning_rate:.6f} (decayed)")
+
+        # Progress logging
+        if (epoch + 1) % 20 == 0:
+            print(f"Epoch {epoch+1:3d}/{epochs} - Loss: {avg_loss:.4f} - LR: {learning_rate:.6f}")
 
     print("-" * 70)
     print()
@@ -358,12 +354,34 @@ def train_model(
 
 
 def main():
-    """Train and save tiny reference model."""
+    """Train and save production model (v0.4.0)."""
+    # Load corpus
+    corpus_path = DEFAULT_CORPUS_PATH
+
+    if not corpus_path.exists():
+        print("=" * 70)
+        print(" ERROR: Training corpus not found")
+        print("=" * 70)
+        print()
+        print(f"Expected: {corpus_path}")
+        print()
+        print("To create the corpus, run:")
+        print("  python3 pixel_llm/build_corpus.py")
+        print()
+        print("Or place .txt files in pixel_llm/data/raw/ and run build_corpus.py")
+        print()
+        return 1
+
+    print(f"Loading corpus from: {corpus_path}")
+    corpus = corpus_path.read_text(encoding='utf-8')
+    print(f"  Corpus size: {len(corpus):,} characters")
+    print()
+
     # Train model
-    weights = train_model(TRAINING_CORPUS)
+    weights = train_model(corpus)
 
     # Save weights
-    output_path = Path(__file__).parent / "models" / "tiny_ref.npz"
+    output_path = Path(__file__).parent / "models" / "tiny_ref_prod.npz"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"Saving weights to: {output_path}")
@@ -378,8 +396,8 @@ def main():
     print("=" * 70)
     print()
     print("Next steps:")
-    print("  1. Export to pixels: python3 pixel_llm/export_to_pixels.py")
-    print("  2. Generate text: python3 -m pxvm.examples.generate_text --program pixel_llm/programs/tiny_ref.pxi")
+    print("  1. Export to pixels: python3 pixel_llm/export_to_pixels.py --model models/tiny_ref_prod.npz")
+    print("  2. Generate text: python3 -m pxvm.examples.generate_text --program pixel_llm/programs/tiny_ref_prod.pxi")
     print()
 
     return 0
