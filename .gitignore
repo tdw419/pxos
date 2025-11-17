@@ -16,3 +16,4 @@ pxvm/examples/matmul_test.pxi
 
 # Pixel-LLM pxVM program (regenerated from weights)
 pixel_llm/programs/pixellm_forward.pxi
+training_output.log
