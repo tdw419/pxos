@@ -40,6 +40,17 @@ class AgentType(Enum):
     AUTO = "auto"            # System decides
 
 
+class TaskAction(Enum):
+    """Standard task actions"""
+    WRITE_FILE = "write_file"
+    EDIT_FILE = "edit_file"
+    REVIEW = "review"
+    TEST = "test"
+    WORLD_REBUILD = "world_rebuild"  # Rebuild entire pxOS from spec
+    ARCHITECTURE_CHANGE = "architecture_change"  # Propose new architecture
+    MIGRATION = "migration"  # Migrate code to new architecture
+
+
 @dataclass
 class Task:
     """Represents a single development task"""
@@ -351,6 +362,165 @@ def complete_task(task_id: str, result: Dict = None):
 def fail_task(task_id: str, error: str):
     """Mark task as failed"""
     return get_queue().fail_task(task_id, error)
+
+
+# Evolution task helpers
+
+def create_world_rebuild_task(
+    target_version: str,
+    parent_cartridge: str,
+    reason: str,
+    template_path: str = "templates/pxos_world_template.yaml",
+    priority: int = 100
+) -> str:
+    """
+    Create a WORLD_REBUILD task for LLM-driven system rebuild.
+
+    This is the "start over" mechanism - build a fresh pxOS from Genesis spec.
+
+    Args:
+        target_version: Version for new cartridge (e.g., "1.1.0")
+        parent_cartridge: Current cartridge to base on
+        reason: Why we're rebuilding
+        template_path: World template specification
+        priority: Task priority (default 100 = very high)
+
+    Returns:
+        Task ID
+    """
+    return add_task({
+        "title": f"Rebuild pxOS v{target_version}",
+        "description": f"""
+Rebuild entire pxOS system from Genesis specification.
+
+Reason: {reason}
+
+Steps:
+1. Create fresh workspace (/tmp/pxos_world_build_{target_version})
+2. Load Genesis spec + world template
+3. Generate all core modules via LLM coaching
+4. Run tests and validate Genesis compliance
+5. Pack into cartridge: pxos_v{target_version}.pxa
+6. Register as experimental cartridge
+
+Parent: {parent_cartridge}
+Template: {template_path}
+
+This task must:
+- Satisfy all Genesis requirements
+- Pass all tests before promotion
+- Preserve evolution history
+        """.strip(),
+        "action": "world_rebuild",
+        "priority": priority,
+        "preferred_agent": AgentType.LOCAL_LLM,
+        "phase": "evolution",
+        "metadata": {
+            "target_version": target_version,
+            "parent_cartridge": parent_cartridge,
+            "template_path": template_path,
+            "reason": reason,
+            "workspace": f"/tmp/pxos_world_build_{target_version}",
+            "target_cartridge": f"pxos_v{target_version.replace('.', '_')}.pxa"
+        }
+    })
+
+
+def create_architecture_change_task(
+    change_description: str,
+    affected_modules: List[str],
+    priority: int = 80
+) -> str:
+    """
+    Create a task for proposing architectural changes.
+
+    LLM proposes a new way of doing something (e.g., "replace PixelFS with PixelDB").
+
+    Args:
+        change_description: What to change and why
+        affected_modules: Modules that would be modified
+        priority: Task priority (default 80 = high)
+
+    Returns:
+        Task ID
+    """
+    return add_task({
+        "title": f"Architecture change: {change_description[:50]}...",
+        "description": f"""
+Propose architectural improvement to pxOS.
+
+Change: {change_description}
+
+Affected modules:
+{chr(10).join(f'  - {m}' for m in affected_modules)}
+
+Deliverables:
+1. Design document explaining the change
+2. Migration plan
+3. Proof-of-concept implementation
+4. Test results comparing old vs new
+
+Must maintain Genesis compliance.
+        """.strip(),
+        "action": "architecture_change",
+        "priority": priority,
+        "preferred_agent": AgentType.GEMINI,  # Architecture review by Gemini
+        "phase": "evolution",
+        "metadata": {
+            "change_description": change_description,
+            "affected_modules": affected_modules
+        }
+    })
+
+
+def create_migration_task(
+    from_architecture: str,
+    to_architecture: str,
+    migration_plan_path: str,
+    priority: int = 90
+) -> str:
+    """
+    Create a task for migrating from one architecture to another.
+
+    Args:
+        from_architecture: Current implementation description
+        to_architecture: Target implementation description
+        migration_plan_path: Path to migration plan document
+        priority: Task priority (default 90 = very high)
+
+    Returns:
+        Task ID
+    """
+    return add_task({
+        "title": f"Migrate: {from_architecture} → {to_architecture}",
+        "description": f"""
+Migrate pxOS from one architecture to another.
+
+From: {from_architecture}
+To: {to_architecture}
+
+Migration plan: {migration_plan_path}
+
+Steps:
+1. Execute migration plan
+2. Update all affected modules
+3. Maintain backward compatibility (if possible)
+4. Run full test suite
+5. Validate Genesis compliance
+6. Pack new cartridge
+
+This is a critical task - test thoroughly!
+        """.strip(),
+        "action": "migration",
+        "priority": priority,
+        "preferred_agent": AgentType.AUTO,
+        "phase": "evolution",
+        "metadata": {
+            "from_architecture": from_architecture,
+            "to_architecture": to_architecture,
+            "migration_plan": migration_plan_path
+        }
+    })
 
 
 # CLI for testing

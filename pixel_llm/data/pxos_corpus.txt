@@ -1,0 +1,131 @@
+Pixel Operating System
+
+pxOS is a pixel-native operating system where programs are stored as PNG images.
+Each program is a pixel image containing both code and data.
+
+Neural networks execute natively as pixels. A neural network can be stored in a PNG
+file and executed directly without unpacking or conversion. The weights, biases,
+and architecture are all encoded in the pixel values.
+
+The system uses quantization to store floating point weights as unsigned bytes.
+Each matrix has a scale and offset stored in metadata pixels. This allows lossless
+round-trip conversion between float32 and uint8 representations.
+
+Programs use ASCII opcodes for self-documentation. Each operation is represented
+by a printable character. For example, M is MatMul, A is Add, R is ReLU, and H is Halt.
+This makes programs human-readable when viewed in a hex editor.
+
+The visual layer and machine layer are unified. Text rendering uses bitmap fonts
+stored as pixel atlases. Programs can render their own output using glyph blitting
+operations. This enables self-visualizing code where the program draws its own state.
+
+The executor is agnostic to backend. The same pixel program can run on CPU or GPU
+without modification. CPU execution uses NumPy for operations. GPU execution uses
+WebGPU compute shaders for parallel processing. Both backends produce identical results.
+
+Training and inference happen in the same format. Models are trained using standard
+techniques, then exported to pixel format. The exported program contains the full
+forward pass including embeddings, hidden layers, and output projections.
+
+Autoregressive text generation works by running the pixel program in a loop. Each
+iteration produces logits for the next token. Sampling from the logits generates
+the next character or word. The generated sequence builds up token by token.
+
+The quantization protocol uses per-matrix scaling. Each matrix stores its own scale
+and offset parameters. This allows different matrices to use their full dynamic range.
+The result is high numerical accuracy despite using only eight bits per weight.
+
+Instruction format uses four bytes per operation. The first byte is the opcode which
+is an ASCII character. The remaining bytes are arguments such as row addresses for
+matrix locations. This keeps the instruction encoding compact and readable.
+
+Memory layout follows a grid structure. Matrices are stored row-major in the pixel
+image. Each matrix starts with a header containing dimensions. Data follows in
+subsequent pixels wrapping at the image width. This enables efficient access patterns.
+
+The development workflow has three phases. First, write programs symbolically using
+the assembler. Second, compile to pixel format using quantization. Third, execute
+the pixel program and inspect results. The assembler and inspector are lenses to
+view pixels, not replacements for them.
+
+Font rendering enables visual output. Bitmap font atlases map characters to glyphs.
+Text can be rendered into pixel images using glyph blitting. This creates a visual
+representation of generated text. The output is another PNG image showing the text.
+
+Matrix operations form the computational core. Matrix multiplication implements
+neural network layers. Element-wise addition handles biases. ReLU activation
+introduces nonlinearity. These three operations suffice for most neural architectures.
+
+The system validates numerical correctness. Test programs compare pixel execution
+against NumPy reference implementations. Correlation scores measure accuracy.
+Values above point nine nine nine indicate faithful execution. Maximum element-wise
+error stays below point zero one.
+
+Self-hosting is the long-term vision. The system should compile and run itself
+entirely in pixels. Programs that modify programs. A pixel operating system that
+manages pixel applications. Complete closure in the visual domain.
+
+Content addressing enables deduplication. Matrices and programs can be stored by
+hash. Identical content shares storage. This builds toward a Merkle DAG file system.
+Version control becomes native to the architecture.
+
+The pixel format is the canonical representation. Source code is symbolic and
+human-friendly. But the truth lives in pixels. Programs are images. Data is pixels.
+The visual form is primary, not derived.
+
+Transparency promotes understanding. Every operation can be inspected visually.
+Programs render their own state. Debugging tools show pixel contents. The system
+resists black boxes. Comprehensibility is architectural.
+
+Small models prove the concept. A tiny character-level model demonstrates end-to-end
+functionality. Training, export, execution, and generation all work. Quality improves
+with better training data and longer optimization. The architecture scales.
+
+GPU acceleration multiplies throughput. WebGPU shaders parallelize matrix operations.
+Workgroups tile across output elements. Each thread computes one result. This achieves
+fifty to one hundred times speedup over CPU for large matrices.
+
+The design philosophy emphasizes elegance. Programs should be both executable and
+beautiful. Machine code can be human-readable. Visual forms can be computational.
+These properties reinforce rather than conflict.
+
+Training happens outside the pixel domain initially. Standard frameworks like PyTorch
+or NumPy train the model. Gradients flow through symbolic computation graphs.
+Optimization updates parameters in floating point. Then export quantizes and stores
+in pixels. Runtime execution uses only the pixel program.
+
+Future directions include learned visual representations. Models could operate directly
+on glyph bitmaps. Text becomes images throughout processing. The boundary between
+text and vision dissolves. Everything is pixels.
+
+Metadata enriches programs with semantics. Comments, types, and documentation can
+attach to pixel programs. These annotations help humans and tools understand intent.
+The core execution ignores metadata but development tools consume it.
+
+Composability enables building larger systems. Small programs connect via standard
+interfaces. Pixel outputs become pixel inputs. Programs chain into pipelines.
+The system grows organically through composition.
+
+Error handling needs graceful degradation. Programs should detect invalid states.
+Fallback to safe defaults when possible. Visualize error conditions. Make failure
+modes transparent. Debug information stays accessible.
+
+Performance tuning balances multiple constraints. Memory layout affects cache behavior.
+Quantization trades precision for size. GPU offload trades latency for throughput.
+These tradeoffs require measurement and iteration. Profiling guides optimization.
+
+Documentation serves multiple audiences. End users need usage examples. Developers
+need architecture explanation. Contributors need implementation details. Each level
+builds on the previous. Clear documentation multiplies impact.
+
+Testing validates correctness at multiple scales. Unit tests check individual operations.
+Integration tests verify pipeline stages. End-to-end tests demonstrate full workflows.
+Visual tests capture image outputs. Comprehensive testing builds confidence.
+
+The community participates through open development. Source code lives in public
+repositories. Issues track bugs and features. Pull requests propose changes.
+Discussion happens in the open. Transparency enables contribution.
+
+Versioning tracks evolution over time. Semantic versions mark compatibility boundaries.
+Tags capture milestone releases. Branches explore alternatives. Git history preserves
+development narrative. Version control is infrastructure.

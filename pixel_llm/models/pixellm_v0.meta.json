@@ -1,0 +1,80 @@
+{
+  "model_name": "pixellm_v0",
+  "version": "0.0.1",
+  "architecture": {
+    "type": "mlp",
+    "vocab_size": 1024,
+    "model_dim": 128,
+    "layers": [
+      "embed",
+      "hidden",
+      "out"
+    ]
+  },
+  "image_path": "pixellm_v0.pxi",
+  "image_width": 306,
+  "image_height": 305,
+  "total_bytes": 279681,
+  "total_params": 279680,
+  "quantization": "uint8_per_tensor",
+  "tensors": [
+    {
+      "name": "b_hidden",
+      "shape": [
+        128
+      ],
+      "dtype": "float32",
+      "w_min": -0.05187923088669777,
+      "w_max": 0.12857797741889954,
+      "offset": 0,
+      "length": 128
+    },
+    {
+      "name": "b_out",
+      "shape": [
+        1024
+      ],
+      "dtype": "float32",
+      "w_min": -0.0021758289076387882,
+      "w_max": 0.42487990856170654,
+      "offset": 128,
+      "length": 1024
+    },
+    {
+      "name": "embed",
+      "shape": [
+        1024,
+        128
+      ],
+      "dtype": "float32",
+      "w_min": -0.1939697563648224,
+      "w_max": 0.22129061818122864,
+      "offset": 1152,
+      "length": 131072
+    },
+    {
+      "name": "hidden",
+      "shape": [
+        128,
+        128
+      ],
+      "dtype": "float32",
+      "w_min": -0.6019114851951599,
+      "w_max": 0.5731120705604553,
+      "offset": 132224,
+      "length": 16384
+    },
+    {
+      "name": "out",
+      "shape": [
+        128,
+        1024
+      ],
+      "dtype": "float32",
+      "w_min": -0.6161069869995117,
+      "w_max": 0.6241595149040222,
+      "offset": 148608,
+      "length": 131072
+    }
+  ]
+}

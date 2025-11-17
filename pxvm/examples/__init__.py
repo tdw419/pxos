@@ -1,5 +1,9 @@
 """
 pxVM Examples
 
-Quick start examples and demonstrations.
+Example pxVM programs and quick start demonstrations.
+
+Includes:
+- Opcode-based pxVM programs
+- LM Studio learning loop demonstrations
 """

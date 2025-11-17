@@ -1,14 +1,16 @@
 """
-pxVM: Self-Expanding Pixel Networks
+pxVM - Pixel Virtual Machine
 
-Version 0.5.0 - The Learning Loop
+A dual-purpose system combining:
+1. Core pxVM (v0.0.1): Programs, data, and results encoded as pixels
+2. LM Studio Learning Networks (v0.5.0): Self-expanding pixel knowledge
 
-A self-contained learning system where:
-- LM Studio LLM generates knowledge
-- Knowledge gets pixelated and stored as PNG files
-- Network reads its own pixels for context
-- System gets smarter with every interaction
+Core principle: Computation happens *inside* the image.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"  # Combined version
 __author__ = "pxOS Contributors"
+
+# The pxVM system has two complementary subsystems:
+# - core: Opcode-based pixel virtual machine
+# - integration: LM Studio self-expanding learning networks

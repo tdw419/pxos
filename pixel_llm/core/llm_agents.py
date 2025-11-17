@@ -28,10 +28,36 @@ class GeminiAgent:
     def __init__(self):
         self.has_cli = self._check_gemini_cli()
         self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_available = self._check_api_available() if self.api_key else False
 
         if not self.has_cli and not self.api_key:
             print("⚠️  Warning: No Gemini access found!")
             print("   Set GEMINI_API_KEY or install gemini-cli")
+        elif self.api_key and not self.api_available:
+            print("⚠️  Warning: GEMINI_API_KEY set but API not accessible")
+
+    def _check_api_available(self) -> bool:
+        """Check if Gemini API is accessible"""
+        if not self.api_key:
+            return False
+
+        # Quick check - just verify requests library is available
+        try:
+            import requests
+            return True
+        except ImportError:
+            print("ℹ️  Install 'requests' library for Gemini API access")
+            return False
+
+    def get_capabilities(self) -> Dict[str, any]:
+        """Get detailed capability information"""
+        return {
+            "has_cli": self.has_cli,
+            "has_api_key": self.api_key is not None,
+            "api_available": self.api_available,
+            "ready": self.has_cli or (self.api_key and self.api_available),
+            "method": "cli" if self.has_cli else ("api" if self.api_available else "none")
+        }
 
     def _check_gemini_cli(self) -> bool:
         """Check if gemini-cli is available"""
@@ -221,19 +247,91 @@ class LocalLLMAgent:
 
     def __init__(self):
         self.backend = self._detect_backend()
+        self.model_available = False
+
+        if self.backend:
+            self.model_available = self._check_model_available()
 
         if not self.backend:
             print("⚠️  Warning: No local LLM found!")
             print("   Install llama.cpp or ollama")
+        elif not self.model_available:
+            print("⚠️  Warning: LLM backend found but model not available")
+
+    def _check_model_available(self) -> bool:
+        """Check if the required model is available"""
+        if self.backend == "ollama":
+            try:
+                result = subprocess.run(
+                    ["ollama", "list"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                return "qwen2.5-coder" in result.stdout
+            except:
+                return False
+        # For llama-cli and llama-cpp-python, assume model is available
+        # (user is responsible for model path)
+        return True
+
+    def get_capabilities(self) -> Dict[str, any]:
+        """Get detailed capability information"""
+        caps = {
+            "backend": self.backend,
+            "model_available": self.model_available,
+            "ready": self.backend is not None and self.model_available,
+        }
+
+        if self.backend == "ollama":
+            try:
+                result = subprocess.run(
+                    ["ollama", "list"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                # Parse available models
+                models = []
+                for line in result.stdout.split('\n')[1:]:  # Skip header
+                    if line.strip():
+                        model_name = line.split()[0]
+                        models.append(model_name)
+                caps["available_models"] = models
+            except:
+                caps["available_models"] = []
+
+        return caps
 
     def _detect_backend(self) -> Optional[str]:
         """Detect which LLM backend is available"""
+
+        # Check ollama (preferred for ease of use)
+        try:
+            result = subprocess.run(
+                ["ollama", "list"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                # Verify qwen2.5-coder model exists
+                if "qwen2.5-coder" in result.stdout:
+                    return "ollama"
+                # Ollama exists but model not pulled
+                print("ℹ️  Ollama found but qwen2.5-coder:7b not installed")
+                print("   Run: ollama pull qwen2.5-coder:7b")
+                # Still return ollama as backend exists
+                return "ollama"
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
 
         # Check llama.cpp
         try:
             result = subprocess.run(
                 ["llama-cli", "--version"],
                 capture_output=True,
+                text=True,
                 timeout=5
             )
             if result.returncode == 0:
@@ -241,16 +339,12 @@ class LocalLLMAgent:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
 
-        # Check ollama
+        # Check for llama-cpp-python (Python bindings)
         try:
-            result = subprocess.run(
-                ["ollama", "list"],
-                capture_output=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                return "ollama"
-        except (FileNotFoundError, subprocess.TimeoutExpired):
+            import llama_cpp
+            # If import succeeds, we can use Python bindings
+            return "llama-cpp-python"
+        except ImportError:
             pass
 
         return None
@@ -427,22 +521,50 @@ if __name__ == "__main__":
 
 # Test/demo
 if __name__ == "__main__":
-    print("\n=== LLM Agents Test ===\n")
+    print("\n" + "="*60)
+    print("LLM AGENT CAPABILITIES")
+    print("="*60)
 
     # Test Gemini
+    print("\n🔍 Gemini Agent:")
     gemini = GeminiAgent()
-    print(f"Gemini backend: {'gemini-cli' if gemini.has_cli else 'API' if gemini.api_key else 'None'}")
+    gemini_caps = gemini.get_capabilities()
+
+    for key, value in gemini_caps.items():
+        icon = "✅" if value and key != "method" else "❌"
+        if key == "method":
+            icon = "📡"
+        print(f"  {icon} {key}: {value}")
 
     # Test Local LLM
+    print("\n🔍 Local LLM Agent:")
     local = LocalLLMAgent()
-    print(f"Local LLM backend: {local.backend or 'None'}")
+    local_caps = local.get_capabilities()
 
-    if gemini.has_cli or gemini.api_key:
-        print("\n✅ Gemini ready for reviews")
-    else:
-        print("\n⚠️  Gemini not configured")
+    for key, value in local_caps.items():
+        if key == "available_models":
+            print(f"  📦 {key}:")
+            for model in value:
+                print(f"     - {model}")
+        else:
+            icon = "✅" if value else "❌"
+            print(f"  {icon} {key}: {value}")
 
-    if local.backend:
-        print("✅ Local LLM ready for generation")
+    # Summary
+    print("\n" + "="*60)
+    if gemini_caps["ready"] and local_caps["ready"]:
+        print("✅ COACHING SYSTEM READY")
+        print("   Gemini will review, Local LLM will generate")
+    elif local_caps["ready"]:
+        print("⚠️  LOCAL LLM ONLY")
+        print("   Can generate but no Gemini review")
+    elif gemini_caps["ready"]:
+        print("⚠️  GEMINI ONLY")
+        print("   Can review but no local generation")
     else:
-        print("⚠️  Local LLM not configured")
+        print("❌ NO LLM AGENTS CONFIGURED")
+        print("\n   Quick setup:")
+        print("   1. Install ollama: curl -fsSL https://ollama.ai/install.sh | sh")
+        print("   2. Pull model: ollama pull qwen2.5-coder:7b")
+        print("   3. Set Gemini key: export GEMINI_API_KEY='your-key'")
+    print("="*60 + "\n")

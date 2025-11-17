@@ -1,0 +1,208 @@
+# pxOS World Template
+# Blueprint for building a complete pxOS implementation from Genesis spec
+
+metadata:
+  template_version: "1.0"
+  genesis_version: "1.0"
+  description: "Genesis implementation of pxOS - pixel-native, archive-based system"
+
+# Core modules that MUST exist
+core_modules:
+  storage:
+    - path: pixel_llm/core/pixelfs.py
+      description: "Pixel-based file system - store data as RGB pixels"
+      min_lines: 200
+      required_classes: [PixelFileHeader, PixelFS]
+      required_functions: [write, read, list_files, get_info]
+      genesis_requirements: ["§1: Pixel Substrate", "§2: Archive Format"]
+
+  spatial:
+    - path: pixel_llm/core/infinite_map.py
+      description: "Theoretically infinite 2D pixel space with sparse storage"
+      min_lines: 200
+      required_classes: [Tile, QuadTreeNode, InfiniteMap]
+      required_functions: [get_pixel, set_pixel, write_region, read_region]
+      genesis_requirements: ["§1: Pixel Substrate"]
+
+  execution:
+    - path: pixel_llm/core/pixel_vm.py
+      description: "Virtual machine for executing pixel bytecode"
+      min_lines: 150
+      required_classes: [PixelVM]
+      required_functions: [execute, load_program]
+      genesis_requirements: ["§4: Hypervisor Contract"]
+
+    - path: pixel_llm/core/hypervisor.py
+      description: "Stable execution API that all implementations must satisfy"
+      min_lines: 200
+      required_classes: [PxOSHypervisorAPI, Hypervisor]
+      required_functions: [run_program, inspect_self, validate_genesis]
+      genesis_requirements: ["§4: Hypervisor Contract", "§6: Sandbox Testing"]
+
+  archive:
+    - path: pixel_llm/core/pixel_archive.py
+      description: "Pack and unpack pixel archives (.pxa files)"
+      min_lines: 150
+      required_classes: [PixelArchive, PixelArchiveReader]
+      required_functions: [pack, unpack, list_files]
+      genesis_requirements: ["§2: Archive-Based Distribution"]
+
+    - path: pixel_llm/core/pxos_archive_loader.py
+      description: "Import system for loading Python from pixel archives"
+      min_lines: 100
+      required_functions: [install_archive_importer, PixelArchiveImporter]
+      genesis_requirements: ["§2: Archive-Based Distribution"]
+
+  management:
+    - path: pixel_llm/core/cartridge_manager.py
+      description: "Version management for pxOS cartridges"
+      min_lines: 200
+      required_classes: [CartridgeManager]
+      required_functions: [register_cartridge, promote_cartridge, rollback_to]
+      genesis_requirements: ["§3: No Silent Deletion", "§7: Transparent Evolution"]
+
+    - path: pixel_llm/core/task_queue.py
+      description: "Task queue for coaching and development"
+      min_lines: 200
+      required_classes: [Task, TaskQueue]
+      required_functions: [add_task, get_next_task, complete_task]
+      genesis_requirements: ["§10: Coaching and Evolution"]
+
+# GPU/Graphics modules (optional but recommended)
+optional_modules:
+  gpu:
+    - path: pixel_llm/core/gpu_interface.py
+      description: "WGSL GPU interface for pixel operations"
+      min_lines: 100
+      genesis_requirements: ["§5: GPU-Native Eventually"]
+
+# Test suite requirements
+test_suite:
+  unit_tests:
+    - path: pixel_llm/tests/test_pixelfs_basic.py
+      description: "Unit tests for PixelFS"
+      min_tests: 10
+      min_coverage: 50
+
+    - path: pixel_llm/tests/test_infinite_map.py
+      description: "Unit tests for InfiniteMap"
+      min_tests: 20
+      min_coverage: 80
+
+    - path: pixel_llm/tests/test_task_queue.py
+      description: "Unit tests for TaskQueue"
+      min_tests: 20
+      min_coverage: 70
+
+  genesis_tests:
+    - path: pixel_llm/tests/genesis/test_genesis_compliance.py
+      description: "Verify all Genesis requirements"
+      min_tests: 12
+
+  infrastructure:
+    - path: pixel_llm/tests/run_tests.sh
+      description: "Professional test runner with coverage"
+
+    - path: pytest.ini
+      description: "Pytest configuration"
+
+# External dependencies (Python packages)
+dependencies:
+  required:
+    - numpy
+    - pillow
+
+  optional:
+    - wgpu  # For GPU operations
+    - pytest
+    - pytest-cov
+
+# Build and pack requirements
+build:
+  entry_points:
+    default: "pixel_llm.programs.hello_world:main"
+    coach: "pixel_llm_coach:main"
+
+  pack_script: "pack_repository.py"
+  output_format: ".pxa"
+
+  includes:
+    - "pixel_llm/**/*.py"
+    - "*.md"
+    - "templates/**/*.yaml"
+
+  excludes:
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - ".git/**"
+    - "pixel_llm/tests/**"  # Tests run before packing, not included
+
+# Quality constraints
+constraints:
+  test_coverage_min: 55  # Percentage
+  tests_must_pass: true
+  genesis_compliance: true
+
+  performance:
+    boot_time_max_seconds: 5
+    memory_max_mb: 500
+
+  code_quality:
+    max_function_lines: 100
+    max_file_lines: 600
+    docstring_coverage_min: 80
+
+# Genesis requirement mapping
+# Each section maps to Genesis spec §X
+genesis_mapping:
+  "§1: Pixel Substrate Primacy":
+    - pixelfs.py: "All data stored as RGB pixels"
+    - infinite_map.py: "2D pixel space for memory"
+
+  "§2: Archive-Based Distribution":
+    - pixel_archive.py: "Pack into .pxa"
+    - pxos_archive_loader.py: "Import from archive"
+    - pack_repository.py: "Build script"
+
+  "§3: No Silent Deletion":
+    - cartridge_manager.py: "Preserve all versions"
+
+  "§4: Hypervisor Contract":
+    - hypervisor.py: "Stable API implementation"
+
+  "§5: GPU-Native Eventually":
+    - gpu_interface.py: "Optional GPU support"
+
+  "§6: Sandbox Testing Required":
+    - hypervisor.py: "Sandbox mode"
+    - pxos_shim.py: "Test command"
+
+  "§7: Transparent Evolution":
+    - cartridge_manager.py: "Evolution log"
+    - task_queue.py: "Track changes"
+
+  "§8: No Backdoors":
+    - "No network calls without consent"
+
+  "§9: Pixel-Native Intelligence":
+    - "LLM weights storable as pixels (future)"
+
+  "§10: Coaching and Evolution":
+    - task_queue.py: "WORLD_REBUILD tasks"
+    - llm_agents.py: "LLM coaching"
+
+  "§11: Game for Good":
+    - "Open development, inspectable"
+
+  "§12: Joy and Wonder":
+    - "Beautiful pixel visualizations"
+
+# Success criteria for a valid pxOS implementation
+success_criteria:
+  - "Can boot via: python pxos_shim.py run <program>"
+  - "All tests pass"
+  - "Genesis compliance validated"
+  - "Packs into single .pxa file"
+  - "Can be promoted to 'current' status"
+  - "Preserves full version history"
+  - "Hypervisor API implemented correctly"

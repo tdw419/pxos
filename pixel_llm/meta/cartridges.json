@@ -1,0 +1,99 @@
+{
+  "current": "pxos_v1_0_0.pxa",
+  "cartridges": {
+    "pxos_v1_0_0.pxa": {
+      "version": "1.0.0",
+      "generation": 1,
+      "parent": null,
+      "created_at": "2025-11-16T00:00:00Z",
+      "built_by": "human",
+      "builder_name": "@tdw419",
+      "genesis_version": "1.0",
+      "status": "current",
+      "notes": "Genesis implementation - PixelFS + InfiniteMap + PixelVM + Archive system",
+      "metrics": {
+        "test_coverage": 55,
+        "tests_passing": 71,
+        "modules": 15,
+        "lines_of_code": 5200
+      },
+      "capabilities": [
+        "pixel_storage",
+        "infinite_map",
+        "pixel_vm",
+        "archive_system",
+        "python_from_pixels"
+      ],
+      "compliance": {
+        "genesis_v1": true,
+        "tested": true,
+        "approved_by": "tdw419",
+        "approved_at": "2025-11-16T00:00:00Z"
+      }
+    },
+    "pxos_v1_0_1.pxa": {
+      "version": "1.0.1",
+      "generation": 2,
+      "parent": "pxos_v1_0_0.pxa",
+      "created_at": "2025-11-16T22:33:29.937129+00:00",
+      "built_by": "llm",
+      "builder_name": "world_rebuilder",
+      "genesis_version": "1.0",
+      "status": "experimental",
+      "notes": "Test of world rebuild system",
+      "metrics": {
+        "build_time_seconds": 0,
+        "modules_built": 5,
+        "test_coverage": 55,
+        "tests_passed": 71
+      },
+      "capabilities": [
+        "pixel_storage",
+        "infinite_map",
+        "hypervisor"
+      ],
+      "compliance": {
+        "genesis_v1": true,
+        "tested": true,
+        "approved_by": null,
+        "approved_at": null
+      }
+    }
+  },
+  "archive_history": [
+    {
+      "from": null,
+      "to": "pxos_v1_0_0.pxa",
+      "reason": "Genesis implementation",
+      "timestamp": "2025-11-16T00:00:00Z",
+      "approved_by": "tdw419"
+    }
+  ],
+  "experiments": {
+    "pxos_v1_0_1.pxa": {
+      "registered_at": "2025-11-16T22:33:29.937135+00:00",
+      "tests_run": [
+        {
+          "timestamp": "2025-11-16T22:35:52.259761+00:00",
+          "genesis_compliant": true,
+          "results": {
+            "compliant": true,
+            "version": "1.0",
+            "violations": [],
+            "tests_passed": 3,
+            "tests_failed": 0,
+            "checks_run": 3
+          }
+        }
+      ],
+      "test_results": {}
+    }
+  },
+  "metadata": {
+    "spec_version": "1.0",
+    "last_updated": "2025-11-16T22:35:52.259778+00:00",
+    "guardians": [
+      "tdw419"
+    ]
+  }
+}
