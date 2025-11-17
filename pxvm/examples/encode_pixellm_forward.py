@@ -35,87 +35,24 @@ import numpy as np
 from PIL import Image
 
 from pxvm.core.opcodes import OP_MATMUL, OP_ADD, OP_RELU, OP_HALT
-
-
-def encode_matrix_header(cols: int, rows: int) -> np.ndarray:
-    """
-    Encode matrix shape as header pixel.
-
-    Format: (cols_low, cols_high, rows_low, rows_high)
-    """
-    return np.array([
-        cols & 0xFF,
-        (cols >> 8) & 0xFF,
-        rows & 0xFF,
-        (rows >> 8) & 0xFF,
-    ], dtype=np.uint8)
-
-
-def encode_matrix_data(
-    data: np.ndarray,
-    img: np.ndarray,
-    row_start: int,
-    quantize: bool = True,
-) -> None:
-    """
-    Encode matrix data into image starting at row_start.
-
-    Data is flattened row-major and written starting at column 1.
-    Wraps across image width to subsequent rows.
-
-    Args:
-        data: 2D numpy array (or 1D for vectors)
-        img: RGBA image array to write into
-        row_start: Starting row index
-        quantize: If True, quantize float32 to uint8 (0-255)
-    """
-    height, width, _ = img.shape
-
-    # Flatten data (row-major)
-    flat = data.flatten()
-
-    if quantize:
-        # Quantize float32 to uint8
-        # Simple linear mapping: min→0, max→255
-        data_min = flat.min()
-        data_max = flat.max()
-
-        if data_max - data_min > 0:
-            flat_q = ((flat - data_min) / (data_max - data_min) * 255).astype(np.uint8)
-        else:
-            flat_q = np.zeros_like(flat, dtype=np.uint8)
-    else:
-        flat_q = flat.astype(np.uint8)
-
-    # Write data starting at column 1, wrapping rows
-    stride = width - 1  # Column 0 is header
-
-    for i, val in enumerate(flat_q):
-        x = 1 + (i % stride)
-        y = row_start + (i // stride)
-
-        if y >= height:
-            break  # Out of space
-
-        img[y, x, 0] = val  # R channel only
-        # G, B, A remain 0
+from pxvm.utils.layout import write_matrix, calculate_image_size, allocate_rows
 
 
 def create_pixellm_forward_program(
     weights_path: Path,
     output_path: Path,
-    image_size: tuple[int, int] = (256, 256),
+    image_width: int = 256,
 ) -> None:
     """
     Create pxVM program for Pixel-LLM forward pass.
 
+    Image height is calculated automatically based on weight sizes.
+
     Args:
         weights_path: Path to pixellm_v0.npz
         output_path: Path to output .pxi program
-        image_size: (width, height) of output image
+        image_width: Width of output image (height auto-calculated)
     """
-    width, height = image_size
-
     # Load weights
     print(f"Loading weights from: {weights_path}")
     weights = np.load(weights_path)
@@ -131,60 +68,78 @@ def create_pixellm_forward_program(
     print(f"  b_out: {b_out.shape}")
     print()
 
+    # Calculate required image size
+    print("Calculating image size...")
+    matrices = {
+        'h_in': (128, 1),
+        'W_hidden': tuple(reversed(W_hidden.shape)),  # (cols, rows)
+        'b_hidden': (128, 1),
+        'h': (128, 1),
+        'W_out': tuple(reversed(W_out.shape)),
+        'b_out': (1024, 1),
+        'logits': (1024, 1),
+    }
+
+    width, height = calculate_image_size(matrices, instruction_count=6, width=image_width)
+    print(f"  Image size: {width}×{height}")
+
+    # Allocate row positions for each matrix
+    rows = allocate_rows(matrices, width=width, start_row=1)
+    print(f"  Row allocation:")
+    for name, row in rows.items():
+        print(f"    {name:12s} @ row {row}")
+    print()
+
     # Create image
     img = np.zeros((height, width, 4), dtype=np.uint8)
 
     # Row 0: Instructions
     print("Encoding instructions (row 0)...")
 
-    # Instruction sequence:
-    # 1. MATMUL: h = h_in @ W_hidden  (row 1 @ row 2 → row 4)
-    # 2. ADD: h = h + b_hidden  (row 4 + row 3 → row 4)
-    # 3. RELU: h = relu(h)  (row 4 in-place)
-    # 4. MATMUL: logits = h @ W_out  (row 4 @ row 5 → row 7)
-    # 5. ADD: logits = logits + b_out  (row 7 + row 6 → row 7)
+    # Instruction sequence using allocated rows:
+    # 1. MATMUL: h = h_in @ W_hidden
+    # 2. ADD: h = h + b_hidden
+    # 3. RELU: h = relu(h)
+    # 4. MATMUL: logits = h @ W_out
+    # 5. ADD: logits = logits + b_out
     # 6. HALT
 
-    img[0, 0] = [OP_MATMUL, 1, 2, 4]   # h = h_in @ W_hidden
-    img[0, 1] = [OP_ADD, 4, 3, 4]      # h += b_hidden
-    img[0, 2] = [OP_RELU, 4, 0, 0]     # h = relu(h)
-    img[0, 3] = [OP_MATMUL, 4, 5, 7]   # logits = h @ W_out
-    img[0, 4] = [OP_ADD, 7, 6, 7]      # logits += b_out
+    r_h_in = rows['h_in']
+    r_W_hidden = rows['W_hidden']
+    r_b_hidden = rows['b_hidden']
+    r_h = rows['h']
+    r_W_out = rows['W_out']
+    r_b_out = rows['b_out']
+    r_logits = rows['logits']
+
+    img[0, 0] = [OP_MATMUL, r_h_in, r_W_hidden, r_h]  # h = h_in @ W_hidden
+    img[0, 1] = [OP_ADD, r_h, r_b_hidden, r_h]        # h += b_hidden
+    img[0, 2] = [OP_RELU, r_h, 0, 0]                  # h = relu(h)
+    img[0, 3] = [OP_MATMUL, r_h, r_W_out, r_logits]   # logits = h @ W_out
+    img[0, 4] = [OP_ADD, r_logits, r_b_out, r_logits] # logits += b_out
     img[0, 5] = [OP_HALT, 0, 0, 0]
 
-    # Row 1: h_in placeholder (will be filled at inference time)
-    # Header: cols=128, rows=1 (vector)
-    print("Encoding h_in placeholder (row 1)...")
-    img[1, 0] = encode_matrix_header(128, 1)
-    # Data left as zeros (filled at inference)
+    # Encode matrices using allocated row positions
+    print(f"Encoding h_in placeholder (row {r_h_in})...")
+    write_matrix(img, row_start=r_h_in, data=np.zeros(128, dtype=np.float32), quantize=False)
 
-    # Row 2: W_hidden [128×128]
-    print("Encoding W_hidden matrix (row 2)...")
-    img[2, 0] = encode_matrix_header(128, 128)
-    encode_matrix_data(W_hidden, img, 2, quantize=True)
+    print(f"Encoding W_hidden matrix (row {r_W_hidden})...")
+    write_matrix(img, row_start=r_W_hidden, data=W_hidden, quantize=True)
 
-    # Row 3: b_hidden [128] (as 1×128 vector)
-    print("Encoding b_hidden vector (row 3)...")
-    img[3, 0] = encode_matrix_header(128, 1)
-    encode_matrix_data(b_hidden.reshape(1, -1), img, 3, quantize=True)
+    print(f"Encoding b_hidden vector (row {r_b_hidden})...")
+    write_matrix(img, row_start=r_b_hidden, data=b_hidden, quantize=True)
 
-    # Row 4: h placeholder (computed)
-    print("Encoding h placeholder (row 4)...")
-    img[4, 0] = encode_matrix_header(128, 1)
+    print(f"Encoding h placeholder (row {r_h})...")
+    write_matrix(img, row_start=r_h, data=np.zeros(128, dtype=np.float32), quantize=False)
 
-    # Row 5: W_out [128×1024]
-    print("Encoding W_out matrix (row 5)...")
-    img[5, 0] = encode_matrix_header(1024, 128)
-    encode_matrix_data(W_out, img, 5, quantize=True)
+    print(f"Encoding W_out matrix (row {r_W_out})...")
+    write_matrix(img, row_start=r_W_out, data=W_out, quantize=True)
 
-    # Row 6: b_out [1024] (as 1×1024 vector)
-    print("Encoding b_out vector (row 6)...")
-    img[6, 0] = encode_matrix_header(1024, 1)
-    encode_matrix_data(b_out.reshape(1, -1), img, 6, quantize=True)
+    print(f"Encoding b_out vector (row {r_b_out})...")
+    write_matrix(img, row_start=r_b_out, data=b_out, quantize=True)
 
-    # Row 7: logits placeholder (computed)
-    print("Encoding logits placeholder (row 7)...")
-    img[7, 0] = encode_matrix_header(1024, 1)
+    print(f"Encoding logits placeholder (row {r_logits})...")
+    write_matrix(img, row_start=r_logits, data=np.zeros(1024, dtype=np.float32), quantize=False)
 
     # Save
     print()
@@ -206,7 +161,8 @@ def main() -> None:
         print("   Run: python3 pixel_llm/models/pixellm_v0_train.py")
         return
 
-    create_pixellm_forward_program(weights_path, output_path)
+    # Use width=1024 to keep row addresses within uint8 range (0-255)
+    create_pixellm_forward_program(weights_path, output_path, image_width=1024)
 
 
 if __name__ == "__main__":
