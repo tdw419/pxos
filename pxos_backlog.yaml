@@ -1,0 +1,120 @@
+version: 1
+current_focus: "Validation and Acceleration (v0.1.x → v0.2.0)"
+
+tasks:
+  - id: T001
+    title: "Validate pxVM accuracy vs numpy reference"
+    status: "todo"
+    type: "validation"
+    priority: "critical"
+    notes: |
+      Create pxvm/examples/validate_pixellm_accuracy.py that:
+      1. Runs Pixel-LLM forward pass in numpy (reference)
+      2. Runs same forward pass in pxVM (quantized)
+      3. Compares logits: correlation, MSE, top-k accuracy
+      4. Documents accuracy cost of uint8 quantization
+
+      Expected: >0.9 correlation despite quantization
+      Blocks: All optimization work (must validate correctness first)
+
+  - id: T002
+    title: "Install wgpu-py and test GPU execution"
+    status: "todo"
+    type: "infrastructure"
+    priority: "high"
+    notes: |
+      Install wgpu-py dependencies and verify GPU executor works.
+      Run pxvm/examples/compare_cpu_gpu.py for all test cases.
+
+      Expected: Byte-identical output between CPU and GPU
+      Prerequisite for: Parallel MatMul kernel optimization
+
+  - id: T003
+    title: "Tag v0.1.0 release"
+    status: "todo"
+    type: "release"
+    priority: "high"
+    notes: |
+      After T001 validation passes, tag the milestone:
+      - Complete neural toolkit
+      - Working Pixel-LLM integration
+      - Utilities proven valuable
+      - All tests passing
+
+      This marks: "Production neural networks execute as pixels"
+
+  - id: T004
+    title: "Implement parallel tiled MatMul kernel (WGSL)"
+    status: "todo"
+    type: "acceleration"
+    priority: "medium"
+    notes: |
+      Replace sequential triple-loop in pxvm/gpu/interpreter.wgsl
+      with parallel kernel:
+      - One thread per C[m,n] output element
+      - Shared memory tiling for cache efficiency
+      - Workgroup size: 16×16
+
+      Expected: 100x+ speedup vs CPU naive implementation
+      Dependency: T001 (validate accuracy first), T002 (GPU working)
+
+  - id: T005
+    title: "Implement autoregressive text generation"
+    status: "todo"
+    type: "feature"
+    priority: "medium"
+    notes: |
+      Create pxvm/examples/generate_text.py that:
+      1. Loads pixellm_forward.pxi
+      2. Implements sampling loop (argmax or nucleus)
+      3. Generates text token-by-token
+      4. Detokenizes and prints output
+
+      This proves: User-facing LLM output from pixel program
+      Dependency: T001 (accuracy validation)
+
+  - id: T006
+    title: "Encode tokenizer as pixels"
+    status: "todo"
+    type: "design"
+    priority: "low"
+    notes: |
+      Design pixel encoding for tokenizer vocabulary:
+      - Token ID → embedding vector mapping
+      - Byte-pair encoding merge rules as pixel tables
+      - Special tokens (BOS, EOS, PAD)
+
+      Goal: Entire inference pipeline (tokenize → forward → detokenize)
+      runs natively in pxVM without external dependencies
+
+  - id: T007
+    title: "Define OP_SNAPSHOT and OP_FORK opcodes"
+    status: "todo"
+    type: "design"
+    priority: "low"
+    notes: |
+      Begin designing process management primitives:
+      - OP_SNAPSHOT: Save current VRAM state to row N
+      - OP_FORK: Duplicate execution context
+      - OP_SWITCH: Change active process
+
+      This is the foundation for multi-process pxOS
+
+  - id: T008
+    title: "Design float16/float32 support (backward compatible)"
+    status: "todo"
+    type: "design"
+    priority: "low"
+    notes: |
+      How to support higher precision without breaking v1.0.0 protocol:
+      - New opcodes: OP_MATMUL_F16, OP_MATMUL_F32?
+      - Multi-channel encoding: RGB holds 3 bytes of float?
+      - Separate precision flag in header pixel?
+
+      Constraint: Must remain executor-agnostic
+
+log:
+  - "2024-11-17T08:45Z: pxVM v0.0.3 Complete Neural Toolkit freeze"
+  - "2024-11-17T09:30Z: Pixel-LLM integration complete (bugfix: row allocation)"
+  - "2024-11-17T10:00Z: Utilities library proven valuable in practice"
+  - "2024-11-17T10:15Z: Infinite Concept Engine framework initialized"
