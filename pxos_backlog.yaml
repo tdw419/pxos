@@ -1,27 +1,13 @@
 version: 1
-current_focus: "Quantization Protocol and v0.1.1 (Numerical Fidelity)"
+current_focus: "Autoregressive Text Generation (v0.1.2)"
 tasks:
 - id: T001
   title: Validate pxVM accuracy vs numpy reference
   status: completed
   type: validation
   priority: critical
-  notes: 'COMPLETED: Created complete validation infrastructure:
-
-    - pxvm/examples/validate_pixellm_accuracy.py
-
-    - pxvm/dev/assembler.py (symbolic DSL → pixels)
-
-    - pxvm/dev/inspector.py (pixels → human-readable)
-
-    - pxvm/debug/constraints.py (validation utilities)
-
-
-    Result: Structural integrity PASSED, but naive uint8 quantization
-
-    causes saturation (all outputs → 255). This validates the architecture
-
-    and exposes the quantization limitation for T002 to address.
+  notes: 'COMPLETED: Created complete validation infrastructure and proved structural
+    integrity.
 
 
     Tagged: v0.1.0 "Proof of Concept"
@@ -29,133 +15,137 @@ tasks:
     '
 - id: T002
   title: Integrate quantization protocol into assembler and interpreter
-  status: todo
+  status: completed
   type: feature
   priority: critical
-  notes: 'Implement per-matrix scale/offset quantization:
-
-    1. Update pxvm/utils/layout.py to reserve 2 pixels for metadata
-
-       - Pixel (1, row): scale (4 bytes)
-
-       - Pixel (2, row): offset (4 bytes)
-
-    2. Update pxvm/dev/assembler.py to:
-
-       - Calculate scale/offset per matrix
-
-       - Pack metadata using pxvm/utils/quantization.py
-
-       - Quantize data using linear_quantize()
-
-    3. Update pxvm/core/interpreter.py to:
-
-       - Unpack scale/offset from metadata pixels
-
-       - Dequantize before MATMUL operations
-
-       - Perform MATMUL in float32
-
-       - Requantize output with new scale/offset
-
-    4. Re-run validate_pixellm_accuracy.py
-
-       - Target: correlation > 0.9 with float32 reference
+  notes: 'COMPLETED: Achieved 0.999759 correlation with float32 reference!
 
 
-    Blocks: v0.1.1 release
+    Implementation:
+
+    - pxvm/utils/layout.py: Quantized matrix I/O (cols 0-2 for header+metadata)
+
+    - pxvm/dev/assembler.py: Automatic per-matrix quantization
+
+    - pxvm/core/interpreter.py: Dequantize → compute float32 → requantize
+
+    - pxvm/examples/validate_pixellm_accuracy.py: Updated validation
+
+
+    Results:
+
+    - Correlation: 0.999759 (was NaN)
+
+    - MSE: 0.000010 (was 65,022.8)
+
+    - Max Error: 0.009687 (was 255.5)
+
+    - Top-5 Overlap: 5/5 (was 0/5)
+
+    - Top-1 Match: YES (was NO)
+
+
+    Tagged: v0.1.1 "Numerically Faithful Execution"
 
     '
 - id: T003
+  title: Tag v0.1.1 release
+  status: completed
+  type: release
+  priority: high
+  notes: 'COMPLETED: v0.1.1 tagged locally
+
+
+    Milestone: Neural networks execute as pixels with production-quality accuracy
+
+
+    Status: Local tag exists, remote push failed (permissions)
+
+    '
+- id: T004
+  title: Implement autoregressive text generation
+  status: in_progress
+  type: feature
+  priority: critical
+  notes: 'Create pxvm/examples/generate_text.py for end-to-end inference demo.
+
+
+    Plan:
+
+    1. Load pixellm_forward_compiled.pxi
+
+    2. Implement token-by-token sampling loop
+
+    - Read previous hidden state
+
+    - Run forward pass → get logits
+
+    - Sample next token (argmax or temperature-based)
+
+    - Append to sequence
+
+
+    3. Simple detokenization (map token IDs → strings)
+
+    4. Print generated text
+
+
+    Why prioritized:
+
+    - Proves end-to-end utility (not just validation)
+
+    - Powerful demo: "Type prompt, PNG generates text"
+
+    - Validates numerical fidelity with every token
+
+    - GPU optimization (T005) can wait until this works
+
+
+    Dependency: T002 ✅ (quantization working)
+
+    Blocks: v0.1.2 release
+
+    '
+- id: T005
   title: Install wgpu-py and test GPU execution
   status: todo
   type: infrastructure
   priority: high
   notes: 'Install wgpu-py dependencies and verify GPU executor works.
 
-    Run pxvm/examples/compare_cpu_gpu.py for all test cases.
-
 
     Expected: Byte-identical output between CPU and GPU
 
+
     Prerequisite for: Parallel MatMul kernel optimization
 
-    Dependency: T002 (quantization must work first)
+
+    Dependency: T004 (prove autoregressive works first)
 
     '
-- id: T004
-  title: Tag v0.1.1 release
-  status: todo
-  type: release
-  priority: high
-  notes: 'After T002 quantization validated, tag the milestone:
-
-    - Numerically faithful execution
-
-    - >0.9 correlation with float32 reference
-
-    - Complete development lifecycle
-
-    - Production-ready Pixel-LLM
-
-
-    This marks: "Neural networks execute as pixels WITH accuracy"
-
-    '
-- id: T005
+- id: T006
   title: Implement parallel tiled MatMul kernel (WGSL)
   status: todo
   type: acceleration
   priority: medium
-  notes: "Replace sequential triple-loop in pxvm/gpu/interpreter.wgsl\nwith parallel\
-    \ kernel:\n- One thread per C[m,n] output element\n- Shared memory tiling for\
-    \ cache efficiency\n- Workgroup size: 16×16\n\nExpected: 100x+ speedup vs CPU\
-    \ naive implementation\nDependency: T002 (accuracy first), T003 (GPU working)\n"
-- id: T006
-  title: Implement autoregressive text generation
-  status: todo
-  type: feature
-  priority: medium
-  notes: 'Create pxvm/examples/generate_text.py that:
-
-    1. Loads pixellm_forward.pxi
-
-    2. Implements sampling loop (argmax or nucleus)
-
-    3. Generates text token-by-token
-
-    4. Detokenizes and prints output
-
-
-    This proves: User-facing LLM output from pixel program
-
-    Dependency: T002 (accuracy validation)
-
-    '
+  notes: "Replace sequential triple-loop with parallel kernel:\n- One thread per C[m,n]\
+    \ output element\n- Shared memory tiling for cache efficiency\n- Workgroup size:\
+    \ 16\xD716\n\nExpected: 100x+ speedup vs CPU naive implementation\nDependency:\
+    \ T005 (GPU working)\n"
 - id: T007
   title: Encode tokenizer as pixels
   status: todo
   type: design
   priority: low
-  notes: "Design pixel encoding for tokenizer vocabulary:\n- Token ID → embedding\
+  notes: "Design pixel encoding for tokenizer vocabulary:\n- Token ID \u2192 embedding\
     \ vector mapping\n- Byte-pair encoding merge rules as pixel tables\n- Special\
-    \ tokens (BOS, EOS, PAD)\n\nGoal: Entire inference pipeline (tokenize → forward\
-    \ → detokenize)\nruns natively in pxVM without external dependencies\n"
+    \ tokens (BOS, EOS, PAD)\n\nGoal: Entire inference pipeline runs natively in pxVM\n"
 - id: T008
   title: Define OP_SNAPSHOT and OP_FORK opcodes
   status: todo
   type: design
   priority: low
-  notes: 'Begin designing process management primitives:
-
-    - OP_SNAPSHOT: Save current VRAM state to row N
-
-    - OP_FORK: Duplicate execution context
-
-    - OP_SWITCH: Change active process
-
-
-    This is the foundation for multi-process pxOS
+  notes: 'Begin designing process management primitives for multi-process pxOS
 
     '
 - id: T009
@@ -163,16 +153,40 @@ tasks:
   status: todo
   type: design
   priority: low
-  notes: 'How to support higher precision without breaking v1.0.0 protocol:
+  notes: 'How to support higher precision without breaking v1.0.0 protocol
 
-    - New opcodes: OP_MATMUL_F16, OP_MATMUL_F32?
+    '
+- id: T010
+  title: Implement content-addressed matrix storage (PixelDB)
+  status: todo
+  type: infrastructure
+  priority: medium
+  notes: 'Foundation for PixelFS and self-hosting architecture.
 
-    - Multi-channel encoding: RGB holds 3 bytes of float?
 
-    - Separate precision flag in header pixel?
+    Create pxvm/db/pixel_db.py with SQLite schema:
+
+    - matrices: Content-addressed storage with hash references
+
+    - programs: Compiled .pxi files with metadata
+
+    - files: Source files (future)
 
 
-    Constraint: Must remain executor-agnostic
+    Benefits:
+
+    - Deduplication (same matrix stored once)
+
+    - Queryability (find all programs using W_hidden)
+
+    - Provenance (track compilation metadata)
+
+    - Foundation for PixelFS
+
+
+    Dependency: None (can be parallel track)
+
+    Target: v0.2.0
 
     '
 log:
@@ -182,4 +196,8 @@ log:
 - '2024-11-17T10:15Z: Infinite Concept Engine framework initialized'
 - '2025-11-17T02:57:50.362840Z: Engine processed T001'
 - '2025-11-17T18:30Z: T001 COMPLETE - Validation infrastructure and v0.1.0 tagged'
-- '2025-11-17T18:35Z: Quantization protocol (pxvm/utils/quantization.py) implemented and tested'
+- '2025-11-17T18:35Z: Quantization protocol implemented and tested'
+- '2025-11-17T19:45Z: T002 COMPLETE - Quantization integration achieved 0.999759 correlation!'
+- '2025-11-17T19:50Z: v0.1.1 tagged - Numerically Faithful Execution milestone'
+- '2025-11-17T19:55Z: Strategic pivot to T004 (autoregressive generation) before GPU
+  optimization'
