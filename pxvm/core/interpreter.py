@@ -95,10 +95,12 @@ def _exec_dot_rgb(
         # Out-of-bounds rows: do nothing for now (could log/flag later)
         return
 
+    # Infer vector length (includes header at column 0)
     length = _infer_vector_length(img, row_a, row_b)
 
+    # Compute dot product over data columns (skip column 0 header)
     dot_val = 0
-    for x in range(length):
+    for x in range(1, length):
         a_r = int(img[row_a, x, 0])  # R channel only
         b_r = int(img[row_b, x, 0])
         dot_val += a_r * b_r
@@ -132,11 +134,12 @@ def _exec_add(
     if not (0 <= row_a < height and 0 <= row_b < height and 0 <= row_out < height):
         return  # Out-of-bounds, skip
 
-    # Infer vector length
+    # Infer vector length (includes header at column 0)
     length = _infer_vector_length(img, row_a, row_b)
 
     # Element-wise addition (R channel only)
-    for x in range(length):
+    # Skip column 0 (header pixel) - process columns 1 to length-1
+    for x in range(1, length):
         a_r = int(img[row_a, x, 0])
         b_r = int(img[row_b, x, 0])
         sum_val = a_r + b_r
@@ -166,10 +169,11 @@ def _exec_relu(
     if not (0 <= row_data < height):
         return  # Out-of-bounds, skip
 
-    # Apply ReLU to all non-zero pixels in row (R channel)
+    # Apply ReLU to all pixels in row (R channel)
+    # Skip column 0 (header pixel) - process columns 1 to width-1
     # Since we're using uint8, negative values don't exist, so this is a no-op
     # But we keep the structure for future float support
-    for x in range(width):
+    for x in range(1, width):
         val = int(img[row_data, x, 0])
         # For uint8: ReLU(x) = max(x, 0) = x (since x >= 0)
         # This becomes meaningful when we support signed/float values
