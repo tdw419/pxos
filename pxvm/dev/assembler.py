@@ -40,7 +40,7 @@ import numpy as np
 from PIL import Image
 
 from pxvm.core.opcodes import OP_HALT, OP_MATMUL, OP_ADD, OP_RELU, OP_DOT_RGB
-from pxvm.utils.layout import calculate_matrix_rows, write_matrix
+from pxvm.utils.layout import calculate_matrix_rows_quantized, write_quantized_matrix
 from pxvm.debug.constraints import validate_addressing_constraints, validate_matmul_structure
 
 
@@ -205,16 +205,18 @@ class PixelAssembler:
         """Add HALT instruction (terminates program)."""
         self.instructions.append((OP_HALT, None, None, None))
 
-    def compile(self, quantize: bool = True) -> np.ndarray:
+    def compile(self) -> np.ndarray:
         """
-        Compile symbolic program to pixel array.
+        Compile symbolic program to pixel array with quantization.
 
         Two-pass compilation:
         1. Layout pass: Allocate row positions for all matrices
-        2. Encoding pass: Write instructions and data to pixels
+        2. Encoding pass: Write instructions and quantized data to pixels
 
-        Args:
-            quantize: If True, quantize float32 matrices to uint8
+        Quantization is performed automatically for all matrices:
+        - Scale/offset calculated per matrix for optimal range usage
+        - Metadata stored in pixels (1-2, row)
+        - Data quantized to uint8 and stored from pixel (3+, row)
 
         Returns:
             RGBA pixel array ready to save as .pxi
@@ -229,7 +231,8 @@ class PixelAssembler:
         for name, data in self.matrices.items():
             if name not in self.layout:
                 # data.shape = (rows, cols) in numpy convention
-                rows_needed = calculate_matrix_rows(data.shape[1], data.shape[0], self.image_width)
+                # Use quantized layout (reserves cols 0-2 for header+metadata)
+                rows_needed = calculate_matrix_rows_quantized(data.shape[1], data.shape[0], self.image_width)
                 self.layout[name] = current_row
                 current_row += rows_needed
 
@@ -277,10 +280,10 @@ class PixelAssembler:
 
                 img[0, i] = [opcode, row_a, row_b, row_c]
 
-        # Encode matrices
+        # Encode matrices with quantization
         for name, row_start in self.layout.items():
             data = self.matrices[name]
-            write_matrix(img, row_start, data, quantize=quantize)
+            write_quantized_matrix(img, row_start, data)
 
         # === Validation ===
 
@@ -365,8 +368,8 @@ def compile_pixellm_program(weights_path: Path, output_path: Path, image_width: 
     print()
 
     # Compile
-    print("Compiling to pixels...")
-    program = asm.compile(quantize=True)
+    print("Compiling to pixels with quantization...")
+    program = asm.compile()
 
     print(f"  Program dimensions: {program.shape[1]}×{program.shape[0]} RGBA")
     print(f"  Total size: {program.nbytes:,} bytes")

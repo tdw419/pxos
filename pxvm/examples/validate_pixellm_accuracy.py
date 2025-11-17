@@ -24,7 +24,6 @@ import numpy as np
 from PIL import Image
 
 from pxvm.core.interpreter import run_program
-from pxvm.utils.layout import read_matrix
 
 
 def pixellm_forward_numpy(
@@ -77,46 +76,22 @@ def pixellm_forward_pixel(
     img = np.array(Image.open(program_path).convert("RGBA"), dtype=np.uint8)
 
     # Find h_in row (should be row 1 based on encode_pixellm_forward.py)
-    # Read header to confirm
-    from pxvm.core.interpreter import _read_shape
+    # Write h_in using quantized matrix format
+    from pxvm.utils.layout import write_quantized_matrix, read_quantized_matrix
 
     h_in_row = 1
-    cols, rows = _read_shape(img, h_in_row)
-
-    if (cols, rows) != (128, 1):
-        raise ValueError(f"Expected h_in to be 128×1, got {cols}×{rows} at row {h_in_row}")
-
-    # Quantize h_in to uint8 (same quantization used in program)
-    h_in_min = h_in.min()
-    h_in_max = h_in.max()
-
-    if h_in_max - h_in_min > 0:
-        h_in_q = ((h_in - h_in_min) / (h_in_max - h_in_min) * 255).astype(np.uint8)
-    else:
-        h_in_q = np.zeros_like(h_in, dtype=np.uint8)
-
-    # Write h_in to row 1
-    stride = img.shape[1] - 1  # Column 0 is header
-
-    for i, val in enumerate(h_in_q):
-        x = 1 + (i % stride)
-        y = h_in_row + (i // stride)
-        img[y, x, 0] = val
+    h_in_2d = h_in.reshape(1, -1)  # Reshape to 2D: 1×128
+    write_quantized_matrix(img, h_in_row, h_in_2d)
 
     # Execute program
     result_img = run_program(img.copy())
 
-    # Extract logits from row 7 (based on encode_pixellm_forward.py)
-    # First, find the actual logits row by reading instruction 4 (MATMUL that writes to logits)
-    logits_row = int(result_img[0, 3, 3])  # ARG2 of instruction 3 (0-indexed)
+    # Extract logits from row (find from instruction 4's output argument)
+    logits_row = int(result_img[0, 4, 3])  # ARG2 of instruction 4 (ADD to logits)
 
-    # Read logits matrix
-    logits_q = read_matrix(result_img, logits_row)
-
-    # Dequantize logits (they're uint8, map back to approximate float range)
-    # Since we don't know the original min/max, we just use the uint8 values directly
-    # This is a limitation of the quantization scheme - we lose the scale information
-    logits = logits_q.astype(np.float32).flatten()
+    # Read logits matrix with dequantization
+    logits_2d = read_quantized_matrix(result_img, logits_row)
+    logits = logits_2d.flatten()
 
     return logits
 

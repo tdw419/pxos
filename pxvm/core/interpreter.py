@@ -119,36 +119,42 @@ def _exec_add(
     instr: np.ndarray,
 ) -> None:
     """
-    Execute OP_ADD: element-wise addition.
+    Execute OP_ADD: element-wise addition with quantization.
 
     instr: single RGBA uint8 pixel from row 0.
     Format: (OP_ADD, row_a, row_b, row_out)
-    Semantics: row_out[i] = row_a[i] + row_b[i] for all i (R channel)
+    Semantics: row_out = row_a + row_b (element-wise)
+
+    Process:
+    1. Read quantized matrices A, B and dequantize to float32
+    2. Compute C = A + B in float32 (prevents saturation)
+    3. Quantize result C with new scale/offset
+    4. Write quantized C to output row
     """
+    from pxvm.utils.layout import read_quantized_matrix, write_quantized_matrix
+
     height, width, _ = img.shape
 
-    row_a = int(instr[1])    # G
-    row_b = int(instr[2])    # B
-    row_out = int(instr[3])  # A
+    row_a = int(instr[1])
+    row_b = int(instr[2])
+    row_out = int(instr[3])
 
     if not (0 <= row_a < height and 0 <= row_b < height and 0 <= row_out < height):
         return  # Out-of-bounds, skip
 
-    # Infer vector length (includes header at column 0)
-    length = _infer_vector_length(img, row_a, row_b)
+    # Read and dequantize matrices to float32
+    A = read_quantized_matrix(img, row_a)
+    B = read_quantized_matrix(img, row_b)
 
-    # Element-wise addition (R channel only)
-    # Skip column 0 (header pixel) - process columns 1 to length-1
-    for x in range(1, length):
-        a_r = int(img[row_a, x, 0])
-        b_r = int(img[row_b, x, 0])
-        sum_val = a_r + b_r
+    # Validate shapes for element-wise addition
+    if A.shape != B.shape:
+        return  # Invalid shapes: must be identical
 
-        # Clamp to uint8 range
-        sum_val = min(255, max(0, sum_val))
+    # Compute C = A + B in float32 (prevents saturation)
+    C = A + B
 
-        img[row_out, x, 0] = sum_val
-        # G, B, A channels remain 0
+    # Write quantized result with new scale/offset
+    write_quantized_matrix(img, row_out, C)
 
 
 def _exec_relu(
@@ -156,28 +162,35 @@ def _exec_relu(
     instr: np.ndarray,
 ) -> None:
     """
-    Execute OP_RELU: in-place ReLU activation.
+    Execute OP_RELU: in-place ReLU activation with quantization.
 
     instr: single RGBA uint8 pixel from row 0.
     Format: (OP_RELU, row_data, 0, 0)
-    Semantics: row_data[i] = max(row_data[i], 0) for all i (R channel, in-place)
+    Semantics: row_data = max(row_data, 0) (in-place, element-wise)
+
+    Process:
+    1. Read quantized matrix and dequantize to float32
+    2. Apply ReLU: clamp negative values to zero
+    3. Quantize result with new scale/offset
+    4. Write quantized result back to same row
     """
+    from pxvm.utils.layout import read_quantized_matrix, write_quantized_matrix
+
     height, width, _ = img.shape
 
-    row_data = int(instr[1])  # G
+    row_data = int(instr[1])
 
     if not (0 <= row_data < height):
         return  # Out-of-bounds, skip
 
-    # Apply ReLU to all pixels in row (R channel)
-    # Skip column 0 (header pixel) - process columns 1 to width-1
-    # Since we're using uint8, negative values don't exist, so this is a no-op
-    # But we keep the structure for future float support
-    for x in range(1, width):
-        val = int(img[row_data, x, 0])
-        # For uint8: ReLU(x) = max(x, 0) = x (since x >= 0)
-        # This becomes meaningful when we support signed/float values
-        img[row_data, x, 0] = max(0, val)
+    # Read and dequantize matrix to float32
+    data = read_quantized_matrix(img, row_data)
+
+    # Apply ReLU: max(data, 0)
+    data_relu = np.maximum(data, 0.0)
+
+    # Write quantized result back (in-place)
+    write_quantized_matrix(img, row_data, data_relu)
 
 
 def _read_shape(img: np.ndarray, row_start: int) -> tuple[int, int]:
@@ -243,62 +256,47 @@ def _exec_matmul(
     instr: np.ndarray,
 ) -> None:
     """
-    Execute OP_MATMUL: matrix multiply.
+    Execute OP_MATMUL: matrix multiply with quantization.
 
     instr: single RGBA uint8 pixel from row 0.
     Format: (OP_MATMUL, row_A_start, row_B_start, row_C_start)
     Semantics: C = A @ B (matrix multiplication)
 
-    Matrix encoding:
+    Quantized matrix encoding:
     - Header at (0, row_start): (cols_low, cols_high, rows_low, rows_high)
-    - Data starts at column 1, row-major flattened
+    - Metadata at (1-2, row_start): (scale, offset) as float32
+    - Data starts at column 3, row-major flattened
+
+    Process:
+    1. Read quantized matrices A, B and dequantize to float32
+    2. Compute C = A @ B in float32 (prevents saturation)
+    3. Quantize result C with new scale/offset
+    4. Write quantized C to output row
     """
+    from pxvm.utils.layout import read_quantized_matrix, write_quantized_matrix
+
     height, width, _ = img.shape
 
-    row_a = int(instr[1])  # G
-    row_b = int(instr[2])  # B
-    row_c = int(instr[3])  # A
+    row_a = int(instr[1])
+    row_b = int(instr[2])
+    row_c = int(instr[3])
 
     if not (0 <= row_a < height and 0 <= row_b < height and 0 <= row_c < height):
         return  # Out-of-bounds, skip
 
-    # Read matrix shapes
-    cols_a, rows_a = _read_shape(img, row_a)  # A: M×K
-    cols_b, rows_b = _read_shape(img, row_b)  # B: K×N
+    # Read and dequantize matrices to float32
+    A = read_quantized_matrix(img, row_a)  # M×K
+    B = read_quantized_matrix(img, row_b)  # K×N
 
-    K = cols_a  # Inner dimension
-    M = rows_a  # Output rows
-    N = cols_b  # Output cols
+    # Validate shapes for matrix multiplication
+    if A.shape[1] != B.shape[0]:
+        return  # Invalid shapes: A.cols != B.rows
 
-    # Validate inner dimension
-    if rows_b != K:
-        return  # Invalid shapes for multiplication
+    # Compute C = A @ B in float32 (prevents saturation)
+    C = A @ B  # M×N
 
-    # Write output shape header
-    img[row_c, 0, 0] = N & 0xFF         # cols_low
-    img[row_c, 0, 1] = (N >> 8) & 0xFF  # cols_high
-    img[row_c, 0, 2] = M & 0xFF         # rows_low
-    img[row_c, 0, 3] = (M >> 8) & 0xFF  # rows_high
-
-    # Compute C = A @ B
-    # C[m,n] = sum_k A[m,k] * B[k,n]
-    for m in range(M):
-        for n in range(N):
-            acc = 0
-            for k in range(K):
-                a_idx = m * K + k
-                b_idx = k * N + n
-
-                a_val = _get_matrix_val(img, row_a, K, M, a_idx)
-                b_val = _get_matrix_val(img, row_b, N, K, b_idx)
-
-                acc += a_val * b_val
-
-            # Clamp to uint8 range
-            acc = max(0, min(255, acc))
-
-            c_idx = m * N + n
-            _set_matrix_val(img, row_c, N, M, c_idx, acc)
+    # Write quantized result with new scale/offset
+    write_quantized_matrix(img, row_c, C)
 
 
 def run_program(
