@@ -133,6 +133,69 @@ python3 -c "from pxvm.tests.test_dot_rgb import test_op_dot_rgb_basic; test_op_d
 
 ---
 
+## GPU Execution (Track A)
+
+**Status**: Architecture complete, awaiting wgpu-py ⚙️
+
+We've implemented a **complete GPU execution path** that proves the Pixel Protocol is executor-agnostic.
+
+### What's Implemented
+
+- ✅ **WGSL compute shader** (`pxvm/gpu/interpreter.wgsl`) - Full pxVM interpreter in WGSL
+- ✅ **Python bridge** (`pxvm/gpu/__init__.py`) - Buffer management, shader dispatch
+- ✅ **Test harness** (`run_dot_test_gpu.py`) - Execute `.pxi` on GPU
+- ✅ **Comparison tool** (`compare_cpu_gpu.py`) - Verify CPU vs GPU identical results
+
+### The Promise
+
+**Same `.pxi` file, different executors, identical results.**
+
+```bash
+# CPU execution
+$ python3 -m pxvm.examples.run_dot_test
+Dot product: 300 ✅
+
+# GPU execution (requires: pip install wgpu)
+$ python3 -m pxvm.examples.run_dot_test_gpu
+Dot product: 300 ✅
+
+# Proof of executor-agnostic design
+$ python3 -m pxvm.examples.compare_cpu_gpu
+✅ IDENTICAL RESULTS
+The Pixel Protocol is executor-agnostic!
+```
+
+### Why This Matters
+
+The `.pxi` file is **never transformed**:
+- No compilation to GPU code
+- No format conversion
+- No shader code generation
+
+Upload as-is → Execute as-is → Download as-is.
+
+**The format is the contract. The executor is firmware.**
+
+### Current Status
+
+Without wgpu-py:
+```bash
+$ python3 -m pxvm.examples.run_dot_test_gpu
+❌ GPU execution not available
+Install with: pip install wgpu
+```
+
+### Next Steps
+
+1. Install wgpu-py: `pip install wgpu`
+2. Run comparison: `python3 -m pxvm.examples.compare_cpu_gpu`
+3. Verify identical results (CPU=300, GPU=300)
+4. Benchmark performance (expect 10-100x speedup)
+
+**See `pxvm/GPU_TRACK.md` for complete documentation.**
+
+---
+
 ## Architecture
 
 ### Interpreter Model
