@@ -4,3 +4,7 @@ __pycache__/
 .pytest_cache/
 htmlcov/
 *.pyi
+
+# Pixel-LLM generated outputs (regenerated each inference run)
+pixel_llm/outputs/*.pxi
+temp_pixellm_query.pxi
