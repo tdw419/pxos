@@ -104,39 +104,61 @@ def sample_token(logits: np.ndarray, temperature: float = 1.0, top_k: int = 0) -
         return int(np.random.choice(len(probs), p=probs))
 
 
-def encode_hidden_state(tokens: list[int], hidden_dim: int = 128) -> np.ndarray:
+def encode_hidden_state(
+    tokens: list[int],
+    hidden_dim: int = 128,
+    W_embed: np.ndarray = None
+) -> np.ndarray:
     """
     Encode token sequence as hidden state vector.
-
-    For now, this is a simple embedding (one-hot + projection).
-    In practice, this would use learned embeddings or previous hidden state.
 
     Args:
         tokens: Token sequence
         hidden_dim: Hidden state dimension
+        W_embed: Optional embedding matrix [vocab_size, hidden_dim].
+                 If provided, uses learned embeddings. Otherwise uses random.
 
     Returns:
         Hidden state vector [hidden_dim]
     """
-    # Simple: use last token ID as seed for deterministic "embedding"
-    # This is a placeholder - real implementation would use learned embeddings
-    if not tokens:
-        # Start of sequence: random initialization
-        np.random.seed(42)
-        h = np.random.randn(hidden_dim).astype(np.float32) * 0.01
-    else:
-        # Use last token to generate hidden state
-        last_token = tokens[-1]
-        np.random.seed(last_token)
-        h = np.random.randn(hidden_dim).astype(np.float32) * 0.1
+    if W_embed is not None:
+        # Use learned embeddings
+        if not tokens:
+            # Start of sequence: return zero vector or BOS embedding
+            # For now, use zero vector
+            h = np.zeros(hidden_dim, dtype=np.float32)
+        else:
+            # Look up last token in embedding matrix
+            last_token = tokens[-1]
+            h = W_embed[last_token].copy()
 
-        # Add positional encoding (sin/cos)
-        pos = len(tokens)
-        for i in range(hidden_dim):
-            if i % 2 == 0:
-                h[i] += np.sin(pos / (10000 ** (i / hidden_dim)))
-            else:
-                h[i] += np.cos(pos / (10000 ** (i / hidden_dim)))
+            # Add positional encoding (helps model distinguish positions)
+            pos = len(tokens)
+            for i in range(hidden_dim):
+                if i % 2 == 0:
+                    h[i] += np.sin(pos / (10000 ** (i / hidden_dim)))
+                else:
+                    h[i] += np.cos(pos / (10000 ** (i / hidden_dim)))
+    else:
+        # Fallback: use random embeddings (for untrained models)
+        # This is a placeholder - real implementation would use learned embeddings
+        if not tokens:
+            # Start of sequence: random initialization
+            np.random.seed(42)
+            h = np.random.randn(hidden_dim).astype(np.float32) * 0.01
+        else:
+            # Use last token to generate hidden state
+            last_token = tokens[-1]
+            np.random.seed(last_token)
+            h = np.random.randn(hidden_dim).astype(np.float32) * 0.1
+
+            # Add positional encoding (sin/cos)
+            pos = len(tokens)
+            for i in range(hidden_dim):
+                if i % 2 == 0:
+                    h[i] += np.sin(pos / (10000 ** (i / hidden_dim)))
+                else:
+                    h[i] += np.cos(pos / (10000 ** (i / hidden_dim)))
 
     return h
 
@@ -147,6 +169,7 @@ def generate_text(
     max_tokens: int = 20,
     temperature: float = 0.8,
     top_k: int = 40,
+    weights_path: Path = None,
 ) -> str:
     """
     Generate text autoregressively using pixel program.
@@ -157,6 +180,7 @@ def generate_text(
         max_tokens: Maximum tokens to generate
         temperature: Sampling temperature
         top_k: Top-k filtering
+        weights_path: Optional path to .npz weights file for embeddings
 
     Returns:
         Generated text
@@ -171,6 +195,16 @@ def generate_text(
     print(f"Temperature: {temperature}")
     print(f"Top-k: {top_k}")
     print()
+
+    # Load embeddings if weights provided
+    W_embed = None
+    if weights_path is not None:
+        print(f"Loading embeddings: {weights_path.name}")
+        weights = np.load(weights_path)
+        if 'embed' in weights:
+            W_embed = weights['embed']
+            print(f"  Embedding matrix: {W_embed.shape}")
+        print()
 
     # Load program
     img = np.array(Image.open(program_path).convert("RGBA"), dtype=np.uint8)
@@ -187,7 +221,7 @@ def generate_text(
 
     for step in range(max_tokens):
         # Encode current sequence as hidden state
-        h_in = encode_hidden_state(tokens)
+        h_in = encode_hidden_state(tokens, W_embed=W_embed)
 
         # Write h_in to program (row 1)
         h_in_row = 1
@@ -257,10 +291,16 @@ def main():
         default=40,
         help="Top-k filtering (0=disabled)"
     )
+    parser.add_argument(
+        "--weights",
+        type=Path,
+        default=None,
+        help="Path to .npz weights file for embeddings (optional)"
+    )
 
     args = parser.parse_args()
 
-    # Resolve path
+    # Resolve paths
     root = Path(__file__).resolve().parents[2]
     program_path = root / args.program
 
@@ -269,6 +309,13 @@ def main():
         print("Run: python3 -m pxvm.dev.assembler")
         return 1
 
+    weights_path = None
+    if args.weights is not None:
+        weights_path = root / args.weights
+        if not weights_path.exists():
+            print(f"ERROR: Weights not found: {weights_path}")
+            return 1
+
     # Generate text
     generated = generate_text(
         program_path=program_path,
@@ -276,6 +323,7 @@ def main():
         max_tokens=args.max_tokens,
         temperature=args.temperature,
         top_k=args.top_k,
+        weights_path=weights_path,
     )
 
     print("=" * 70)

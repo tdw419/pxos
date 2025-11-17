@@ -1,5 +1,5 @@
 version: 1
-current_focus: "Autoregressive Text Generation (v0.1.2)"
+current_focus: "Semantic Text Generation (v0.1.3)"
 tasks:
 - id: T001
   title: Validate pxVM accuracy vs numpy reference
@@ -64,46 +64,47 @@ tasks:
     '
 - id: T004
   title: Implement autoregressive text generation
-  status: in_progress
+  status: completed
   type: feature
   priority: critical
-  notes: 'Create pxvm/examples/generate_text.py for end-to-end inference demo.
+  notes: 'COMPLETED: Full autoregressive inference pipeline with trained models!
 
 
-    Plan:
+    Implementation:
 
-    1. Load pixellm_forward_compiled.pxi
+    - pxvm/examples/generate_text.py: Token-by-token generation loop
 
-    2. Implement token-by-token sampling loop
+    - pixel_llm/train_tiny_ref_model.py: Character-level model training
 
-    - Read previous hidden state
+    - pixel_llm/export_to_pixels.py: Export trained weights to .pxi format
 
-    - Run forward pass → get logits
-
-    - Sample next token (argmax or temperature-based)
-
-    - Append to sequence
+    - Updated generate_text.py: Support for learned embeddings
 
 
-    3. Simple detokenization (map token IDs → strings)
+    Results:
 
-    4. Print generated text
+    - v0.1.2: Autoregressive generation framework working
 
+    - v0.1.3: Semantic generation with trained model
 
-    Why prioritized:
+    - PNG generates text using learned weights!
 
-    - Proves end-to-end utility (not just validation)
-
-    - Powerful demo: "Type prompt, PNG generates text"
-
-    - Validates numerical fidelity with every token
-
-    - GPU optimization (T005) can wait until this works
+    - Complete pipeline: Train → Export → Generate
 
 
-    Dependency: T002 ✅ (quantization working)
+    Example:
 
-    Blocks: v0.1.2 release
+      python3 pixel_llm/train_tiny_ref_model.py
+
+      python3 pixel_llm/export_to_pixels.py
+
+      python3 -m pxvm.examples.generate_text --program pixel_llm/programs/tiny_ref.pxi
+      --weights pixel_llm/models/tiny_ref.npz
+
+
+    Tagged: v0.1.2 "Autoregressive Text Generation"
+
+    Next: v0.1.3 tag + better training (larger corpus, more epochs)
 
     '
 - id: T005
@@ -201,3 +202,10 @@ log:
 - '2025-11-17T19:50Z: v0.1.1 tagged - Numerically Faithful Execution milestone'
 - '2025-11-17T19:55Z: Strategic pivot to T004 (autoregressive generation) before GPU
   optimization'
+- '2025-11-17T20:15Z: v0.1.2 tagged - Autoregressive Text Generation from PNG files
+  working!'
+- '2025-11-17T20:30Z: Created training infrastructure: train_tiny_ref_model.py and
+  export_to_pixels.py'
+- '2025-11-17T21:00Z: T004 COMPLETE - Semantic text generation with trained model
+  achieved!'
+- '2025-11-17T21:00Z: v0.1.3 milestone - PNG generates text using learned embeddings'
