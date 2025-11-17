@@ -25,6 +25,7 @@ from PIL import Image
 
 from pxvm.core.interpreter import run_program
 from pxvm.utils.layout import write_quantized_matrix, read_quantized_matrix
+from pxvm.visual.text_render import FontAtlas, create_text_image
 
 
 # Simple character-level vocabulary for demonstration
@@ -170,6 +171,7 @@ def generate_text(
     temperature: float = 0.8,
     top_k: int = 40,
     weights_path: Path = None,
+    output_image: Path = None,
 ) -> str:
     """
     Generate text autoregressively using pixel program.
@@ -181,6 +183,7 @@ def generate_text(
         temperature: Sampling temperature
         top_k: Top-k filtering
         weights_path: Optional path to .npz weights file for embeddings
+        output_image: Optional path to save visual rendering of generated text
 
     Returns:
         Generated text
@@ -252,8 +255,43 @@ def generate_text(
     print("-" * 70)
     print()
 
+    # Get full generated text
+    generated_text = detokenize(tokens)
+
+    # Render visual output if requested
+    if output_image is not None:
+        print("Rendering visual output...")
+
+        # Load font atlas
+        root = Path(__file__).resolve().parents[2]
+        font_png = root / "fonts" / "ascii_16x16.png"
+        font_json = root / "fonts" / "ascii_16x16.json"
+
+        if not font_png.exists():
+            print(f"WARNING: Font atlas not found at {font_png}")
+            print("Run: python3 -m pxvm.visual.font_atlas")
+            print("Skipping visual output.")
+        else:
+            # Load font
+            font = FontAtlas(font_png, font_json)
+
+            # Create image with rendered text
+            visual_img = create_text_image(
+                generated_text,
+                font,
+                padding=20,
+                background=(20, 20, 30, 255),
+                text_color=(200, 220, 255)
+            )
+
+            # Save
+            Image.fromarray(visual_img).save(output_image)
+            print(f"  Saved visual output: {output_image}")
+            print(f"  Image size: {visual_img.shape[1]}×{visual_img.shape[0]} RGBA")
+            print()
+
     # Return full generated text
-    return detokenize(tokens)
+    return generated_text
 
 
 def main():
@@ -297,6 +335,12 @@ def main():
         default=None,
         help="Path to .npz weights file for embeddings (optional)"
     )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Path to save visual output as PNG (optional)"
+    )
 
     args = parser.parse_args()
 
@@ -316,6 +360,12 @@ def main():
             print(f"ERROR: Weights not found: {weights_path}")
             return 1
 
+    output_image = None
+    if args.output is not None:
+        output_image = root / args.output
+        # Create parent directory if needed
+        output_image.parent.mkdir(parents=True, exist_ok=True)
+
     # Generate text
     generated = generate_text(
         program_path=program_path,
@@ -324,6 +374,7 @@ def main():
         temperature=args.temperature,
         top_k=args.top_k,
         weights_path=weights_path,
+        output_image=output_image,
     )
 
     print("=" * 70)
