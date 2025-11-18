@@ -41,6 +41,49 @@ else
     exit 1
 fi
 
+# Build guest code (real mode test)
+echo -e "${YELLOW}Building guest code...${NC}"
+nasm -f bin -o build/guest_real.bin guest_real.asm
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ guest_real.bin built: $(stat -c%s build/guest_real.bin) bytes${NC}"
+else
+    echo -e "${RED}✗ guest_real.bin build failed${NC}"
+    exit 1
+fi
+
+# Build minimal DOS
+nasm -f bin -o build/minimal_dos.bin minimal_dos.asm
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ minimal_dos.bin built: $(stat -c%s build/minimal_dos.bin) bytes${NC}"
+else
+    echo -e "${RED}✗ minimal_dos.bin build failed${NC}"
+    exit 1
+fi
+
+# Build minimal DOS BIOS version
+nasm -f bin -o build/minimal_dos_bios.bin minimal_dos_bios.asm
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ minimal_dos_bios.bin built: $(stat -c%s build/minimal_dos_bios.bin) bytes${NC}"
+else
+    echo -e "${RED}✗ minimal_dos_bios.bin build failed${NC}"
+    exit 1
+fi
+
+# Build test bootloader
+echo -e "${YELLOW}Building test bootloader...${NC}"
+nasm -f bin -o build/test_boot.bin test_boot.asm
+if [ $? -eq 0 ]; then
+    SIZE=$(stat -c%s build/test_boot.bin)
+    echo -e "${GREEN}✓ test_boot.bin built: $SIZE bytes${NC}"
+    if [ $SIZE -ne 512 ]; then
+        echo -e "${RED}ERROR: Boot sector must be exactly 512 bytes!${NC}"
+        exit 1
+    fi
+else
+    echo -e "${RED}✗ test_boot.bin build failed${NC}"
+    exit 1
+fi
+
 # Build Stage 2 (Hypervisor loader)
 echo -e "${YELLOW}Building Stage 2 hypervisor loader...${NC}"
 nasm -f bin -o build/pxhv_stage2.bin pxhv_stage2.asm
@@ -62,7 +105,17 @@ dd if=build/pxhv_boot.bin of=build/pxhv.img conv=notrunc 2>/dev/null
 # Write Stage 2 at sector 2 (offset 512 bytes)
 dd if=build/pxhv_stage2.bin of=build/pxhv.img bs=512 seek=1 conv=notrunc 2>/dev/null
 
+# Create virtual disk image for guest (at offset 0x100000 = 1MB)
+echo -e "${YELLOW}Creating virtual disk for guest...${NC}"
+# Write test bootloader as sector 0 of virtual disk
+dd if=build/test_boot.bin of=build/pxhv.img bs=512 seek=2048 conv=notrunc 2>/dev/null
+# (seek=2048 because 1MB / 512 bytes = 2048 sectors)
+
+# Create a dummy sector 1 for the disk (in case INT 13h tries to read it)
+dd if=/dev/zero of=build/pxhv.img bs=512 count=1 seek=2049 conv=notrunc 2>/dev/null
+
 echo -e "${GREEN}✓ Disk image created: build/pxhv.img${NC}"
+echo -e "${GREEN}✓ Virtual disk at 1MB with test bootloader${NC}"
 
 # Print summary
 echo ""

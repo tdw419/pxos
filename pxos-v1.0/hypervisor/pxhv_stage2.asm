@@ -23,6 +23,9 @@ VMXON_REGION    equ 0x15000     ; VMXON region (4KB aligned)
 VMCS_REGION     equ 0x16000     ; VMCS region (4KB aligned)
 STACK_TOP       equ 0x9F000     ; Stack at ~640KB
 
+; Virtual disk image location
+DISK_IMAGE      equ 0x100000    ; Virtual disk at 1MB (1MB = 1048576 bytes)
+
 stage2_entry:
     ; Setup segments
     xor ax, ax
@@ -404,6 +407,111 @@ load_guest_code:
     ret
 
 ;-----------------------------------------------------------------------------
+; setup_ivt_bda: Initialize IVT (Interrupt Vector Table) and BDA (BIOS Data Area)
+; IVT: 0x0000-0x03FF (1024 bytes, 256 vectors * 4 bytes each)
+; BDA: 0x0400-0x04FF (256 bytes)
+;-----------------------------------------------------------------------------
+setup_ivt_bda:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rdi
+
+    ; -----------------------------------------------------------------------
+    ; 1) Initialize IVT (0x0000-0x03FF)
+    ; -----------------------------------------------------------------------
+    ; For now, we'll set all vectors to point to a dummy IRET handler
+    ; Our hypervisor traps INT 3, 10h, 13h, 16h, 19h via exception bitmap
+    ; So these vectors won't actually be used, but DOS expects them present
+
+    ; First, install a dummy IRET handler at 0xF000:0xFFF0
+    ; (This is a safe location in the BIOS area)
+    mov byte [0xFFFF0], 0xCF        ; IRET instruction
+
+    ; Now fill IVT with vectors pointing to F000:FFF0
+    mov rdi, 0x0000                 ; Start of IVT
+    mov cx, 256                     ; 256 interrupt vectors
+
+.ivt_loop:
+    mov word [rdi], 0xFFF0          ; Offset = 0xFFF0
+    mov word [rdi+2], 0xF000        ; Segment = 0xF000
+    add rdi, 4
+    loop .ivt_loop
+
+    ; -----------------------------------------------------------------------
+    ; 2) Initialize BDA (0x0400-0x04FF)
+    ; -----------------------------------------------------------------------
+
+    ; Clear entire BDA first
+    mov rdi, 0x0400
+    mov rcx, 64                     ; 256 bytes / 4 = 64 dwords
+    xor eax, eax
+    rep stosd
+
+    ; Now set specific BDA fields
+
+    ; COM port addresses (0x0400-0x0407)
+    mov word [0x0400], 0x03F8       ; COM1 = 0x3F8
+    mov word [0x0402], 0x02F8       ; COM2 = 0x2F8
+    mov word [0x0404], 0x03E8       ; COM3 = 0x3E8
+    mov word [0x0406], 0x02E8       ; COM4 = 0x2E8
+
+    ; LPT port addresses (0x0408-0x040F)
+    mov word [0x0408], 0x0378       ; LPT1 = 0x378
+    mov word [0x040A], 0x0278       ; LPT2 = 0x278
+
+    ; Equipment word (0x0410)
+    ; Bit 0: Floppy installed
+    ; Bit 1: Math coprocessor
+    ; Bits 4-5: Initial video mode (01 = 80x25 color)
+    ; Bits 6-7: Number of floppies - 1 (00 = 1 floppy)
+    mov word [0x0410], 0x0021       ; Floppy + 80x25 color text
+
+    ; Memory size in KB (0x0413)
+    mov word [0x0413], 640          ; 640 KB conventional memory
+
+    ; Keyboard flags (0x0417)
+    mov byte [0x0417], 0x00         ; No keys pressed
+
+    ; Video mode (0x0449)
+    mov byte [0x0449], 0x03         ; Mode 3: 80x25 color text
+
+    ; Screen columns (0x044A)
+    mov word [0x044A], 80           ; 80 columns
+
+    ; Video page size (0x044C)
+    mov word [0x044C], 4000         ; 80*25*2 = 4000 bytes
+
+    ; Current video page offset (0x044E)
+    mov word [0x044E], 0            ; Page 0
+
+    ; Cursor positions for 8 pages (0x0450-0x045F)
+    mov rdi, 0x0450
+    mov rcx, 8
+    xor ax, ax
+.cursor_loop:
+    mov word [rdi], ax              ; Row 0, Col 0
+    add rdi, 2
+    loop .cursor_loop
+
+    ; Active display page (0x0462)
+    mov byte [0x0462], 0            ; Page 0
+
+    ; Video controller base (0x0463)
+    mov word [0x0463], 0x03D4       ; CRT controller for color
+
+    ; Number of rows minus 1 (0x0484)
+    mov byte [0x0484], 24           ; 25 rows - 1
+
+    pop rdi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
 ; print_string_64: Print null-terminated string (64-bit mode)
 ; Input: RSI = string address
 ; Uses direct VGA text mode writes (0xB8000)
@@ -466,7 +574,20 @@ setup_vmcs_and_guest:
     ; 4.5) Setup EPT (Extended Page Tables)
     call setup_ept_tables
 
-    ; 4.6) Load guest real mode code to memory at 0x7C00
+    ; 4.6) Setup IVT and BDA for DOS compatibility
+    call setup_ivt_bda
+
+    ; 4.7) Setup boot vector - Place INT 19h instruction at BIOS reset vector
+    ; Real PCs boot from 0xF000:0xFFF0 (physical 0xFFFF0)
+    ; We'll place INT 19h there to trigger the bootstrap loader
+    mov byte [0xFFFF0], 0xCD    ; INT instruction opcode
+    mov byte [0xFFFF1], 0x19    ; INT 19h (bootstrap loader)
+    mov byte [0xFFFF2], 0xF4    ; HLT (in case we return)
+    mov byte [0xFFFF3], 0xEB    ; JMP short
+    mov byte [0xFFFF4], 0xFD    ; Jump to self (0xFFFF3)
+
+    ; 4.8) Load guest real mode code to memory at 0x7C00 (for reference/testing)
+    ; This will be overwritten by INT 19h when it loads the boot sector
     call load_guest_code
 
     ; ---------------------------------------------------------------------
@@ -491,8 +612,8 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; Guest RIP = 0x7C00 (real mode boot sector location)
-    mov rax, 0x7C00
+    ; Guest RIP = 0xFFF0 (BIOS reset vector - where INT 19h is placed)
+    mov rax, 0xFFF0
     mov rdx, 0x681E             ; GUEST_RIP
     vmwrite rdx, rax
     jc .error
@@ -510,13 +631,13 @@ setup_vmcs_and_guest:
     jc .error
 
     ; Guest CS selector (real mode segment)
-    xor rax, rax                ; CS = 0x0000
+    mov rax, 0xF000             ; CS = 0xF000 (BIOS segment)
     mov rdx, 0x802              ; GUEST_CS_SELECTOR
     vmwrite rdx, rax
     jc .error
 
     ; Guest CS base (segment * 16)
-    xor rax, rax                ; 0x0000 * 16 = 0x00000
+    mov rax, 0xF0000            ; 0xF000 * 16 = 0xF0000
     mov rdx, 0x6808             ; GUEST_CS_BASE
     vmwrite rdx, rax
     jc .error
@@ -642,11 +763,12 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; Guest IDTR (minimal empty IDT)
+    ; Guest IDTR (points to IVT in real mode)
     xor rax, rax
-    mov rdx, 0x6818             ; GUEST_IDTR_BASE
+    mov rdx, 0x6818             ; GUEST_IDTR_BASE (0x0000 for real mode IVT)
     vmwrite rdx, rax
     jc .error
+    mov rax, 0x3FF              ; IDTR limit for 256 vectors (0x000-0x3FF)
     mov rdx, 0x4812             ; GUEST_IDTR_LIMIT
     vmwrite rdx, rax
     jc .error
@@ -858,8 +980,8 @@ setup_vmcs_and_guest:
 
     ; Exception bitmap (trap software interrupts for BIOS emulation)
     ; Bit 3 set = trap INT 3 (breakpoint)
-    ; Bits 16, 19, 22 = trap INT 10h, 13h, 16h (BIOS services)
-    mov rax, (1 << 3) | (1 << 16) | (1 << 19) | (1 << 22)
+    ; Bits 16, 19, 22, 25 = trap INT 10h, 13h, 16h, 19h (BIOS services)
+    mov rax, (1 << 3) | (1 << 16) | (1 << 19) | (1 << 22) | (1 << 25)
     mov rdx, 0x4004             ; EXCEPTION_BITMAP
     vmwrite rdx, rax
     jc .error
@@ -1041,6 +1163,8 @@ vm_exit_handler:
     je .handle_int13h
     cmp rax, 0x16               ; INT 16h - Keyboard
     je .handle_int16h
+    cmp rax, 0x19               ; INT 19h - Bootstrap loader
+    je .handle_int19h
     cmp rax, 0x03               ; INT 3 - Breakpoint (for debugging)
     je .handle_int3
 
@@ -1083,6 +1207,14 @@ vm_exit_handler:
 .handle_int16h:
     ; BIOS Keyboard Service (INT 16h)
     call emulate_int16h
+    vmresume
+    mov rsi, msg_vmresume_failed
+    call print_string_64
+    jmp .halt
+
+.handle_int19h:
+    ; BIOS Bootstrap Loader (INT 19h)
+    call emulate_int19h
     vmresume
     mov rsi, msg_vmresume_failed
     call print_string_64
@@ -1247,20 +1379,186 @@ emulate_int13h:
     jmp .int13_done
 
 .int13_read:
-    ; Read sectors - for now, just return success
-    ; TODO: Implement actual disk read
-    mov rdx, 0x6820
+    ; Read sectors from virtual disk
+    ; Input registers (from guest):
+    ;   AL = number of sectors
+    ;   CH = cylinder (low 8 bits)
+    ;   CL = sector (bits 0-5) + cylinder high 2 bits (bits 6-7)
+    ;   DH = head
+    ;   DL = drive
+    ;   ES:BX = destination buffer
+
+    push rcx
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+
+    ; Read guest registers
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rax, rdx
+    mov r8, rax                 ; R8 = RAX (AL = sector count)
+
+    mov rdx, 0x6810             ; GUEST_RCX
+    vmread rcx, rdx             ; RCX = CX (CH=cylinder, CL=sector)
+
+    mov rdx, 0x6816             ; GUEST_RDX
+    vmread r9, rdx              ; R9 = DX (DH=head, DL=drive)
+
+    mov rdx, 0x6808             ; GUEST_RBX
+    vmread r10, rdx             ; R10 = BX (offset)
+
+    mov rdx, 0x6802             ; GUEST_ES
+    vmread r11, rdx             ; R11 = ES (segment)
+
+    ; Extract parameters
+    and r8, 0xFF                ; R8 = sector count (AL)
+    test r8, r8
+    jz .int13_read_error        ; No sectors to read
+
+    ; Extract cylinder number (10 bits: CL[7:6] + CH[7:0])
+    mov rsi, rcx
+    shr rsi, 8                  ; SI = CH (cylinder low 8 bits)
+    and rsi, 0xFF
+    mov rdi, rcx
+    shr rdi, 6                  ; DI = CL >> 6
+    and rdi, 0x3                ; DI = cylinder high 2 bits
+    shl rdi, 8
+    or rsi, rdi                 ; RSI = full 10-bit cylinder number
+
+    ; Extract sector number (6 bits: CL[5:0])
+    and rcx, 0x3F               ; RCX = sector number (1-63)
+    test rcx, rcx
+    jz .int13_read_error        ; Sector 0 is invalid
+    dec rcx                     ; Convert to 0-based
+
+    ; Extract head number
+    mov rdi, r9
+    shr rdi, 8                  ; DI = DH (head)
+    and rdi, 0xFF
+
+    ; Calculate LBA = (C * heads_per_cylinder + H) * sectors_per_track + S
+    ; For floppy: 2 heads, 18 sectors per track
+    ; LBA = (cylinder * 2 + head) * 18 + sector
+
+    mov rax, rsi                ; RAX = cylinder
+    shl rax, 1                  ; RAX = cylinder * 2
+    add rax, rdi                ; RAX = cylinder * 2 + head
+    mov rbx, 18
+    mul rbx                     ; RAX = (cylinder * 2 + head) * 18
+    add rax, rcx                ; RAX = LBA
+
+    ; Calculate source offset in disk image
+    ; Source = DISK_IMAGE + LBA * 512
+    shl rax, 9                  ; RAX = LBA * 512
+    add rax, DISK_IMAGE         ; RAX = disk image + offset
+    mov rsi, rax                ; RSI = source address
+
+    ; Calculate destination address
+    ; Destination = ES * 16 + BX
+    shl r11, 4                  ; R11 = ES * 16
+    add r11, r10                ; R11 = ES:BX linear address
+    mov rdi, r11                ; RDI = destination address
+
+    ; Copy data (sector count * 512 bytes)
+    mov rcx, r8                 ; RCX = sector count
+    shl rcx, 9                  ; RCX = sector count * 512 (bytes to copy)
+    rep movsb                   ; Copy from RSI to RDI
+
+    ; Set success status
+    ; Clear CF, set AH=0, keep AL=sector count
+    mov rdx, 0x6820             ; GUEST_RFLAGS
     vmread rax, rdx
     and rax, ~1                 ; Clear CF
+    vmwrite rdx, rax
+
+    ; Set AH=0 (success), AL already contains sector count
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rax, rdx
+    and rax, 0xFFFFFFFFFFFF00FF ; Clear AH
+    vmwrite rdx, rax
+
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rcx
+    jmp .int13_done
+
+.int13_read_error:
+    ; Set error status (CF=1, AH=1)
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rcx
+
+    mov rdx, 0x6820
+    vmread rax, rdx
+    or rax, 1                   ; Set CF
+    vmwrite rdx, rax
+
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rax, rdx
+    and rax, 0xFFFFFFFFFFFF00FF ; Clear AH
+    or rax, 0x0100              ; Set AH=1 (error)
     vmwrite rdx, rax
     jmp .int13_done
 
 .int13_params:
-    ; Get drive parameters - return dummy values
-    mov rdx, 0x6820
+    ; Get drive parameters
+    ; Input: DL = drive number
+    ; Output:
+    ;   CF = 0 (success)
+    ;   AH = 0 (status)
+    ;   CH = max cylinder number (lower 8 bits)
+    ;   CL = max sector number (bits 0-5) + cylinder high 2 bits (bits 6-7)
+    ;   DH = max head number
+    ;   DL = number of drives
+    ;   ES:DI = pointer to disk parameter table (can be 0:0)
+
+    ; For standard 1.44MB floppy:
+    ; 80 cylinders (0-79), 2 heads (0-1), 18 sectors (1-18)
+
+    ; Clear CF (success)
+    mov rdx, 0x6820             ; GUEST_RFLAGS
     vmread rax, rdx
-    and rax, ~1                 ; Clear CF
+    and rax, ~1
     vmwrite rdx, rax
+
+    ; Set AH=0 (success)
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rax, rdx
+    and rax, 0xFFFFFFFFFFFF00FF ; Clear AH
+    vmwrite rdx, rax
+
+    ; Set CH=79 (max cylinder, lower 8 bits)
+    ; Set CL=18 (max sector) + 0 (cylinder high 2 bits = 0)
+    mov rax, 0x4F12             ; CH=0x4F (79), CL=0x12 (18)
+    mov rdx, 0x6810             ; GUEST_RCX
+    vmwrite rdx, rax
+
+    ; Set DH=1 (max head), DL=1 (number of drives)
+    mov rax, 0x0101
+    mov rdx, 0x6816             ; GUEST_RDX
+    vmread rbx, rdx
+    and rbx, 0xFFFFFFFFFFFF0000 ; Clear DX
+    or rbx, rax
+    vmwrite rdx, rbx
+
+    ; Set ES:DI = 0:0 (no parameter table)
+    xor rax, rax
+    mov rdx, 0x6802             ; GUEST_ES
+    vmwrite rdx, rax
+    mov rdx, 0x681A             ; GUEST_RDI
+    vmwrite rdx, rax
+
     jmp .int13_done
 
 .int13_error:
@@ -1351,6 +1649,113 @@ emulate_int16h:
     vmwrite rdx, rax
 
     pop rdx
+    pop rbx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
+; emulate_int19h: BIOS Bootstrap Loader (INT 19h)
+; Loads boot sector from disk and transfers control to it
+;-----------------------------------------------------------------------------
+emulate_int19h:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+
+    ; 1) Read boot sector (sector 0) from virtual disk to 0x7C00
+    ; Source: DISK_IMAGE + 0 (first sector)
+    mov rsi, DISK_IMAGE         ; Source address
+    mov rdi, 0x7C00             ; Destination: standard boot sector location
+    mov rcx, 512                ; 512 bytes (one sector)
+    rep movsb                   ; Copy boot sector
+
+    ; 2) Verify boot signature (0xAA55 at offset 510-511)
+    mov ax, [0x7C00 + 510]
+    cmp ax, 0xAA55
+    jne .int19_no_boot_signature
+
+    ; 3) Set guest registers to boot from 0x0000:0x7C00
+    ; Set CS = 0x0000
+    xor rax, rax
+    mov rdx, 0x802              ; GUEST_CS
+    vmwrite rdx, rax
+    jc .int19_error
+
+    ; Set CS base = 0x0000
+    mov rdx, 0x6808             ; GUEST_CS_BASE
+    vmwrite rdx, rax
+    jc .int19_error
+
+    ; Set IP = 0x7C00
+    mov rax, 0x7C00
+    mov rdx, 0x681E             ; GUEST_RIP
+    vmwrite rdx, rax
+    jc .int19_error
+
+    ; Set DS, ES, SS = 0x0000
+    xor rax, rax
+    mov rdx, 0x806              ; GUEST_DS
+    vmwrite rdx, rax
+    mov rdx, 0x680A             ; GUEST_DS_BASE
+    vmwrite rdx, rax
+
+    mov rdx, 0x800              ; GUEST_ES
+    vmwrite rdx, rax
+    mov rdx, 0x6806             ; GUEST_ES_BASE
+    vmwrite rdx, rax
+
+    mov rdx, 0x810              ; GUEST_SS
+    vmwrite rdx, rax
+    mov rdx, 0x6810             ; GUEST_SS_BASE
+    vmwrite rdx, rax
+
+    ; Set SP = 0x7C00 (stack grows down from boot sector)
+    mov rax, 0x7C00
+    mov rdx, 0x681C             ; GUEST_RSP
+    vmwrite rdx, rax
+
+    ; Set DL = boot drive (0x00 for floppy A:)
+    xor rax, rax
+    mov rdx, 0x6816             ; GUEST_RDX
+    vmwrite rdx, rax
+
+    ; Boot sector is loaded and guest is ready to execute from 0x7C00
+    ; Note: We don't advance RIP here because we're setting it to 0x7C00
+
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+.int19_no_boot_signature:
+    ; No valid boot signature - halt
+    ; In a real BIOS, this would try the next boot device
+    ; For now, just set RIP to advance past INT 19h and let guest continue
+    mov rdx, 0x681E
+    vmread rax, rdx
+    add rax, 2
+    vmwrite rdx, rax
+
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+.int19_error:
+    ; VMWRITE error - should not happen
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
     pop rbx
     pop rax
     ret
