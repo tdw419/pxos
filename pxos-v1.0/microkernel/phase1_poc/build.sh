@@ -18,6 +18,8 @@ echo ""
 echo "Checking build tools..."
 command -v nasm >/dev/null 2>&1 || { echo -e "${RED}ERROR: nasm not found${NC}"; exit 1; }
 echo -e "${GREEN}✓ nasm found${NC}"
+command -v python3 >/dev/null 2>&1 || { echo -e "${RED}ERROR: python3 not found${NC}"; exit 1; }
+echo -e "${GREEN}✓ python3 found${NC}"
 
 # Create build directory
 mkdir -p build
@@ -54,6 +56,18 @@ else
     exit 1
 fi
 
+# Generate os.pxi (pixel-encoded OS)
+echo ""
+echo -e "${YELLOW}Generating os.pxi (pixel-encoded OS)...${NC}"
+python3 create_os_pxi.py
+if [ $? -eq 0 ]; then
+    SIZE=$(stat -c%s build/os.pxi)
+    echo -e "${GREEN}✓ os.pxi generated: $SIZE bytes${NC}"
+else
+    echo -e "${RED}✗ os.pxi generation failed${NC}"
+    exit 1
+fi
+
 # Create disk image
 echo ""
 echo -e "${YELLOW}Creating disk image...${NC}"
@@ -76,9 +90,11 @@ echo "Build Summary"
 echo "========================================"
 echo "Bootloader:    $(stat -c%s build/boot.bin) bytes"
 echo "Microkernel:   $(stat -c%s build/microkernel.bin) bytes"
+echo "os.pxi:        $(stat -c%s build/os.pxi) bytes"
 echo "Disk image:    $(stat -c%s build/pxos.img) bytes"
 echo ""
 echo "Total code:    $(( $(stat -c%s build/boot.bin) + $(stat -c%s build/microkernel.bin) )) bytes"
+echo "GPU program:   $(stat -c%s build/os.pxi) bytes"
 echo ""
 echo "========================================"
 echo "Test Commands"

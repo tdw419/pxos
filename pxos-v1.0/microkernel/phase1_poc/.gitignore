@@ -1,0 +1,10 @@
+# Build artifacts
+build/
+*.bin
+*.img
+*.pxi
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
