@@ -834,6 +834,7 @@ setup_vmcs_and_guest:
     mov ecx, 0x482              ; IA32_VMX_TRUE_PROCBASED_CTLS
     rdmsr
     or eax, (1 << 7)            ; HLT exiting
+    or eax, (1 << 24)           ; Unconditional I/O exiting
     or eax, (1 << 31)           ; Activate secondary controls
     mov rdx, 0x4002             ; CPU_BASED_VM_EXEC_CONTROL
     vmwrite rdx, rax
@@ -923,6 +924,10 @@ vm_exit_handler:
     ; Mask to get basic exit reason (bits 0-15)
     and eax, 0xFFFF
 
+    ; Check for I/O instruction (exit reason 30)
+    cmp eax, 30
+    je .handle_io
+
     ; Check for HLT (exit reason 12)
     cmp eax, 12
     je .handle_hlt
@@ -943,6 +948,63 @@ vm_exit_handler:
     mov rsi, msg_unknown_exit
     call print_string_64
     call print_hex_64
+    jmp .halt
+
+.handle_io:
+    ; Read EXIT_QUALIFICATION to get I/O details
+    mov rdx, 0x6400             ; EXIT_QUALIFICATION
+    vmread rbx, rdx             ; RBX = qualification
+
+    ; Extract port number (bits 15:0)
+    movzx ecx, bx               ; ECX = port number
+
+    ; Check if this is port 0xE9 (QEMU debug port)
+    cmp ecx, 0xE9
+    jne .io_skip                ; Ignore other ports for now
+
+    ; Check direction (bit 3: 0=OUT, 1=IN)
+    test rbx, (1 << 3)
+    jnz .io_skip                ; Only handle OUT for now
+
+    ; Read guest RAX to get the byte being output
+    mov rdx, 0x6828             ; GUEST_RAX  (low 64 bits)
+    vmread rax, rdx
+
+    ; AL now contains the byte to output
+    ; Write it to host VGA memory
+    mov rbx, [io_vga_cursor]
+    cmp rbx, 0xB8FA0            ; End of VGA buffer (80x25)
+    jae .io_wrap
+
+    mov byte [rbx], al          ; Write character
+    mov byte [rbx+1], 0x0F      ; White on black
+    add rbx, 2                  ; Move cursor
+    mov [io_vga_cursor], rbx
+    jmp .io_advance_rip
+
+.io_wrap:
+    ; Wrap to beginning of VGA buffer
+    mov rbx, 0xB8000
+    mov [io_vga_cursor], rbx
+    jmp .io_advance_rip
+
+.io_skip:
+.io_advance_rip:
+    ; Advance guest RIP by instruction length
+    mov rdx, 0x440C             ; VM_EXIT_INSTRUCTION_LEN
+    vmread rax, rdx             ; RAX = instruction length
+
+    mov rdx, 0x681E             ; GUEST_RIP
+    vmread rbx, rdx             ; RBX = current RIP
+    add rbx, rax                ; Add instruction length
+    vmwrite rdx, rbx            ; Write back new RIP
+
+    ; Resume guest execution
+    vmresume
+
+    ; If VMRESUME fails, fall through to error handling
+    mov rsi, msg_vmresume_failed
+    call print_string_64
     jmp .halt
 
 .handle_hlt:
@@ -1035,12 +1097,17 @@ msg_vmcs_setup:      db 'Setting up VMCS...', 0
 msg_vmcs_error:      db 'VMCS error!', 0
 msg_vmlaunch_failed: db 'VMLAUNCH failed!', 0
 msg_vm_error:        db 'VM instruction error: ', 0
-msg_launching_guest: db 'Launching guest...', 0
-msg_guest_hlt:       db 'Guest executed HLT successfully!', 0
-msg_unknown_exit:    db 'Unknown VM exit: ', 0
-msg_ept_violation:   db 'EPT violation at GPA: ', 0
-msg_triple_fault:    db 'Guest triple fault!', 0
-msg_invalid_state:   db 'Invalid guest state, error: ', 0
+msg_launching_guest:  db 'Launching guest...', 0
+msg_guest_hlt:        db 'Guest executed HLT successfully!', 0
+msg_unknown_exit:     db 'Unknown VM exit: ', 0
+msg_ept_violation:    db 'EPT violation at GPA: ', 0
+msg_triple_fault:     db 'Guest triple fault!', 0
+msg_invalid_state:    db 'Invalid guest state, error: ', 0
+msg_vmresume_failed:  db 'VMRESUME failed!', 0
+
+; I/O handler state
+align 8
+io_vga_cursor:  dq 0xB8000          ; VGA cursor for I/O port output
 
 ;-----------------------------------------------------------------------------
 ; Embedded guest real mode code (512 bytes)
