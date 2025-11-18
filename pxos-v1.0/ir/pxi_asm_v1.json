@@ -1,0 +1,422 @@
+{
+  "version": "1.0",
+  "name": "PXI Assembly",
+  "description": "pxOS Intermediate Representation - Human-readable, architecture-agnostic assembly language",
+  "purpose": "Universal target for all source languages, compiles mechanically to pxOS primitives",
+
+  "registers": {
+    "general_purpose": ["AX", "BX", "CX", "DX"],
+    "index": ["SI", "DI"],
+    "stack": ["SP", "BP"],
+    "segment": ["ES", "DS"],
+    "byte_accessible": {
+      "AX": ["AH", "AL"],
+      "BX": ["BH", "BL"],
+      "CX": ["CH", "CL"],
+      "DX": ["DH", "DL"]
+    }
+  },
+
+  "instructions": {
+    "data_movement": {
+      "MOV": {
+        "description": "Move data between registers, memory, or immediate values",
+        "syntax": "MOV <dst>, <src>",
+        "operands": {
+          "dst": ["reg", "mem"],
+          "src": ["reg", "mem", "imm"]
+        },
+        "examples": [
+          "MOV AX, 0x1234",
+          "MOV SI, str_hello",
+          "MOV [0x7E00], AL"
+        ]
+      },
+      "PUSH": {
+        "description": "Push value onto stack",
+        "syntax": "PUSH <src>",
+        "operands": {"src": ["reg", "mem", "imm"]},
+        "examples": ["PUSH AX", "PUSH 0x1234"]
+      },
+      "POP": {
+        "description": "Pop value from stack",
+        "syntax": "POP <dst>",
+        "operands": {"dst": ["reg"]},
+        "examples": ["POP AX", "POP BX"]
+      },
+      "LEA": {
+        "description": "Load effective address",
+        "syntax": "LEA <dst>, <src>",
+        "operands": {"dst": ["reg"], "src": ["mem"]},
+        "examples": ["LEA SI, [BP+4]"]
+      }
+    },
+
+    "arithmetic": {
+      "ADD": {
+        "description": "Add",
+        "syntax": "ADD <dst>, <src>",
+        "operands": {"dst": ["reg", "mem"], "src": ["reg", "mem", "imm"]},
+        "examples": ["ADD AX, 10", "ADD CX, BX"]
+      },
+      "SUB": {
+        "description": "Subtract",
+        "syntax": "SUB <dst>, <src>",
+        "operands": {"dst": ["reg", "mem"], "src": ["reg", "mem", "imm"]},
+        "examples": ["SUB AX, 5"]
+      },
+      "INC": {
+        "description": "Increment by 1",
+        "syntax": "INC <dst>",
+        "operands": {"dst": ["reg", "mem"]},
+        "examples": ["INC CX"]
+      },
+      "DEC": {
+        "description": "Decrement by 1",
+        "syntax": "DEC <dst>",
+        "operands": {"dst": ["reg", "mem"]},
+        "examples": ["DEC CX"]
+      },
+      "MUL": {
+        "description": "Unsigned multiply (AX * src → DX:AX)",
+        "syntax": "MUL <src>",
+        "operands": {"src": ["reg", "mem"]},
+        "examples": ["MUL BX"]
+      },
+      "DIV": {
+        "description": "Unsigned divide (DX:AX / src → AX quotient, DX remainder)",
+        "syntax": "DIV <src>",
+        "operands": {"src": ["reg", "mem"]},
+        "examples": ["DIV CX"]
+      }
+    },
+
+    "logical": {
+      "AND": {
+        "description": "Bitwise AND",
+        "syntax": "AND <dst>, <src>",
+        "operands": {"dst": ["reg", "mem"], "src": ["reg", "mem", "imm"]},
+        "examples": ["AND AX, 0xFF"]
+      },
+      "OR": {
+        "description": "Bitwise OR",
+        "syntax": "OR <dst>, <src>",
+        "operands": {"dst": ["reg", "mem"], "src": ["reg", "mem", "imm"]},
+        "examples": ["OR AL, AL"]
+      },
+      "XOR": {
+        "description": "Bitwise XOR",
+        "syntax": "XOR <dst>, <src>",
+        "operands": {"dst": ["reg", "mem"], "src": ["reg", "mem", "imm"]},
+        "examples": ["XOR DI, DI"]
+      },
+      "NOT": {
+        "description": "Bitwise NOT",
+        "syntax": "NOT <dst>",
+        "operands": {"dst": ["reg", "mem"]},
+        "examples": ["NOT AX"]
+      },
+      "SHL": {
+        "description": "Shift left",
+        "syntax": "SHL <dst>, <count>",
+        "operands": {"dst": ["reg", "mem"], "count": ["imm", "CL"]},
+        "examples": ["SHL AX, 2"]
+      },
+      "SHR": {
+        "description": "Shift right",
+        "syntax": "SHR <dst>, <count>",
+        "operands": {"dst": ["reg", "mem"], "count": ["imm", "CL"]},
+        "examples": ["SHR BX, 1"]
+      }
+    },
+
+    "comparison": {
+      "CMP": {
+        "description": "Compare (subtract without storing result, sets flags)",
+        "syntax": "CMP <op1>, <op2>",
+        "operands": {"op1": ["reg", "mem"], "op2": ["reg", "mem", "imm"]},
+        "examples": ["CMP AL, 0", "CMP AX, BX"]
+      },
+      "TEST": {
+        "description": "Test (AND without storing result, sets flags)",
+        "syntax": "TEST <op1>, <op2>",
+        "operands": {"op1": ["reg", "mem"], "op2": ["reg", "mem", "imm"]},
+        "examples": ["TEST AL, AL"]
+      }
+    },
+
+    "control_flow": {
+      "JMP": {
+        "description": "Unconditional jump",
+        "syntax": "JMP <target>",
+        "operands": {"target": ["label", "reg", "mem"]},
+        "examples": ["JMP main_loop", "JMP halt"]
+      },
+      "JE": {
+        "description": "Jump if equal (ZF=1)",
+        "syntax": "JE <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JE .done"]
+      },
+      "JNE": {
+        "description": "Jump if not equal (ZF=0)",
+        "syntax": "JNE <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JNE .loop"]
+      },
+      "JZ": {
+        "description": "Jump if zero (ZF=1)",
+        "syntax": "JZ <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JZ .done"]
+      },
+      "JNZ": {
+        "description": "Jump if not zero (ZF=0)",
+        "syntax": "JNZ <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JNZ .continue"]
+      },
+      "JG": {
+        "description": "Jump if greater (signed)",
+        "syntax": "JG <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JG .positive"]
+      },
+      "JL": {
+        "description": "Jump if less (signed)",
+        "syntax": "JL <target>",
+        "operands": {"target": ["label"]},
+        "examples": ["JL .negative"]
+      },
+      "CALL": {
+        "description": "Call subroutine",
+        "syntax": "CALL <target>",
+        "operands": {"target": ["label", "reg", "mem"]},
+        "examples": ["CALL print_string"]
+      },
+      "RET": {
+        "description": "Return from subroutine",
+        "syntax": "RET",
+        "operands": {},
+        "examples": ["RET"]
+      }
+    },
+
+    "string_operations": {
+      "LODSB": {
+        "description": "Load byte at DS:SI into AL, increment SI",
+        "syntax": "LODSB",
+        "operands": {},
+        "examples": ["LODSB"]
+      },
+      "STOSB": {
+        "description": "Store AL at ES:DI, increment DI",
+        "syntax": "STOSB",
+        "operands": {},
+        "examples": ["STOSB"]
+      },
+      "STOSW": {
+        "description": "Store AX at ES:DI, increment DI by 2",
+        "syntax": "STOSW",
+        "operands": {},
+        "examples": ["STOSW"]
+      },
+      "REP": {
+        "description": "Repeat next string operation CX times",
+        "syntax": "REP <string_op>",
+        "operands": {"string_op": ["STOSB", "STOSW", "LODSB"]},
+        "examples": ["REP STOSW"]
+      }
+    },
+
+    "system": {
+      "INT": {
+        "description": "Software interrupt",
+        "syntax": "INT <num>",
+        "operands": {"num": ["imm"]},
+        "examples": ["INT 0x10", "INT 0x16"]
+      },
+      "CLI": {
+        "description": "Clear interrupt flag (disable interrupts)",
+        "syntax": "CLI",
+        "operands": {},
+        "examples": ["CLI"]
+      },
+      "STI": {
+        "description": "Set interrupt flag (enable interrupts)",
+        "syntax": "STI",
+        "operands": {},
+        "examples": ["STI"]
+      },
+      "HLT": {
+        "description": "Halt CPU until interrupt",
+        "syntax": "HLT",
+        "operands": {},
+        "examples": ["HLT"]
+      },
+      "NOP": {
+        "description": "No operation",
+        "syntax": "NOP",
+        "operands": {},
+        "examples": ["NOP"]
+      }
+    }
+  },
+
+  "pseudo_instructions": {
+    "LABEL": {
+      "description": "Define a code label",
+      "syntax": "LABEL <name>",
+      "examples": [".loop:", "main_loop:", "print_string:"]
+    },
+    "BYTE": {
+      "description": "Define byte data",
+      "syntax": "BYTE <values...>",
+      "examples": ["BYTE 0x48, 0x65, 0x6C, 0x6C, 0x6F"]
+    },
+    "WORD": {
+      "description": "Define word (16-bit) data",
+      "syntax": "WORD <values...>",
+      "examples": ["WORD 0x1234, 0x5678"]
+    },
+    "STRING": {
+      "description": "Define null-terminated string",
+      "syntax": "STRING \"<text>\"",
+      "examples": ["STRING \"Hello World!\""]
+    },
+    "ALIGN": {
+      "description": "Align to boundary",
+      "syntax": "ALIGN <bytes>",
+      "examples": ["ALIGN 16"]
+    },
+    "ORG": {
+      "description": "Set origin address",
+      "syntax": "ORG <address>",
+      "examples": ["ORG 0x7C00"]
+    }
+  },
+
+  "macros": {
+    "SYSCALL": {
+      "description": "pxOS system call (high-level abstraction)",
+      "syntax": "SYSCALL <name>, <args...>",
+      "examples": [
+        "SYSCALL print_text, \"Hello\"",
+        "SYSCALL clear_screen",
+        "SYSCALL read_key"
+      ],
+      "note": "Expands to appropriate INT/BIOS calls"
+    },
+    "FUNC": {
+      "description": "Function definition with prologue",
+      "syntax": "FUNC <name>",
+      "examples": ["FUNC print_string"]
+    },
+    "ENDFUNC": {
+      "description": "Function epilogue and return",
+      "syntax": "ENDFUNC",
+      "examples": ["ENDFUNC"]
+    }
+  },
+
+  "memory_addressing": {
+    "immediate": {
+      "description": "Literal value",
+      "syntax": "0x1234 or 1234",
+      "examples": ["MOV AX, 0x7C00"]
+    },
+    "register": {
+      "description": "Register name",
+      "syntax": "AX, BX, SI, etc.",
+      "examples": ["MOV AX, BX"]
+    },
+    "direct": {
+      "description": "Memory address",
+      "syntax": "[address] or [label]",
+      "examples": ["MOV AL, [0xB8000]"]
+    },
+    "register_indirect": {
+      "description": "Address in register",
+      "syntax": "[reg]",
+      "examples": ["MOV AL, [SI]"]
+    },
+    "indexed": {
+      "description": "Base + offset",
+      "syntax": "[reg+offset]",
+      "examples": ["MOV AL, [BP+4]"]
+    },
+    "label": {
+      "description": "Symbolic address",
+      "syntax": "label_name",
+      "examples": ["MOV SI, str_hello", "JMP main_loop"]
+    }
+  },
+
+  "standard_library": {
+    "description": "Pre-defined functions available to all PXI programs",
+    "functions": {
+      "print_char": {
+        "description": "Print single character",
+        "signature": "CALL print_char ; AL = character",
+        "uses": ["INT 0x10 (AH=0x0E)"]
+      },
+      "print_string": {
+        "description": "Print null-terminated string",
+        "signature": "CALL print_string ; SI = string address",
+        "uses": ["LODSB, INT 0x10"]
+      },
+      "read_key": {
+        "description": "Read keyboard input",
+        "signature": "CALL read_key ; returns AL = ASCII",
+        "uses": ["INT 0x16 (AH=0x00)"]
+      },
+      "clear_screen": {
+        "description": "Clear screen with color",
+        "signature": "CALL clear_screen ; BH = color attribute",
+        "uses": ["INT 0x10 (AH=0x06)"]
+      }
+    }
+  },
+
+  "compilation_notes": {
+    "address_resolution": "Two-pass: first pass collects labels, second pass resolves addresses",
+    "optimization": "IR compiler may optimize register usage, eliminate dead code, fold constants",
+    "validation": "All label references must be defined, register usage must be valid",
+    "output": "Generates pxOS primitives (WRITE/DEFINE commands)"
+  },
+
+  "example_program": {
+    "description": "Complete PXI Assembly program",
+    "code": [
+      "; Hello World in PXI Assembly",
+      "ORG 0x7C00",
+      "",
+      "FUNC main",
+      "  SYSCALL clear_screen",
+      "  MOV SI, str_hello",
+      "  CALL print_string",
+      "  JMP halt",
+      "ENDFUNC",
+      "",
+      "FUNC print_string",
+      ".loop:",
+      "  LODSB",
+      "  OR AL, AL",
+      "  JZ .done",
+      "  MOV AH, 0x0E",
+      "  INT 0x10",
+      "  JMP .loop",
+      ".done:",
+      "  RET",
+      "ENDFUNC",
+      "",
+      "halt:",
+      "  JMP halt",
+      "",
+      "str_hello:",
+      "  STRING \"Hello from PXI Assembly!\"",
+      "",
+      "; Boot signature added automatically"
+    ]
+  }
+}

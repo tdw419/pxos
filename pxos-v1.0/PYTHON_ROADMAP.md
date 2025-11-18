@@ -4,12 +4,56 @@ This document outlines the path to full Python support on pxOS, from cross-compi
 
 ---
 
+## 🎯 CRITICAL ARCHITECTURE: IR Layer
+
+**Update 2025-01-18**: The compiler architecture has been redesigned with a proper **Intermediate Representation (IR) layer**.
+
+### New Architecture (v2.0)
+
+```
+Source Languages → PXI Assembly IR → Primitives → Binary
+     ↓                    ↓               ↓
+  Python          Human-readable     x86 opcodes
+  C (future)      Debuggable         (only in ir_compiler.py)
+  Binary lifter   Semantic
+```
+
+**Key Change**: Source compilers NO LONGER generate x86 opcodes directly. They emit **PXI Assembly IR** (JSON), which is then mechanically compiled to primitives by `ir_compiler.py`.
+
+### Why This Matters
+
+**Without IR** (v1.0 - deprecated):
+```python
+# Python compiler had to know about x86 opcodes
+opcodes = [0xB8, value & 0xFF, (value >> 8) & 0xFF]  # MOV AX, imm16
+# Hard to debug, not portable, fragile
+```
+
+**With IR** (v2.0 - current):
+```python
+# Python compiler emits semantic operations
+self.emit_instr("MOV", dst="AX", src=0xB800)
+# Human-readable, debuggable, portable
+```
+
+**Benefits**:
+- ✅ **Debuggable**: Can inspect IR between compilation stages
+- ✅ **Portable**: IR is semantic, not architecture-specific
+- ✅ **Separation of concerns**: Language knowledge vs. opcode knowledge
+- ✅ **LLM-friendly**: Can generate/analyze IR directly
+- ✅ **Pixel cartridges**: Can store IR for true portability
+
+See [ir/README.md](ir/README.md) for complete IR documentation.
+
+---
+
 ## Overview
 
-Python support for pxOS is being developed in **two parallel tracks**:
+Python support for pxOS is being developed in **three parallel tracks**:
 
-1. **Near-Term (Track A)**: Python as a cross-compiler (development-time)
-2. **Mid-Term (Track B)**: Native Python runtime on pxOS (run-time)
+1. **Track A (COMPLETE ✅)**: Python cross-compiler with IR layer
+2. **Track B (PLANNED)**: Native Python runtime on pxOS (run-time)
+3. **Track C (COMPLETE ✅)**: Pixel cartridge format for binary porting
 
 ---
 

@@ -1,0 +1,169 @@
+{
+  "source": "hello_simple.py",
+  "ir_version": "1.0",
+  "origin": 31744,
+  "instructions": [
+    {
+      "op": "COMMENT",
+      "operands": {},
+      "comment": "clear_screen()"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "AX",
+        "src": 47104
+      },
+      "comment": "Set ES to VGA buffer"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "ES",
+        "src": "AX"
+      },
+      "comment": ""
+    },
+    {
+      "op": "XOR",
+      "operands": {
+        "dst": "DI",
+        "src": "DI"
+      },
+      "comment": "DI = 0 (start of screen)"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "CX",
+        "src": 2000
+      },
+      "comment": "2000 characters"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "AX",
+        "src": 1824
+      },
+      "comment": "Space + color attr"
+    },
+    {
+      "op": "REP",
+      "operands": {},
+      "comment": "Fill screen"
+    },
+    {
+      "op": "STOSW",
+      "operands": {},
+      "comment": ""
+    },
+    {
+      "op": "COMMENT",
+      "operands": {},
+      "comment": "print_text(\"Hello from pxOS Python!\")"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "SI",
+        "src": "str_0"
+      },
+      "comment": "Load string address"
+    },
+    {
+      "op": "CALL",
+      "operands": {
+        "target": "print_string"
+      },
+      "comment": "Call print_string"
+    },
+    {
+      "op": "COMMENT",
+      "operands": {},
+      "comment": "loop_forever()"
+    },
+    {
+      "op": "JMP",
+      "operands": {
+        "target": "$"
+      },
+      "comment": "Infinite loop"
+    },
+    {
+      "op": "LABEL",
+      "operands": {
+        "name": "print_string"
+      },
+      "comment": "Print null-terminated string at SI"
+    },
+    {
+      "op": "LABEL",
+      "operands": {
+        "name": ".print_loop"
+      },
+      "comment": ""
+    },
+    {
+      "op": "LODSB",
+      "operands": {},
+      "comment": "Load byte from SI"
+    },
+    {
+      "op": "OR",
+      "operands": {
+        "dst": "AL",
+        "src": "AL"
+      },
+      "comment": "Check if zero"
+    },
+    {
+      "op": "JZ",
+      "operands": {
+        "target": ".print_done"
+      },
+      "comment": "Jump if null terminator"
+    },
+    {
+      "op": "MOV",
+      "operands": {
+        "dst": "AH",
+        "src": 14
+      },
+      "comment": "BIOS teletype"
+    },
+    {
+      "op": "INT",
+      "operands": {
+        "num": 16
+      },
+      "comment": "Print character"
+    },
+    {
+      "op": "JMP",
+      "operands": {
+        "target": ".print_loop"
+      },
+      "comment": "Loop back"
+    },
+    {
+      "op": "LABEL",
+      "operands": {
+        "name": ".print_done"
+      },
+      "comment": ""
+    },
+    {
+      "op": "RET",
+      "operands": {},
+      "comment": "Return"
+    }
+  ],
+  "data": [
+    {
+      "label": "str_0",
+      "type": "string",
+      "value": "Hello from pxOS Python!"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+COMMENT ============================================================
+COMMENT PXI Assembly IR Compiled to pxOS Primitives
+COMMENT ============================================================
+COMMENT 
+WRITE 0x7C00 0xB8    COMMENT Set ES to VGA buffer
+WRITE 0x7C01 0x00
+WRITE 0x7C02 0xB8
+WRITE 0x7C03 0x8E    COMMENT MOV dst=ES, src=AX
+WRITE 0x7C04 0xC0
+WRITE 0x7C05 0x31    COMMENT DI = 0 (start of screen)
+WRITE 0x7C06 0xFF
+WRITE 0x7C07 0xB9    COMMENT 2000 characters
+WRITE 0x7C08 0xD0
+WRITE 0x7C09 0x07
+WRITE 0x7C0A 0xB8    COMMENT Space + color attr
+WRITE 0x7C0B 0x20
+WRITE 0x7C0C 0x07
+WRITE 0x7C0D 0xF3    COMMENT Fill screen
+WRITE 0x7C0E 0xAB    COMMENT STOSW
+WRITE 0x7C0F 0xBE    COMMENT Load string address
+WRITE 0x7C10 0x24
+WRITE 0x7C11 0x7C
+WRITE 0x7C12 0xE8    COMMENT Call print_string
+WRITE 0x7C13 0x00
+WRITE 0x7C14 0x00
+WRITE 0x7C15 0xEB    COMMENT Infinite loop
+WRITE 0x7C16 0xFE
+WRITE 0x7C17 0xAC    COMMENT Load byte from SI
+WRITE 0x7C18 0x08    COMMENT Check if zero
+WRITE 0x7C19 0xC0
+WRITE 0x7C1A 0x74    COMMENT Jump if null terminator
+WRITE 0x7C1B 0x00
+WRITE 0x7C1C 0xB4    COMMENT BIOS teletype
+WRITE 0x7C1D 0x0E
+WRITE 0x7C1E 0xCD    COMMENT Print character
+WRITE 0x7C1F 0x10
+WRITE 0x7C20 0xEB    COMMENT Loop back
+WRITE 0x7C21 0x00
+WRITE 0x7C22 0xC3    COMMENT Return
+COMMENT 
+COMMENT Data: str_0
+DEFINE str_0 0x7C24
+WRITE 0x7C24 0x48    COMMENT 'H'
+WRITE 0x7C25 0x65    COMMENT 'e'
+WRITE 0x7C26 0x6C    COMMENT 'l'
+WRITE 0x7C27 0x6C    COMMENT 'l'
+WRITE 0x7C28 0x6F    COMMENT 'o'
+WRITE 0x7C29 0x20    COMMENT ' '
+WRITE 0x7C2A 0x66    COMMENT 'f'
+WRITE 0x7C2B 0x72    COMMENT 'r'
+WRITE 0x7C2C 0x6F    COMMENT 'o'
+WRITE 0x7C2D 0x6D    COMMENT 'm'
+WRITE 0x7C2E 0x20    COMMENT ' '
+WRITE 0x7C2F 0x70    COMMENT 'p'
+WRITE 0x7C30 0x78    COMMENT 'x'
+WRITE 0x7C31 0x4F    COMMENT 'O'
+WRITE 0x7C32 0x53    COMMENT 'S'
+WRITE 0x7C33 0x20    COMMENT ' '
+WRITE 0x7C34 0x50    COMMENT 'P'
+WRITE 0x7C35 0x79    COMMENT 'y'
+WRITE 0x7C36 0x74    COMMENT 't'
+WRITE 0x7C37 0x68    COMMENT 'h'
+WRITE 0x7C38 0x6F    COMMENT 'o'
+WRITE 0x7C39 0x6E    COMMENT 'n'
+WRITE 0x7C3A 0x21    COMMENT '!'
+WRITE 0x7C3B 0x00    COMMENT Null terminator
+COMMENT 
+COMMENT ============================================================
+COMMENT Boot signature (added by build_pxos.py)
+COMMENT ============================================================
