@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "description": "PXI Assembly - pxOS Intermediate Representation",
+  "registers": ["AX", "BX", "CX", "DX", "SI", "DI", "SP", "BP"],
+  "instructions": {
+    "MOV": {
+      "args": ["dst:reg|mem", "src:reg|mem|imm"],
+      "example": "MOV SI, 0x7E00"
+    },
+    "CALL": {
+      "args": ["target:label"],
+      "example": "CALL print_string"
+    },
+    "INT": {
+      "args": ["num:imm"],
+      "example": "INT 0x10"
+    },
+    "PUSH": {"args": ["src:reg|mem|imm"]},
+    "POP": {"args": ["dst:reg"]},
+    "RET": {"args": []},
+    "JMP": {"args": ["target:label"]},
+    "CMP": {"args": ["op1:reg|mem", "op2:reg|mem|imm"]},
+    "JE": {"args": ["target:label"]},
+    "JNE": {"args": ["target:label"]}
+  },
+  "pseudo_ops": {
+    "LABEL": "Define a label",
+    "STRING": "Define string data",
+    "BYTE": "Define byte data"
+  }
+}
