@@ -1,0 +1,3 @@
+Script started on 2025-11-18 18:11:07+00:00 [COMMAND="qemu-system-x86_64 -drive file=build/pxhv.img,format=raw -m 512M -display none -serial stdio" <not executed on terminal>]
+
+Script done on 2025-11-18 18:11:14+00:00 [COMMAND_EXIT_CODE="0"]
