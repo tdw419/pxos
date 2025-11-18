@@ -78,8 +78,8 @@ if [ "$MODE" == "menu" ]; then
     echo
     echo "  1) Demo LM Studio Bridge (test the AI learning system)"
     echo "  2) Interactive Primitive Generator (generate code interactively)"
-    echo "  3) Automated Build (let AI build pxOS automatically)"
-    echo "  4) Full Automation + Testing (build and test in QEMU)"
+    echo "  3) Orchestrator - Full Pipeline (ONE command does everything)"
+    echo "  4) Legacy Auto Build (old auto_build_pxos.py)"
     echo "  5) Exit"
     echo
     read -p "Enter choice [1-5]: " choice
@@ -87,8 +87,8 @@ if [ "$MODE" == "menu" ]; then
     case $choice in
         1) MODE="demo" ;;
         2) MODE="interactive" ;;
-        3) MODE="auto" ;;
-        4) MODE="auto-test" ;;
+        3) MODE="orchestrator" ;;
+        4) MODE="auto" ;;
         5) echo "Exiting..."; exit 0 ;;
         *) echo "Invalid choice"; exit 1 ;;
     esac
@@ -110,8 +110,14 @@ case $MODE in
         python3 tools/ai_primitive_generator.py --interactive --network "$NETWORK_PATH"
         ;;
 
+    orchestrator)
+        echo -e "${GREEN}🚀 Starting Orchestrator - Full Pipeline${NC}"
+        echo
+        python3 pxos_orchestrator.py --auto
+        ;;
+
     auto)
-        echo -e "${GREEN}🚀 Starting Automated Build${NC}"
+        echo -e "${GREEN}🚀 Starting Legacy Auto Build${NC}"
         echo
         python3 tools/auto_build_pxos.py \
             --auto \
@@ -121,14 +127,9 @@ case $MODE in
         ;;
 
     auto-test)
-        echo -e "${GREEN}🚀 Starting Automated Build + Testing${NC}"
+        echo -e "${GREEN}🚀 Starting Automated Build + Testing (Orchestrator)${NC}"
         echo
-        python3 tools/auto_build_pxos.py \
-            --auto \
-            --test \
-            --network "$NETWORK_PATH" \
-            --pxos-dir "$PXOS_DIR" \
-            --max-iterations 10
+        python3 pxos_orchestrator.py --auto
         ;;
 esac
 
