@@ -1,0 +1,11 @@
+"The purpose of life is not to be happy. It is to be useful, to be honorable, to be compassionate, to have it make some difference that you have lived and lived well." - Ralph Waldo Emerson
+
+"The only way to do great work is to love what you do." - Steve Jobs
+
+"The journey of a thousand miles begins with a single step." - Lao Tzu
+
+pxOS is a visual operating system where computation is represented by pixels.
+
+The system is designed to be simple, elegant, and easy to understand.
+
+A neural network can be trained, compiled to pixels, and generate text.

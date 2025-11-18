@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "pxOS AI Primitive Schema",
+  "description": "Defines the strict JSON format for AI-generated primitives for pxOS.",
+  "type": "object",
+  "properties": {
+    "feature": {
+      "description": "A brief description of the feature being implemented.",
+      "type": "string"
+    },
+    "primitives": {
+      "description": "An array of pxOS primitive commands.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type of primitive command.",
+            "type": "string",
+            "enum": ["DEFINE", "WRITE", "COMMENT"]
+          },
+          "label": {
+            "description": "The label for a DEFINE command.",
+            "type": "string"
+          },
+          "addr": {
+            "description": "The memory address for a DEFINE or WRITE command.",
+            "type": "string"
+          },
+          "byte": {
+            "description": "The byte value for a WRITE command.",
+            "type": "string"
+          },
+          "comment": {
+            "description": "A comment associated with the command.",
+            "type": "string"
+          }
+        },
+        "required": ["type"]
+      }
+    }
+  },
+  "required": ["feature", "primitives"]
+}

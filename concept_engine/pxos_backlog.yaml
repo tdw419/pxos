@@ -1,0 +1,31 @@
+version: 1
+current_focus: "Developer Experience and Quantization Refinement"
+
+tasks:
+  - id: T001
+    title: "Refine Quantization Scheme"
+    status: "todo"
+    type: "feature"
+    notes: "The current uint8 quantization is naive and causes saturation. Implement a more robust scheme, likely using a scaling factor and offset stored in metadata."
+
+  - id: T002
+    title: "Build PixelInspector Tool"
+    status: "todo"
+    type: "dev-tool"
+    notes: "Create a read-only tool to inspect .pxi files, showing instructions, matrices, and a data flow graph."
+
+  - id: T003
+    title: "Build PixelAssembler Tool"
+    status: "todo"
+    type: "dev-tool"
+    notes: "Create a DSL that compiles to pixels, making it easier to write and read programs."
+
+  - id: T004
+    title: "Build SymbolicDebugger Tool"
+    status: "todo"
+    type: "dev-tool"
+    notes: "Create a debugger that allows stepping through execution with symbolic names."
+
+log:
+  - "2025-11-16T20:00Z: Initialized backlog"
+  - "2025-11-16T20:01Z: Tagged v0.1.0 - Proof of Concept"
