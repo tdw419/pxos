@@ -856,6 +856,14 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
+    ; Exception bitmap (trap software interrupts for BIOS emulation)
+    ; Bit 3 set = trap INT 3 (breakpoint)
+    ; Bits 16, 19, 22 = trap INT 10h, 13h, 16h (BIOS services)
+    mov rax, (1 << 3) | (1 << 16) | (1 << 19) | (1 << 22)
+    mov rdx, 0x4004             ; EXCEPTION_BITMAP
+    vmwrite rdx, rax
+    jc .error
+
     ; VM-entry controls (real mode, no IA-32e)
     mov ecx, 0x484              ; IA32_VMX_TRUE_ENTRY_CTLS
     rdmsr
@@ -923,6 +931,10 @@ vm_exit_handler:
 
     ; Mask to get basic exit reason (bits 0-15)
     and eax, 0xFFFF
+
+    ; Check for Exception or NMI (exit reason 0) - handles software interrupts
+    cmp eax, 0
+    je .handle_exception
 
     ; Check for I/O instruction (exit reason 30)
     cmp eax, 30
@@ -1007,6 +1019,75 @@ vm_exit_handler:
     call print_string_64
     jmp .halt
 
+.handle_exception:
+    ; Read VM_EXIT_INTERRUPTION_INFORMATION to get interrupt vector
+    mov rdx, 0x4404             ; VM_EXIT_INTR_INFO
+    vmread rax, rdx
+
+    ; Extract interrupt type (bits 10:8): 4 = software interrupt (INT n)
+    mov rbx, rax
+    shr rbx, 8
+    and rbx, 0x7
+    cmp rbx, 4                  ; Is it a software interrupt?
+    jne .exception_skip         ; Not a software INT, skip
+
+    ; Extract vector number (bits 7:0)
+    and rax, 0xFF
+
+    ; Check if it's a BIOS service INT
+    cmp rax, 0x10               ; INT 10h - Video
+    je .handle_int10h
+    cmp rax, 0x13               ; INT 13h - Disk
+    je .handle_int13h
+    cmp rax, 0x16               ; INT 16h - Keyboard
+    je .handle_int16h
+    cmp rax, 0x03               ; INT 3 - Breakpoint (for debugging)
+    je .handle_int3
+
+    ; Unknown INT, skip and advance RIP
+.exception_skip:
+    ; Advance RIP past the INT instruction (2 bytes)
+    mov rdx, 0x681E             ; GUEST_RIP
+    vmread rax, rdx
+    add rax, 2                  ; INT is 2 bytes
+    vmwrite rdx, rax
+    vmresume
+    jmp .halt
+
+.handle_int3:
+    ; INT 3 breakpoint - print debug message
+    mov rsi, msg_int3
+    call print_string_64
+    ; Read and print guest RIP
+    mov rdx, 0x681E
+    vmread rax, rdx
+    call print_hex_64
+    jmp .halt
+
+.handle_int10h:
+    ; BIOS Video Service (INT 10h)
+    call emulate_int10h
+    vmresume
+    mov rsi, msg_vmresume_failed
+    call print_string_64
+    jmp .halt
+
+.handle_int13h:
+    ; BIOS Disk Service (INT 13h)
+    call emulate_int13h
+    vmresume
+    mov rsi, msg_vmresume_failed
+    call print_string_64
+    jmp .halt
+
+.handle_int16h:
+    ; BIOS Keyboard Service (INT 16h)
+    call emulate_int16h
+    vmresume
+    mov rsi, msg_vmresume_failed
+    call print_string_64
+    jmp .halt
+
 .handle_hlt:
     mov rsi, msg_guest_hlt
     call print_string_64
@@ -1044,6 +1125,235 @@ vm_exit_handler:
     pop rax
     cli
     hlt
+
+;=============================================================================
+; BIOS Emulation Functions
+;=============================================================================
+
+;-----------------------------------------------------------------------------
+; emulate_int10h: BIOS Video Service (INT 10h)
+; Reads guest AH to determine function
+;-----------------------------------------------------------------------------
+emulate_int10h:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+
+    ; Read guest RAX to get AH (function number)
+    mov rdx, 0x6828             ; GUEST_RAX (encoding 0x6828 for full RAX)
+    vmread rax, rdx
+
+    ; Extract AH (bits 15:8)
+    shr rax, 8
+    and rax, 0xFF
+
+    ; Dispatch based on function
+    cmp rax, 0x0E               ; AH=0Eh: Teletype output
+    je .int10_teletype
+    cmp rax, 0x00               ; AH=00h: Set video mode
+    je .int10_set_mode
+    cmp rax, 0x03               ; AH=03h: Get cursor position
+    je .int10_get_cursor
+
+    ; Unsupported function - just advance RIP and return
+    jmp .int10_done
+
+.int10_teletype:
+    ; Write character in AL to current cursor position
+    ; Read guest RAX again to get AL
+    mov rdx, 0x6828
+    vmread rax, rdx
+    and rax, 0xFF               ; AL = character
+
+    ; Write to VGA memory at current io_vga_cursor
+    mov rbx, [io_vga_cursor]
+    mov byte [rbx], al
+    mov byte [rbx+1], 0x0F      ; White on black
+    add qword [io_vga_cursor], 2
+    jmp .int10_done
+
+.int10_set_mode:
+    ; Set video mode - for now just acknowledge
+    ; TODO: Implement mode switching
+    jmp .int10_done
+
+.int10_get_cursor:
+    ; Return cursor position in DX
+    ; For now, return 0,0
+    xor rax, rax
+    mov rdx, 0x6816             ; GUEST_RDX
+    vmwrite rdx, rax
+    jmp .int10_done
+
+.int10_done:
+    ; Advance guest RIP past INT instruction (2 bytes)
+    mov rdx, 0x681E             ; GUEST_RIP
+    vmread rax, rdx
+    add rax, 2
+    vmwrite rdx, rax
+
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
+; emulate_int13h: BIOS Disk Service (INT 13h)
+; Reads guest AH to determine function
+;-----------------------------------------------------------------------------
+emulate_int13h:
+    push rax
+    push rbx
+    push rdx
+
+    ; Read guest RAX to get AH (function number)
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rax, rdx
+
+    ; Extract AH
+    shr rax, 8
+    and rax, 0xFF
+
+    ; Dispatch based on function
+    cmp rax, 0x00               ; AH=00h: Reset disk
+    je .int13_reset
+    cmp rax, 0x02               ; AH=02h: Read sectors
+    je .int13_read
+    cmp rax, 0x08               ; AH=08h: Get drive parameters
+    je .int13_params
+
+    ; Unsupported function - set CF (carry flag) to indicate error
+    jmp .int13_error
+
+.int13_reset:
+    ; Reset disk - always succeed
+    ; Clear CF in guest RFLAGS
+    mov rdx, 0x6820             ; GUEST_RFLAGS
+    vmread rax, rdx
+    and rax, ~1                 ; Clear CF (bit 0)
+    vmwrite rdx, rax
+    ; Set AH=0 (success)
+    xor rax, rax
+    mov rdx, 0x6828             ; GUEST_RAX
+    vmread rbx, rdx
+    and rbx, 0xFFFFFFFFFFFF00FF ; Clear AH
+    vmwrite rdx, rbx
+    jmp .int13_done
+
+.int13_read:
+    ; Read sectors - for now, just return success
+    ; TODO: Implement actual disk read
+    mov rdx, 0x6820
+    vmread rax, rdx
+    and rax, ~1                 ; Clear CF
+    vmwrite rdx, rax
+    jmp .int13_done
+
+.int13_params:
+    ; Get drive parameters - return dummy values
+    mov rdx, 0x6820
+    vmread rax, rdx
+    and rax, ~1                 ; Clear CF
+    vmwrite rdx, rax
+    jmp .int13_done
+
+.int13_error:
+    ; Set CF to indicate error
+    mov rdx, 0x6820
+    vmread rax, rdx
+    or rax, 1                   ; Set CF
+    vmwrite rdx, rax
+
+.int13_done:
+    ; Advance guest RIP
+    mov rdx, 0x681E
+    vmread rax, rdx
+    add rax, 2
+    vmwrite rdx, rax
+
+    pop rdx
+    pop rbx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
+; emulate_int16h: BIOS Keyboard Service (INT 16h)
+; Reads guest AH to determine function
+;-----------------------------------------------------------------------------
+emulate_int16h:
+    push rax
+    push rbx
+    push rdx
+
+    ; Read guest RAX to get AH
+    mov rdx, 0x6828
+    vmread rax, rdx
+
+    ; Extract AH
+    shr rax, 8
+    and rax, 0xFF
+
+    ; Dispatch based on function
+    cmp rax, 0x00               ; AH=00h: Read keystroke
+    je .int16_read
+    cmp rax, 0x01               ; AH=01h: Check keystroke
+    je .int16_check
+    cmp rax, 0x02               ; AH=02h: Get shift flags
+    je .int16_flags
+
+    ; Unsupported function
+    jmp .int16_done
+
+.int16_read:
+    ; Read keystroke - simulate Enter key for now
+    ; In real implementation, this would read from keyboard buffer
+    mov rax, 0x1C0D             ; Scan code 0x1C (Enter), ASCII 0x0D (CR)
+    mov rdx, 0x6828             ; GUEST_RAX
+    mov rbx, rax
+    shl rbx, 8                  ; Shift to AX position
+    vmwrite rdx, rbx
+    jmp .int16_done
+
+.int16_check:
+    ; Check if keystroke available
+    ; For now, always say yes (clear ZF)
+    mov rdx, 0x6820             ; GUEST_RFLAGS
+    vmread rax, rdx
+    and rax, ~0x40              ; Clear ZF (bit 6)
+    vmwrite rdx, rax
+    ; Put dummy key in AX
+    mov rax, 0x1C0D
+    mov rdx, 0x6828
+    vmread rbx, rdx
+    and rbx, 0xFFFFFFFFFFFF0000 ; Clear AX
+    or rbx, rax
+    vmwrite rdx, rbx
+    jmp .int16_done
+
+.int16_flags:
+    ; Get shift flags - return 0 (no keys pressed)
+    mov rdx, 0x6828
+    vmread rax, rdx
+    and rax, 0xFFFFFFFFFFFFFF00 ; Clear AL
+    vmwrite rdx, rax
+
+.int16_done:
+    ; Advance guest RIP
+    mov rdx, 0x681E
+    vmread rax, rdx
+    add rax, 2
+    vmwrite rdx, rax
+
+    pop rdx
+    pop rbx
+    pop rax
+    ret
 
 ;-----------------------------------------------------------------------------
 ; print_hex_64: Print 64-bit value in RAX as hex
@@ -1104,6 +1414,7 @@ msg_ept_violation:    db 'EPT violation at GPA: ', 0
 msg_triple_fault:     db 'Guest triple fault!', 0
 msg_invalid_state:    db 'Invalid guest state, error: ', 0
 msg_vmresume_failed:  db 'VMRESUME failed!', 0
+msg_int3:             db 'INT 3 breakpoint at RIP: ', 0
 
 ; I/O handler state
 align 8
