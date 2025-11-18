@@ -108,6 +108,10 @@ start32:
     mov ss, ax
     mov esp, 0x90000            ; Stack at 640KB
 
+    ; Debug: Write 'P' to VGA (Protected mode reached)
+    mov byte [0xB8000], 'P'
+    mov byte [0xB8001], 0x0F
+
     ; Transition to 64-bit long mode
     ; Enable PAE (Physical Address Extension)
     mov eax, cr4
@@ -127,13 +131,23 @@ start32:
     or eax, 0x100               ; Set LME bit
     wrmsr
 
+    ; Debug: Write 'G' to VGA (Paging about to be enabled)
+    mov byte [0xB8002], 'G'
+    mov byte [0xB8003], 0x0F
+
     ; Enable paging (activates long mode)
     mov eax, cr0
     or eax, 0x80000000          ; Set PG bit
     mov cr0, eax
 
-    ; Far jump to 64-bit code
-    jmp 0x08:start64
+    ; Debug: Write 'L' to VGA (Long mode enabled!)
+    mov byte [0xB8004], 'L'
+    mov byte [0xB8005], 0x0F
+
+    ; Use far return to jump to 64-bit code (safer than far jmp)
+    push 0x08                   ; Code segment selector
+    push start64                ; Return address
+    retf                        ; Far return to 64-bit code
 
 ;-----------------------------------------------------------------------------
 ; setup_paging_32: Setup minimal page tables for long mode
@@ -179,6 +193,10 @@ setup_paging_32:
 ;-----------------------------------------------------------------------------
 BITS 64
 start64:
+    ; Debug: Write '6' to VGA (64-bit mode reached!)
+    mov byte [0xB8006], '6'
+    mov byte [0xB8007], 0x0F
+
     ; Setup segments for 64-bit mode
     xor ax, ax
     mov ds, ax
@@ -189,6 +207,10 @@ start64:
 
     ; Setup stack
     mov rsp, 0x90000
+
+    ; Debug: Write 'M' to VGA (About to jump to microkernel)
+    mov byte [0xB8008], 'M'
+    mov byte [0xB8009], 0x0F
 
     ; Jump to microkernel at 0x1000
     jmp 0x1000
@@ -214,7 +236,7 @@ gdt_start:
     dw 0x0000                   ; Base low
     db 0x00                     ; Base middle
     db 10011010b                ; Access: present, ring 0, code, executable, readable
-    db 11001111b                ; Flags + Limit high: 4KB granularity, 32-bit
+    db 10101111b                ; Flags + Limit high: 4KB granularity, LONG MODE (L=1, D=0)
     db 0x00                     ; Base high
 
     ; Data segment
