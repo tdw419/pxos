@@ -1,0 +1,113 @@
+{
+  "name": "util_print_string",
+  "description": "Print a null-terminated string to the screen using BIOS teletype output.",
+  "layer": "L1",
+  "contract": {
+    "inputs": {
+      "string_ptr": {
+        "register": "SI",
+        "description": "Pointer to null-terminated string in memory"
+      }
+    },
+    "outputs": {
+      "string_ptr": {
+        "register": "SI",
+        "description": "Points to byte after null terminator"
+      }
+    },
+    "clobbers": ["AL", "AH"],
+    "side_effects": [
+      "Prints each character until null terminator (0x00)",
+      "Advances cursor position for each character",
+      "Advances SI to point past the string"
+    ]
+  },
+  "implementation": {
+    "type": "inline_primitives",
+    "primitives": [
+      {
+        "type": "WRITE",
+        "offset": 0,
+        "value": "0xAC",
+        "comment": "LODSB (load byte from [SI] to AL, increment SI)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 1,
+        "value": "0x08",
+        "comment": "OR AL, AL (test if AL is zero)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 2,
+        "value": "0xC0",
+        "comment": "  ^^ sets zero flag if null terminator"
+      },
+      {
+        "type": "WRITE",
+        "offset": 3,
+        "value": "0x74",
+        "comment": "JZ done (jump if zero - string end)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 4,
+        "value": "0x06",
+        "comment": "  ^^ offset +6 bytes to RET"
+      },
+      {
+        "type": "WRITE",
+        "offset": 5,
+        "value": "0xB4",
+        "comment": "MOV AH, 0x0E (BIOS teletype)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 6,
+        "value": "0x0E",
+        "comment": "  ^^ teletype function"
+      },
+      {
+        "type": "WRITE",
+        "offset": 7,
+        "value": "0xCD",
+        "comment": "INT 0x10 (BIOS video)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 8,
+        "value": "0x10",
+        "comment": "  ^^ video interrupt"
+      },
+      {
+        "type": "WRITE",
+        "offset": 9,
+        "value": "0xEB",
+        "comment": "JMP (back to loop start)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 10,
+        "value": "0xF5",
+        "comment": "  ^^ offset -11 bytes to LODSB"
+      },
+      {
+        "type": "WRITE",
+        "offset": 11,
+        "value": "0xC3",
+        "comment": "RET (return from subroutine)"
+      }
+    ],
+    "size_bytes": 12
+  },
+  "tests": [
+    "Print empty string (immediate null terminator)",
+    "Print single character string",
+    "Print multi-word message like 'Hello World'",
+    "Print string then another string (SI positioning)"
+  ],
+  "usage_example": "UTILITY_CALL util_print_string COMMENT Print string pointed to by SI",
+  "references": {
+    "existing_implementation": "0x7C28 in pxos_commands.txt"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "name": "util_print_newline",
+  "description": "Print a newline (carriage return + line feed) to move cursor to start of next line.",
+  "layer": "L1",
+  "contract": {
+    "inputs": {},
+    "outputs": {},
+    "clobbers": ["AL", "AH"],
+    "side_effects": [
+      "Prints CR (0x0D) to return cursor to column 0",
+      "Prints LF (0x0A) to advance to next line",
+      "Cursor moves to beginning of next line"
+    ]
+  },
+  "implementation": {
+    "type": "inline_primitives",
+    "primitives": [
+      {
+        "type": "WRITE",
+        "offset": 0,
+        "value": "0xB0",
+        "comment": "MOV AL, 0x0D (carriage return)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 1,
+        "value": "0x0D",
+        "comment": "  ^^ CR character"
+      },
+      {
+        "type": "WRITE",
+        "offset": 2,
+        "value": "0xB4",
+        "comment": "MOV AH, 0x0E (BIOS teletype)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 3,
+        "value": "0x0E",
+        "comment": "  ^^ teletype function"
+      },
+      {
+        "type": "WRITE",
+        "offset": 4,
+        "value": "0xCD",
+        "comment": "INT 0x10 (print CR)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 5,
+        "value": "0x10",
+        "comment": "  ^^ video interrupt"
+      },
+      {
+        "type": "WRITE",
+        "offset": 6,
+        "value": "0xB0",
+        "comment": "MOV AL, 0x0A (line feed)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 7,
+        "value": "0x0A",
+        "comment": "  ^^ LF character"
+      },
+      {
+        "type": "WRITE",
+        "offset": 8,
+        "value": "0xCD",
+        "comment": "INT 0x10 (print LF)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 9,
+        "value": "0x10",
+        "comment": "  ^^ video interrupt"
+      },
+      {
+        "type": "WRITE",
+        "offset": 10,
+        "value": "0xC3",
+        "comment": "RET (return from subroutine)"
+      }
+    ],
+    "size_bytes": 11
+  },
+  "tests": [
+    "Print newline after text on same line",
+    "Print multiple newlines in sequence",
+    "Verify cursor at column 0 after execution"
+  ],
+  "usage_example": "UTILITY_CALL util_print_newline COMMENT Move to next line",
+  "references": {
+    "existing_implementation": "0x7C47 in pxos_commands.txt (inline in shell)"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "manifest_version": "1.0",
+  "description": "pxOS L1 Utility Library - Reusable subroutines for building L2 features",
+  "last_updated": "2025-11-18",
+  "utilities": [
+    {
+      "name": "util_print_char",
+      "file": "util_print_char.json",
+      "category": "output",
+      "size_bytes": 5,
+      "stability": "stable",
+      "description": "Print a single character to screen"
+    },
+    {
+      "name": "util_print_string",
+      "file": "util_print_string.json",
+      "category": "output",
+      "size_bytes": 12,
+      "stability": "stable",
+      "description": "Print null-terminated string to screen"
+    },
+    {
+      "name": "util_clear_screen",
+      "file": "util_clear_screen.json",
+      "category": "output",
+      "size_bytes": 17,
+      "stability": "stable",
+      "description": "Clear entire screen (fill with spaces)"
+    },
+    {
+      "name": "util_print_newline",
+      "file": "util_print_newline.json",
+      "category": "output",
+      "size_bytes": 11,
+      "stability": "stable",
+      "description": "Print CR+LF to move to next line"
+    },
+    {
+      "name": "util_read_key",
+      "file": "util_read_key.json",
+      "category": "input",
+      "size_bytes": 5,
+      "stability": "stable",
+      "description": "Read single keystroke from keyboard"
+    }
+  ],
+  "categories": {
+    "input": {
+      "description": "Keyboard and input handling utilities"
+    },
+    "output": {
+      "description": "Screen output and display utilities"
+    },
+    "string": {
+      "description": "String manipulation utilities"
+    },
+    "memory": {
+      "description": "Memory management utilities"
+    },
+    "system": {
+      "description": "System-level operations"
+    }
+  },
+  "stability_levels": {
+    "stable": "Well-tested, contract won't change",
+    "experimental": "New utility, contract may evolve",
+    "deprecated": "Scheduled for removal or replacement"
+  },
+  "total_utilities": 5,
+  "total_size_bytes": 50,
+  "notes": [
+    "All utilities follow the L1 contract model with defined inputs/outputs",
+    "Each utility is self-contained and can be used independently",
+    "Utilities are designed to be composed into higher-level L2 features",
+    "Size estimates are for inline implementations (no CALL overhead)"
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "name": "util_clear_screen",
+  "description": "Clear the entire screen by filling VGA text buffer with spaces (white on black).",
+  "layer": "L1",
+  "contract": {
+    "inputs": {},
+    "outputs": {},
+    "clobbers": ["AX", "CX", "DI", "ES"],
+    "side_effects": [
+      "Fills entire 80x25 text screen with spaces",
+      "Sets text color to 0x07 (white on black)",
+      "Resets ES to 0xB800 (VGA text buffer segment)",
+      "Resets DI to 0 (start of buffer)"
+    ]
+  },
+  "implementation": {
+    "type": "inline_primitives",
+    "primitives": [
+      {
+        "type": "WRITE",
+        "offset": 0,
+        "value": "0xB8",
+        "comment": "MOV AX, 0xB800 (VGA text buffer segment)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 1,
+        "value": "0x00",
+        "comment": "  ^^ low byte"
+      },
+      {
+        "type": "WRITE",
+        "offset": 2,
+        "value": "0xB8",
+        "comment": "  ^^ high byte"
+      },
+      {
+        "type": "WRITE",
+        "offset": 3,
+        "value": "0x8E",
+        "comment": "MOV ES, AX (set extra segment to VGA buffer)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 4,
+        "value": "0xC0",
+        "comment": "  ^^ segment register operand"
+      },
+      {
+        "type": "WRITE",
+        "offset": 5,
+        "value": "0x31",
+        "comment": "XOR DI, DI (DI = 0, start of buffer)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 6,
+        "value": "0xFF",
+        "comment": "  ^^ XOR operand"
+      },
+      {
+        "type": "WRITE",
+        "offset": 7,
+        "value": "0xB9",
+        "comment": "MOV CX, 2000 (80x25 = 2000 characters)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 8,
+        "value": "0xD0",
+        "comment": "  ^^ low byte of 2000 (0x07D0)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 9,
+        "value": "0x07",
+        "comment": "  ^^ high byte"
+      },
+      {
+        "type": "WRITE",
+        "offset": 10,
+        "value": "0xB0",
+        "comment": "MOV AL, 0x20 (space character)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 11,
+        "value": "0x20",
+        "comment": "  ^^ ASCII space"
+      },
+      {
+        "type": "WRITE",
+        "offset": 12,
+        "value": "0xB4",
+        "comment": "MOV AH, 0x07 (white on black attribute)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 13,
+        "value": "0x07",
+        "comment": "  ^^ color attribute"
+      },
+      {
+        "type": "WRITE",
+        "offset": 14,
+        "value": "0xF3",
+        "comment": "REP STOSW (repeat store word CX times)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 15,
+        "value": "0xAB",
+        "comment": "  ^^ store AX at ES:DI, increment DI by 2"
+      },
+      {
+        "type": "WRITE",
+        "offset": 16,
+        "value": "0xC3",
+        "comment": "RET (return from subroutine)"
+      }
+    ],
+    "size_bytes": 17
+  },
+  "tests": [
+    "Clear screen from dirty state",
+    "Verify entire buffer filled with 0x0720 (space + attribute)",
+    "Check ES register preserved/restored as needed"
+  ],
+  "usage_example": "UTILITY_CALL util_clear_screen COMMENT Clear the screen",
+  "references": {
+    "existing_implementation": "0x7C0A in pxos_commands.txt (inline in boot)"
+  }
+}

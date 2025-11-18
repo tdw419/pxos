@@ -1,0 +1,69 @@
+{
+  "name": "util_read_key",
+  "description": "Wait for and read a single keystroke from the keyboard using BIOS services.",
+  "layer": "L1",
+  "contract": {
+    "inputs": {},
+    "outputs": {
+      "char": {
+        "register": "AL",
+        "description": "ASCII character code of key pressed"
+      },
+      "scancode": {
+        "register": "AH",
+        "description": "Keyboard scan code"
+      }
+    },
+    "clobbers": [],
+    "side_effects": [
+      "Blocks until key is pressed",
+      "Removes key from keyboard buffer",
+      "Uses BIOS INT 0x16 function 0x00"
+    ]
+  },
+  "implementation": {
+    "type": "inline_primitives",
+    "primitives": [
+      {
+        "type": "WRITE",
+        "offset": 0,
+        "value": "0xB4",
+        "comment": "MOV AH, 0x00 (BIOS read keyboard)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 1,
+        "value": "0x00",
+        "comment": "  ^^ read key function"
+      },
+      {
+        "type": "WRITE",
+        "offset": 2,
+        "value": "0xCD",
+        "comment": "INT 0x16 (BIOS keyboard services)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 3,
+        "value": "0x16",
+        "comment": "  ^^ keyboard interrupt"
+      },
+      {
+        "type": "WRITE",
+        "offset": 4,
+        "value": "0xC3",
+        "comment": "RET (return with key in AL)"
+      }
+    ],
+    "size_bytes": 5
+  },
+  "tests": [
+    "Press 'A' and verify AL = 0x41",
+    "Press Enter and verify AL = 0x0D",
+    "Press special keys (arrows, function keys) and check scan codes"
+  ],
+  "usage_example": "UTILITY_CALL util_read_key COMMENT Read key into AL",
+  "references": {
+    "existing_implementation": "0x7C38 in pxos_commands.txt (inline in shell_loop)"
+  }
+}

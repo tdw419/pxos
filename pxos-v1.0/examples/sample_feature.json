@@ -1,0 +1,115 @@
+{
+  "feature": "Display welcome banner using utilities",
+  "primitives": [
+    {
+      "type": "COMMENT",
+      "text": "Welcome Banner Feature - Demonstrates utility composition"
+    },
+    {
+      "type": "UTILITY_CALL",
+      "name": "util_clear_screen",
+      "comment": "Clear the screen for fresh display"
+    },
+    {
+      "type": "COMMENT",
+      "text": "Load banner message pointer into SI"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F00",
+      "value": "0xBE",
+      "comment": "MOV SI, banner_msg"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F01",
+      "value": "0x20",
+      "comment": "  ^^ low byte of 0x7F20"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F02",
+      "value": "0x7F",
+      "comment": "  ^^ high byte"
+    },
+    {
+      "type": "UTILITY_CALL",
+      "name": "util_print_string",
+      "comment": "Print the banner message"
+    },
+    {
+      "type": "UTILITY_CALL",
+      "name": "util_print_newline",
+      "comment": "Add newline after banner"
+    },
+    {
+      "type": "UTILITY_CALL",
+      "name": "util_print_newline",
+      "comment": "Add second newline for spacing"
+    },
+    {
+      "type": "COMMENT",
+      "text": "Banner message data"
+    },
+    {
+      "type": "DEFINE",
+      "label": "banner_msg",
+      "address": "0x7F20",
+      "comment": "Banner string location"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F20",
+      "value": "0x57",
+      "comment": "'W'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F21",
+      "value": "0x65",
+      "comment": "'e'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F22",
+      "value": "0x6C",
+      "comment": "'l'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F23",
+      "value": "0x63",
+      "comment": "'c'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F24",
+      "value": "0x6F",
+      "comment": "'o'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F25",
+      "value": "0x6D",
+      "comment": "'m'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F26",
+      "value": "0x65",
+      "comment": "'e'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F27",
+      "value": "0x21",
+      "comment": "'!'"
+    },
+    {
+      "type": "WRITE",
+      "address": "0x7F28",
+      "value": "0x00",
+      "comment": "null terminator"
+    }
+  ]
+}

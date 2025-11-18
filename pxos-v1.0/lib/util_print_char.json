@@ -1,0 +1,62 @@
+{
+  "name": "util_print_char",
+  "description": "Print a single character to the screen using BIOS teletype output.",
+  "layer": "L1",
+  "contract": {
+    "inputs": {
+      "char": {
+        "register": "AL",
+        "description": "ASCII character to print"
+      }
+    },
+    "outputs": {},
+    "clobbers": ["AH"],
+    "side_effects": [
+      "Prints character at current cursor position",
+      "Advances cursor position",
+      "Uses BIOS INT 0x10 function 0x0E"
+    ]
+  },
+  "implementation": {
+    "type": "inline_primitives",
+    "primitives": [
+      {
+        "type": "WRITE",
+        "offset": 0,
+        "value": "0xB4",
+        "comment": "MOV AH, 0x0E (BIOS teletype function)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 1,
+        "value": "0x0E",
+        "comment": "  ^^ teletype output function"
+      },
+      {
+        "type": "WRITE",
+        "offset": 2,
+        "value": "0xCD",
+        "comment": "INT 0x10 (BIOS video services)"
+      },
+      {
+        "type": "WRITE",
+        "offset": 3,
+        "value": "0x10",
+        "comment": "  ^^ video interrupt"
+      },
+      {
+        "type": "WRITE",
+        "offset": 4,
+        "value": "0xC3",
+        "comment": "RET (return from subroutine)"
+      }
+    ],
+    "size_bytes": 5
+  },
+  "tests": [
+    "Print 'A' (0x41) to screen",
+    "Print newline character (0x0A)",
+    "Print multiple characters in sequence"
+  ],
+  "usage_example": "UTILITY_CALL util_print_char COMMENT Print character in AL"
+}

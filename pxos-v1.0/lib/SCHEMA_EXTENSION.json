@@ -1,0 +1,144 @@
+{
+  "schema_version": "1.1",
+  "description": "Extended JSON schema for pxOS primitive generation with utility support",
+  "extends": "pxOS primitives v1.0 (WRITE/DEFINE/COMMENT)",
+  "new_primitive_types": [
+    {
+      "type": "UTILITY_CALL",
+      "description": "Reference to a reusable L1 utility function",
+      "required_fields": ["type", "name"],
+      "optional_fields": ["comment", "inline"],
+      "field_definitions": {
+        "type": {
+          "value": "UTILITY_CALL",
+          "description": "Primitive type identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of utility from LIB_MANIFEST.json",
+          "examples": ["util_print_string", "util_clear_screen", "util_read_key"]
+        },
+        "comment": {
+          "type": "string",
+          "description": "Human-readable description of what this call does",
+          "optional": true
+        },
+        "inline": {
+          "type": "boolean",
+          "description": "If true, emit inline code; if false, emit CALL instruction",
+          "default": true,
+          "optional": true
+        }
+      }
+    }
+  ],
+  "examples": {
+    "basic_utility_call": {
+      "description": "Simple utility call with comment",
+      "json": {
+        "type": "UTILITY_CALL",
+        "name": "util_print_string",
+        "comment": "Print welcome message"
+      }
+    },
+    "feature_with_utilities": {
+      "description": "Complete feature using multiple utilities",
+      "json": {
+        "feature": "Clear screen and show prompt",
+        "primitives": [
+          {
+            "type": "UTILITY_CALL",
+            "name": "util_clear_screen",
+            "comment": "Clear the display"
+          },
+          {
+            "type": "UTILITY_CALL",
+            "name": "util_print_string",
+            "comment": "Print shell prompt (SI must point to prompt string)"
+          },
+          {
+            "type": "COMMENT",
+            "text": "Now ready for user input"
+          }
+        ]
+      }
+    },
+    "mixed_primitives_and_utilities": {
+      "description": "Combining low-level WRITE with high-level utilities",
+      "json": {
+        "feature": "Print custom character then newline",
+        "primitives": [
+          {
+            "type": "WRITE",
+            "address": "0x7E00",
+            "value": "0xB0",
+            "comment": "MOV AL, '*'"
+          },
+          {
+            "type": "WRITE",
+            "address": "0x7E01",
+            "value": "0x2A",
+            "comment": "  ^^ asterisk character"
+          },
+          {
+            "type": "UTILITY_CALL",
+            "name": "util_print_char",
+            "comment": "Print the asterisk"
+          },
+          {
+            "type": "UTILITY_CALL",
+            "name": "util_print_newline",
+            "comment": "Move to next line"
+          }
+        ]
+      }
+    },
+    "call_instruction_mode": {
+      "description": "Generate CALL instruction instead of inlining",
+      "json": {
+        "type": "UTILITY_CALL",
+        "name": "util_print_string",
+        "inline": false,
+        "comment": "CALL to print_string (saves space if used many times)"
+      },
+      "note": "Requires utility to be defined at known address"
+    }
+  },
+  "conversion_rules": {
+    "utility_call_resolution": {
+      "step_1": "Load utility definition from lib/<utility_name>.json",
+      "step_2": "Read contract to understand inputs/outputs",
+      "step_3_inline_true": "Emit all primitives from implementation.primitives array",
+      "step_3_inline_false": "Emit CALL instruction to utility's defined address",
+      "step_4": "Add comment indicating utility name and purpose"
+    },
+    "address_allocation": {
+      "inline_mode": "No address needed; code emitted at current position",
+      "call_mode": "Utility must have DEFINE entry; CALL references that label"
+    }
+  },
+  "ai_generator_instructions": {
+    "when_to_use_utilities": [
+      "ALWAYS prefer UTILITY_CALL over raw primitives for common operations",
+      "Use UTILITY_CALL when the utility contract matches the need exactly",
+      "Check LIB_MANIFEST.json for available utilities before writing raw primitives",
+      "Only write new raw primitives when extending the utility library itself"
+    ],
+    "utility_discovery": [
+      "Load LIB_MANIFEST.json at generation time",
+      "Include utility names and descriptions in generation context",
+      "When planning a feature, list relevant utilities before generating code",
+      "Suggest new utilities when patterns repeat across features"
+    ],
+    "code_generation_prompt_template": {
+      "system": "You are generating pxOS primitives. Available utilities: {utility_list}",
+      "user": "Generate primitives for: {feature_description}",
+      "constraint": "PREFER UTILITY_CALL over raw WRITE primitives when possible"
+    }
+  },
+  "backwards_compatibility": {
+    "old_schema_still_valid": true,
+    "note": "Pure WRITE/DEFINE/COMMENT primitives still work exactly as before",
+    "migration_path": "Gradually refactor features to use UTILITY_CALL where appropriate"
+  }
+}
