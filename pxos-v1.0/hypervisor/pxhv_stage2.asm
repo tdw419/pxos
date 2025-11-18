@@ -10,10 +10,14 @@ BITS 16
 ORG 0x10000
 
 ; Memory layout constants
-PML4_ADDR       equ 0x70000     ; Page Map Level 4
-PDPT_ADDR       equ 0x71000     ; Page Directory Pointer Table
-PD_ADDR         equ 0x72000     ; Page Directory
-PT_ADDR         equ 0x73000     ; Page Table
+PML4_ADDR       equ 0x70000     ; Page Map Level 4 (host)
+PDPT_ADDR       equ 0x71000     ; Page Directory Pointer Table (host)
+PD_ADDR         equ 0x72000     ; Page Directory (host)
+PT_ADDR         equ 0x73000     ; Page Table (host)
+
+EPT_PML4        equ 0x80000     ; EPT PML4 (guest memory virtualization)
+EPT_PDPT        equ 0x81000     ; EPT PDPT
+EPT_PD          equ 0x82000     ; EPT PD
 
 VMXON_REGION    equ 0x15000     ; VMXON region (4KB aligned)
 VMCS_REGION     equ 0x16000     ; VMCS region (4KB aligned)
@@ -332,6 +336,51 @@ vmxon_exec:
     hlt
 
 ;-----------------------------------------------------------------------------
+; setup_ept_tables: Create Extended Page Tables for guest memory
+; Maps first 1GB of guest physical memory to host physical memory (identity mapped)
+; Uses 2MB pages for simplicity
+;-----------------------------------------------------------------------------
+setup_ept_tables:
+    push rax
+    push rcx
+    push rdi
+
+    ; 1) Clear EPT table memory (12KB total: PML4 + PDPT + PD)
+    mov rdi, EPT_PML4
+    mov rcx, 3072               ; 12KB / 8 bytes = 1536 qwords
+    xor rax, rax
+    rep stosq
+
+    ; 2) Setup EPT PML4 (points to PDPT)
+    mov rdi, EPT_PML4
+    mov rax, EPT_PDPT
+    or rax, 0x7                 ; Read, Write, Execute permissions
+    mov [rdi], rax
+
+    ; 3) Setup EPT PDPT (points to PD)
+    mov rdi, EPT_PDPT
+    mov rax, EPT_PD
+    or rax, 0x7                 ; Read, Write, Execute permissions
+    mov [rdi], rax
+
+    ; 4) Setup EPT PD with 2MB pages (identity map first 1GB)
+    mov rdi, EPT_PD
+    mov rax, 0x87               ; Read, Write, Execute + 2MB page
+    mov rcx, 512                ; 512 entries * 2MB = 1GB
+
+.pd_loop:
+    mov [rdi], rax
+    add rax, 0x200000           ; Next 2MB
+    add rdi, 8
+    loop .pd_loop
+
+    ; EPT is now ready
+    pop rdi
+    pop rcx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
 ; print_string_64: Print null-terminated string (64-bit mode)
 ; Input: RSI = string address
 ; Uses direct VGA text mode writes (0xB8000)
@@ -390,6 +439,9 @@ setup_vmcs_and_guest:
     ; Print setup message
     mov rsi, msg_vmcs_setup
     call print_string_64
+
+    ; 4.5) Setup EPT (Extended Page Tables)
+    call setup_ept_tables
 
     ; ---------------------------------------------------------------------
     ; 5) Configure GUEST STATE
@@ -733,7 +785,23 @@ setup_vmcs_and_guest:
     mov ecx, 0x482              ; IA32_VMX_TRUE_PROCBASED_CTLS
     rdmsr
     or eax, (1 << 7)            ; HLT exiting
+    or eax, (1 << 31)           ; Activate secondary controls
     mov rdx, 0x4002             ; CPU_BASED_VM_EXEC_CONTROL
+    vmwrite rdx, rax
+    jc .error
+
+    ; Secondary processor-based VM-execution controls (for EPT)
+    mov ecx, 0x48B              ; IA32_VMX_PROCBASED_CTLS2
+    rdmsr
+    or eax, (1 << 1)            ; Enable EPT
+    mov rdx, 0x401E             ; SECONDARY_PROC_BASED_VM_EXEC_CONTROL
+    vmwrite rdx, rax
+    jc .error
+
+    ; Set EPT pointer (points to EPT_PML4)
+    mov rax, EPT_PML4
+    or rax, 0x1E                ; Memory type: Write-back (6), Page-walk length: 3 (bits 3-5)
+    mov rdx, 0x201A             ; EPT_POINTER
     vmwrite rdx, rax
     jc .error
 
