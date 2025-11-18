@@ -381,6 +381,29 @@ setup_ept_tables:
     ret
 
 ;-----------------------------------------------------------------------------
+; load_guest_code: Copy guest real mode code to memory at 0x7C00
+; The guest code is embedded at the end of this binary
+;-----------------------------------------------------------------------------
+load_guest_code:
+    push rsi
+    push rdi
+    push rcx
+
+    ; Source: embedded guest binary
+    mov rsi, guest_code_data
+    ; Destination: 0x7C00 (guest memory)
+    mov rdi, 0x7C00
+    ; Length: 512 bytes (one sector)
+    mov rcx, 512
+    ; Copy byte by byte
+    rep movsb
+
+    pop rcx
+    pop rdi
+    pop rsi
+    ret
+
+;-----------------------------------------------------------------------------
 ; print_string_64: Print null-terminated string (64-bit mode)
 ; Input: RSI = string address
 ; Uses direct VGA text mode writes (0xB8000)
@@ -443,96 +466,111 @@ setup_vmcs_and_guest:
     ; 4.5) Setup EPT (Extended Page Tables)
     call setup_ept_tables
 
+    ; 4.6) Load guest real mode code to memory at 0x7C00
+    call load_guest_code
+
     ; ---------------------------------------------------------------------
-    ; 5) Configure GUEST STATE
+    ; 5) Configure GUEST STATE (Real Mode 16-bit)
     ; ---------------------------------------------------------------------
 
-    ; Guest CR0 (PE=1, PG=1 for long mode)
-    mov rax, 0x80000001
+    ; Guest CR0 (Real mode: PE=0, NE=1, ET=1)
+    mov rax, 0x30               ; No paging, no protection, numerics enabled
     mov rdx, 0x6800             ; GUEST_CR0
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CR3 (use existing page tables)
-    mov rax, PML4_ADDR
+    ; Guest CR3 (not used in real mode, but set to 0)
+    xor rax, rax
     mov rdx, 0x6802             ; GUEST_CR3
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CR4
-    mov rax, cr4
+    ; Guest CR4 (minimal, no VMX/PAE/PSE)
+    mov rax, 0x2000             ; Enable VMXE for safety
     mov rdx, 0x6804             ; GUEST_CR4
     vmwrite rdx, rax
     jc .error
 
-    ; Guest RIP = 0x200000 (where HLT is)
-    mov rax, 0x200000
+    ; Guest RIP = 0x7C00 (real mode boot sector location)
+    mov rax, 0x7C00
     mov rdx, 0x681E             ; GUEST_RIP
     vmwrite rdx, rax
     jc .error
 
-    ; Guest RSP = 0x7000
-    mov rax, 0x7000
+    ; Guest RSP = 0x7C00 (stack before code)
+    mov rax, 0x7C00
     mov rdx, 0x681C             ; GUEST_RSP
     vmwrite rdx, rax
     jc .error
 
-    ; Guest RFLAGS = 0x2
+    ; Guest RFLAGS = 0x2 (reserved bit, IF will be set later)
     mov rax, 0x2
     mov rdx, 0x6820             ; GUEST_RFLAGS
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CS selector
-    mov rax, 0x08               ; Code segment from GDT
+    ; Guest CS selector (real mode segment)
+    xor rax, rax                ; CS = 0x0000
     mov rdx, 0x802              ; GUEST_CS_SELECTOR
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CS base
-    xor rax, rax
+    ; Guest CS base (segment * 16)
+    xor rax, rax                ; 0x0000 * 16 = 0x00000
     mov rdx, 0x6808             ; GUEST_CS_BASE
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CS limit
-    mov rax, 0xFFFFFFFF
+    ; Guest CS limit (64KB for real mode)
+    mov rax, 0xFFFF
     mov rdx, 0x4800             ; GUEST_CS_LIMIT
     vmwrite rdx, rax
     jc .error
 
-    ; Guest CS access rights (P=1, DPL=0, S=1, Type=0xB for code)
-    mov rax, 0xA09B             ; Present, 64-bit code segment
+    ; Guest CS access rights (real mode: present, readable, accessed)
+    mov rax, 0x0093             ; P=1, DPL=0, S=1, Type=3 (readable code)
     mov rdx, 0x4816             ; GUEST_CS_AR_BYTES
     vmwrite rdx, rax
     jc .error
 
-    ; Guest DS/ES/SS selectors and attributes
-    mov rax, 0x10               ; Data segment from GDT
+    ; Guest DS selector (real mode)
+    xor rax, rax
     mov rdx, 0x804              ; GUEST_DS_SELECTOR
     vmwrite rdx, rax
     jc .error
+
+    ; Guest ES selector (real mode segment for VGA: 0xB800)
+    mov rax, 0xB800             ; VGA text segment
     mov rdx, 0x806              ; GUEST_ES_SELECTOR
     vmwrite rdx, rax
     jc .error
+
+    ; Guest SS selector (real mode)
+    xor rax, rax
     mov rdx, 0x808              ; GUEST_SS_SELECTOR
     vmwrite rdx, rax
     jc .error
 
-    ; Guest DS/ES/SS base = 0
+    ; Guest DS base = 0
     xor rax, rax
     mov rdx, 0x6804             ; GUEST_DS_BASE
     vmwrite rdx, rax
     jc .error
+
+    ; Guest ES base = 0xB8000 (VGA text memory)
+    mov rax, 0xB8000
     mov rdx, 0x6806             ; GUEST_ES_BASE
     vmwrite rdx, rax
     jc .error
+
+    ; Guest SS base = 0
+    xor rax, rax
     mov rdx, 0x6810             ; GUEST_SS_BASE
     vmwrite rdx, rax
     jc .error
 
-    ; Guest DS/ES/SS limit
-    mov rax, 0xFFFFFFFF
+    ; Guest DS/ES/SS limit (64KB for real mode)
+    mov rax, 0xFFFF
     mov rdx, 0x4802             ; GUEST_DS_LIMIT
     vmwrite rdx, rax
     jc .error
@@ -543,8 +581,8 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; Guest DS/ES/SS access rights (P=1, DPL=0, S=1, Type=3 for data)
-    mov rax, 0xC093             ; Present, data segment
+    ; Guest DS/ES/SS access rights (real mode: present, writable data)
+    mov rax, 0x0093             ; P=1, DPL=0, S=1, Type=3 (writable data)
     mov rdx, 0x4814             ; GUEST_DS_AR_BYTES
     vmwrite rdx, rax
     jc .error
@@ -555,27 +593,38 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; Guest FS/GS (set to null)
+    ; Guest FS selector (real mode)
     xor rax, rax
     mov rdx, 0x80A              ; GUEST_FS_SELECTOR
     vmwrite rdx, rax
     jc .error
+
+    ; Guest GS selector (real mode)
     mov rdx, 0x80C              ; GUEST_GS_SELECTOR
     vmwrite rdx, rax
     jc .error
+
+    ; Guest FS base
     mov rdx, 0x680A             ; GUEST_FS_BASE
     vmwrite rdx, rax
     jc .error
+
+    ; Guest GS base
     mov rdx, 0x680C             ; GUEST_GS_BASE
     vmwrite rdx, rax
     jc .error
+
+    ; Guest FS/GS limit
+    mov rax, 0xFFFF
     mov rdx, 0x4806             ; GUEST_FS_LIMIT
     vmwrite rdx, rax
     jc .error
     mov rdx, 0x4808             ; GUEST_GS_LIMIT
     vmwrite rdx, rax
     jc .error
-    mov rax, 0x10000            ; Unusable
+
+    ; Guest FS/GS access rights (real mode data)
+    mov rax, 0x0093
     mov rdx, 0x4810             ; GUEST_FS_AR_BYTES
     vmwrite rdx, rax
     jc .error
@@ -790,10 +839,11 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; Secondary processor-based VM-execution controls (for EPT)
+    ; Secondary processor-based VM-execution controls (for EPT + unrestricted guest)
     mov ecx, 0x48B              ; IA32_VMX_PROCBASED_CTLS2
     rdmsr
     or eax, (1 << 1)            ; Enable EPT
+    or eax, (1 << 7)            ; Enable unrestricted guest (real mode support)
     mov rdx, 0x401E             ; SECONDARY_PROC_BASED_VM_EXEC_CONTROL
     vmwrite rdx, rax
     jc .error
@@ -805,10 +855,10 @@ setup_vmcs_and_guest:
     vmwrite rdx, rax
     jc .error
 
-    ; VM-entry controls
+    ; VM-entry controls (real mode, no IA-32e)
     mov ecx, 0x484              ; IA32_VMX_TRUE_ENTRY_CTLS
     rdmsr
-    or eax, (1 << 9)            ; IA-32e mode guest
+    ; Do NOT set bit 9 (IA-32e mode) for real mode guest
     mov rdx, 0x4012             ; VM_ENTRY_CONTROLS
     vmwrite rdx, rax
     jc .error
@@ -870,9 +920,24 @@ vm_exit_handler:
     mov rdx, 0x4402             ; VM_EXIT_REASON
     vmread rax, rdx
 
+    ; Mask to get basic exit reason (bits 0-15)
+    and eax, 0xFFFF
+
     ; Check for HLT (exit reason 12)
     cmp eax, 12
     je .handle_hlt
+
+    ; Check for EPT violation (exit reason 48)
+    cmp eax, 48
+    je .handle_ept_violation
+
+    ; Check for triple fault (exit reason 2)
+    cmp eax, 2
+    je .handle_triple_fault
+
+    ; Check for invalid guest state (exit reason 33)
+    cmp eax, 33
+    je .handle_invalid_state
 
     ; Unknown exit reason
     mov rsi, msg_unknown_exit
@@ -883,6 +948,29 @@ vm_exit_handler:
 .handle_hlt:
     mov rsi, msg_guest_hlt
     call print_string_64
+    jmp .halt
+
+.handle_ept_violation:
+    mov rsi, msg_ept_violation
+    call print_string_64
+    ; Read guest-physical address that caused EPT violation
+    mov rdx, 0x2400             ; GUEST_PHYSICAL_ADDRESS
+    vmread rax, rdx
+    call print_hex_64
+    jmp .halt
+
+.handle_triple_fault:
+    mov rsi, msg_triple_fault
+    call print_string_64
+    jmp .halt
+
+.handle_invalid_state:
+    mov rsi, msg_invalid_state
+    call print_string_64
+    ; Read VM-instruction error
+    mov rdx, 0x4400             ; VM_INSTRUCTION_ERROR
+    vmread rax, rdx
+    call print_hex_64
     jmp .halt
 
 .halt:
@@ -948,8 +1036,18 @@ msg_vmcs_error:      db 'VMCS error!', 0
 msg_vmlaunch_failed: db 'VMLAUNCH failed!', 0
 msg_vm_error:        db 'VM instruction error: ', 0
 msg_launching_guest: db 'Launching guest...', 0
-msg_guest_hlt:       db 'Guest executed HLT!', 0
+msg_guest_hlt:       db 'Guest executed HLT successfully!', 0
 msg_unknown_exit:    db 'Unknown VM exit: ', 0
+msg_ept_violation:   db 'EPT violation at GPA: ', 0
+msg_triple_fault:    db 'Guest triple fault!', 0
+msg_invalid_state:   db 'Invalid guest state, error: ', 0
+
+;-----------------------------------------------------------------------------
+; Embedded guest real mode code (512 bytes)
+;-----------------------------------------------------------------------------
+align 16
+guest_code_data:
+incbin "build/guest_real.bin"
 
 ;-----------------------------------------------------------------------------
 ; Pad to sector boundary (optional)
