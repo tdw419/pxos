@@ -108,9 +108,14 @@ start32:
     mov ss, ax
     mov esp, 0x90000            ; Stack at 640KB
 
-    ; Debug: Write 'P' to VGA (Protected mode reached)
-    mov byte [0xB8000], 'P'
-    mov byte [0xB8001], 0x0F
+    ; Debug: Write 'P' to serial (Protected mode reached)
+    mov dx, 0x3F8
+    mov al, 'P'
+    out dx, al
+
+    ; Debug: Write '3' to serial (32-bit segments configured)
+    mov al, '3'
+    out dx, al
 
     ; Transition to 64-bit long mode
     ; Enable PAE (Physical Address Extension)
@@ -118,11 +123,30 @@ start32:
     or eax, 0x20                ; Set PAE bit
     mov cr4, eax
 
-    ; Setup minimal paging (identity map first 1GB)
-    call setup_paging_32
+    ; Debug: Write 'E' to serial (PAE enabled)
+    mov al, 'E'
+    out dx, al
+
+    ; Setup minimal paging inline (identity map first 2MB only - minimal for boot)
+    ; PML4[0] -> PDPT
+    mov dword [0x70000], 0x71003
+    mov dword [0x70004], 0
+
+    ; PDPT[0] -> PD
+    mov dword [0x71000], 0x72003
+    mov dword [0x71004], 0
+
+    ; PD[0] -> 2MB page at 0x0
+    mov dword [0x72000], 0x83   ; Present, writable, 2MB page
+    mov dword [0x72004], 0
+
+    ; Debug: Write 'T' to serial (Page Tables configured)
+    mov dx, 0x3F8
+    mov al, 'T'
+    out dx, al
 
     ; Load CR3 with PML4 address
-    mov eax, 0x2000             ; PML4 at 0x2000
+    mov eax, 0x70000            ; PML4 at 0x70000
     mov cr3, eax
 
     ; Enable long mode (set EFER.LME)
@@ -131,23 +155,21 @@ start32:
     or eax, 0x100               ; Set LME bit
     wrmsr
 
-    ; Debug: Write 'G' to VGA (Paging about to be enabled)
-    mov byte [0xB8002], 'G'
-    mov byte [0xB8003], 0x0F
+    ; Debug: Write 'L' to serial (Long mode bit set in EFER)
+    mov al, 'L'
+    out dx, al
 
     ; Enable paging (activates long mode)
     mov eax, cr0
     or eax, 0x80000000          ; Set PG bit
     mov cr0, eax
 
-    ; Debug: Write 'L' to VGA (Long mode enabled!)
-    mov byte [0xB8004], 'L'
-    mov byte [0xB8005], 0x0F
+    ; Debug: Write 'G' to serial (Paging enabled - long mode now active!)
+    mov al, 'G'
+    out dx, al
 
-    ; Use far return to jump to 64-bit code (safer than far jmp)
-    push 0x08                   ; Code segment selector
-    push start64                ; Return address
-    retf                        ; Far return to 64-bit code
+    ; Use far jump instead of retf (more reliable)
+    jmp 0x08:start64
 
 ;-----------------------------------------------------------------------------
 ; setup_paging_32: Setup minimal page tables for long mode
@@ -158,22 +180,32 @@ setup_paging_32:
     push ecx
     push edi
 
-    ; Clear page table memory (16KB total)
-    mov edi, 0x2000
+    ; Debug: Function entered
+    mov dx, 0x3F8
+    mov al, 'F'
+    out dx, al
+
+    ; Clear page table memory (16KB total) at safe location
+    cld                         ; Clear direction flag for rep stosd
+    mov edi, 0x70000
     mov ecx, 4096               ; 16KB / 4 = 4096 dwords
     xor eax, eax
     rep stosd
 
+    ; Debug: Memory cleared
+    mov al, 'C'
+    out dx, al
+
     ; Setup PML4 (Page Map Level 4)
-    mov edi, 0x2000
-    mov dword [edi], 0x3003     ; PML4[0] -> PDPT at 0x3000 (present, writable)
+    mov edi, 0x70000
+    mov dword [edi], 0x71003    ; PML4[0] -> PDPT at 0x71000 (present, writable)
 
     ; Setup PDPT (Page Directory Pointer Table)
-    mov edi, 0x3000
-    mov dword [edi], 0x4003     ; PDPT[0] -> PD at 0x4000 (present, writable)
+    mov edi, 0x71000
+    mov dword [edi], 0x72003    ; PDPT[0] -> PD at 0x72000 (present, writable)
 
     ; Setup PD (Page Directory) with 2MB pages
-    mov edi, 0x4000
+    mov edi, 0x72000
     mov eax, 0x83               ; Present, writable, 2MB page
     mov ecx, 512                ; 512 entries * 2MB = 1GB
 
@@ -193,9 +225,10 @@ setup_paging_32:
 ;-----------------------------------------------------------------------------
 BITS 64
 start64:
-    ; Debug: Write '6' to VGA (64-bit mode reached!)
-    mov byte [0xB8006], '6'
-    mov byte [0xB8007], 0x0F
+    ; Debug: Write '6' to serial (64-bit mode reached!)
+    mov dx, 0x3F8
+    mov al, '6'
+    out dx, al
 
     ; Setup segments for 64-bit mode
     xor ax, ax
@@ -208,12 +241,12 @@ start64:
     ; Setup stack
     mov rsp, 0x90000
 
-    ; Debug: Write 'M' to VGA (About to jump to microkernel)
-    mov byte [0xB8008], 'M'
-    mov byte [0xB8009], 0x0F
+    ; Debug: Write 'S' to serial (Success - about to jump to microkernel)
+    mov al, 'S'
+    out dx, al
 
-    ; Jump to microkernel at 0x1000
-    jmp 0x1000
+    ; Jump to microkernel at 0x10000 (corrected from 0x1000)
+    jmp 0x10000
 
 ;-----------------------------------------------------------------------------
 ; Data Section
