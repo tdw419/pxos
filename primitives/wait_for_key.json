@@ -1,0 +1,46 @@
+{
+  "name": "wait_for_key",
+  "description": "Wait for keyboard input using BIOS INT 0x16",
+  "parameters": {
+    "addr": "Starting address for this code"
+  },
+  "size_bytes": 4,
+  "template": {
+    "feature": "Wait for keypress",
+    "primitives": [
+      {
+        "type": "COMMENT",
+        "text": "Wait for keypress using INT 0x16"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr}",
+        "byte": "0xB4",
+        "comment": "mov ah, 0x00 (wait for key)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+1}",
+        "byte": "0x00"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+2}",
+        "byte": "0xCD",
+        "comment": "int 0x16"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+3}",
+        "byte": "0x16"
+      }
+    ]
+  },
+  "returns": "AL contains ASCII character, AH contains scan code",
+  "example": {
+    "parameters": {
+      "addr": "0x7E10"
+    },
+    "result": "Waits for key, returns character in AL"
+  }
+}

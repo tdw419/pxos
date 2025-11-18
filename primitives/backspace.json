@@ -1,0 +1,106 @@
+{
+  "name": "backspace",
+  "description": "Erase previous character (backspace, space, backspace)",
+  "parameters": {
+    "addr": "Starting address for this code"
+  },
+  "size_bytes": 18,
+  "template": {
+    "feature": "Backspace character erasure",
+    "primitives": [
+      {
+        "type": "COMMENT",
+        "text": "Backspace: move cursor left, print space, move cursor left again"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr}",
+        "byte": "0xB4",
+        "comment": "mov ah, 0x0E"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+1}",
+        "byte": "0x0E"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+2}",
+        "byte": "0xB0",
+        "comment": "mov al, 0x08 (backspace)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+3}",
+        "byte": "0x08"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+4}",
+        "byte": "0xCD",
+        "comment": "int 0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+5}",
+        "byte": "0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+6}",
+        "byte": "0xB0",
+        "comment": "mov al, 0x20 (space)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+7}",
+        "byte": "0x20"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+8}",
+        "byte": "0xCD",
+        "comment": "int 0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+9}",
+        "byte": "0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+10}",
+        "byte": "0xB0",
+        "comment": "mov al, 0x08 (backspace again)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+11}",
+        "byte": "0x08"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+12}",
+        "byte": "0xCD",
+        "comment": "int 0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+13}",
+        "byte": "0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+14}",
+        "byte": "0xC3",
+        "comment": "ret"
+      }
+    ]
+  },
+  "example": {
+    "parameters": {
+      "addr": "0x7E20"
+    },
+    "result": "Erases last character from screen"
+  }
+}

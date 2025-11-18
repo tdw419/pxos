@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 """
-AI-Powered Primitive Generator for pxOS
+AI-Powered Primitive Generator for pxOS (JSON Schema-Based)
 
-This tool uses LM Studio to automatically generate WRITE/DEFINE/CALL primitives
-for pxOS features. It bridges natural language descriptions to executable
-bootloader code.
+This tool uses LM Studio with STRICT JSON contracts to generate primitives.
+
+Key improvements over v1:
+- All LLM responses must conform to schemas/ai_primitives.schema.json
+- JSON validation with retry on failure
+- No free-form text parsing (eliminates hallucination issues)
+- Machine-first interface (designed for agent chaining)
 
 The system:
-1. Takes a feature description (e.g., "add backspace support")
-2. Queries LM Studio with pxOS context
-3. Extracts primitive commands from LLM response
-4. Validates and formats them
+1. Takes a feature description
+2. Queries LM Studio with schema-enforced prompt
+3. Validates JSON response against schema
+4. Converts valid JSON → primitive commands
 5. Appends to pxos_commands.txt
 6. Learns from successful builds
 """
 
 from pathlib import Path
 import sys
-import re
+import json
 import requests
 from typing import List, Dict, Optional, Tuple
+import jsonschema
 
 # Add pxOS root to path
 pxos_root = Path(__file__).resolve().parents[1]
@@ -30,294 +35,363 @@ from pxvm.integration.lm_studio_bridge import LMStudioPixelBridge
 
 class PrimitiveGenerator:
     """
-    Generates pxOS primitive commands using LM Studio.
+    Generates pxOS primitive commands using LM Studio with JSON contracts.
 
     This is the AI brain that writes assembly code as primitives!
+    Machine-first design: all responses are JSON, validated against schema.
     """
 
     def __init__(
         self,
         network_path: Path,
         lm_studio_url: str = "http://localhost:1234/v1",
-        knowledge_base: Optional[str] = None
+        schema_path: Optional[Path] = None,
+        primitive_library_path: Optional[Path] = None
     ):
         self.bridge = LMStudioPixelBridge(network_path, lm_studio_url)
-        self.knowledge_base = knowledge_base or self._load_default_knowledge()
 
-        # Seed the network with pxOS-specific knowledge
-        if knowledge_base:
-            self._seed_knowledge()
+        # Load JSON schema
+        if schema_path is None:
+            schema_path = pxos_root / "schemas" / "ai_primitives.schema.json"
 
-    def _load_default_knowledge(self) -> str:
-        """Load default pxOS knowledge base."""
-        return """
-=== pxOS PRIMITIVE SYSTEM KNOWLEDGE BASE ===
+        with open(schema_path, 'r') as f:
+            self.schema = json.load(f)
 
-## PRIMITIVE COMMANDS
+        # Load primitive library if available
+        self.primitive_library = {}
+        if primitive_library_path and primitive_library_path.exists():
+            self._load_primitive_library(primitive_library_path)
 
-WRITE <addr> <byte>  - Write a byte to memory
-DEFINE <label> <addr> - Create a symbolic label
-CALL <label>         - Documentation only (not executed)
-COMMENT <text>       - Comment line
+        # Seed knowledge
+        self._seed_knowledge()
 
-## MEMORY MAP
-
-0x7C00-0x7DFF : Boot sector (512 bytes)
-0x7E00-0x7FFF : Extended boot code
-0x0050        : Cursor position storage
-0xB800:0000   : VGA text mode buffer (80x25)
-
-## COMMON x86 OPCODES
-
-# Data movement
-0xB8 + reg    : MOV reg16, imm16
-0xB0 + reg    : MOV reg8, imm8
-0x8E          : MOV segment, reg
-0xA0/A1       : MOV AL/AX, [addr]
-
-# Stack
-0x50-0x57     : PUSH reg16
-0x58-0x5F     : POP reg16
-0xFA          : CLI (disable interrupts)
-0xFB          : STI (enable interrupts)
-
-# Arithmetic/Logic
-0x31          : XOR reg, reg
-0xB9          : MOV CX, imm16
-0xF3 0xAB     : REP STOSW
-
-# Control flow
-0xCD          : INT (software interrupt)
-0xE8          : CALL rel16
-0xC3          : RET
-0xEB          : JMP short
-0x74          : JZ (jump if zero)
-0x75          : JNZ (jump if not zero)
-
-## BIOS INTERRUPTS
-
-INT 0x10 - Video Services
-  AH=0x00 : Set video mode
-  AH=0x0E : Teletype output (AL=char)
-  AH=0x02 : Set cursor position
-
-INT 0x16 - Keyboard Services
-  AH=0x00 : Wait for keypress (returns AL=ASCII)
-  AH=0x01 : Check for keypress
-
-INT 0x13 - Disk Services
-  AH=0x02 : Read sectors
-  AH=0x03 : Write sectors
-
-## BOOT SECTOR REQUIREMENTS
-
-- First instruction at 0x7C00
-- Boot signature 0x55AA at bytes 510-511 (0x1FE-0x1FF)
-- Total size: exactly 512 bytes for sector 1
-
-## EXAMPLE PRIMITIVE SEQUENCES
-
-Print character 'A':
-WRITE 0x7C00 0xB4    COMMENT mov ah, 0x0E
-WRITE 0x7C01 0x0E
-WRITE 0x7C02 0xB0    COMMENT mov al, 'A'
-WRITE 0x7C03 0x41
-WRITE 0x7C04 0xCD    COMMENT int 0x10
-WRITE 0x7C05 0x10
-
-Wait for keypress:
-WRITE 0x7C10 0xB4    COMMENT mov ah, 0x00
-WRITE 0x7C11 0x00
-WRITE 0x7C12 0xCD    COMMENT int 0x16
-WRITE 0x7C13 0x16
-
-Set up stack:
-WRITE 0x7C00 0xFA    COMMENT cli
-WRITE 0x7C01 0xB8    COMMENT mov ax, 0x9000
-WRITE 0x7C02 0x00
-WRITE 0x7C03 0x90
-WRITE 0x7C04 0x8E    COMMENT mov ss, ax
-WRITE 0x7C05 0xD0
-WRITE 0x7C06 0xBC    COMMENT mov sp, 0xFFFF
-WRITE 0x7C07 0xFF
-WRITE 0x7C08 0xFF
-WRITE 0x7C09 0xFB    COMMENT sti
-"""
+    def _load_primitive_library(self, library_path: Path):
+        """Load pre-built primitive templates."""
+        for prim_file in library_path.glob("*.json"):
+            with open(prim_file, 'r') as f:
+                template = json.load(f)
+                self.primitive_library[template['name']] = template
 
     def _seed_knowledge(self):
-        """Seed the pixel network with pxOS knowledge."""
-        print("🌱 Seeding pixel network with pxOS knowledge...")
+        """Seed the pixel network with pxOS + JSON contract knowledge."""
+        knowledge = """
+=== pxOS PRIMITIVE SYSTEM WITH JSON CONTRACTS ===
+
+## CRITICAL: ALL RESPONSES MUST BE VALID JSON
+
+You MUST respond with JSON conforming to this schema:
+
+{
+  "feature": "string describing what this implements",
+  "start_address": "0xHHHH",  // optional
+  "primitives": [
+    {
+      "type": "WRITE",
+      "addr": "0xHHHH",
+      "byte": "0xBB",
+      "comment": "optional explanation"
+    },
+    {
+      "type": "DEFINE",
+      "label": "symbol_name",
+      "addr": "0xHHHH"
+    },
+    {
+      "type": "COMMENT",
+      "text": "comment text"
+    }
+  ]
+}
+
+## MEMORY MAP (STRICT CONSTRAINTS)
+
+0x7C00-0x7DFF : Boot sector (512 bytes) - HUMAN REVIEW REQUIRED
+0x7E00-0x7FFF : Extended boot code - safe for AI changes
+0x0050        : Cursor position storage
+0x1FE-0x1FF   : Boot signature 0x55AA - NEVER CHANGE
+
+## x86 OPCODES (VALIDATED SUBSET)
+
+# BIOS Interrupts
+0xCD 0x10 : INT 0x10 (video services)
+0xCD 0x16 : INT 0x16 (keyboard services)
+0xCD 0x13 : INT 0x13 (disk services)
+
+# Video (INT 0x10)
+AH=0x0E : Teletype output (AL=char)
+AH=0x00 : Set video mode
+AH=0x02 : Set cursor position
+
+# Keyboard (INT 0x16)
+AH=0x00 : Wait for keypress (returns AL=ASCII)
+AH=0x01 : Check for keypress
+
+# Common sequences
+Print char 'X':
+  0xB4 0x0E      # mov ah, 0x0E
+  0xB0 0x58      # mov al, 'X'
+  0xCD 0x10      # int 0x10
+
+Wait for key:
+  0xB4 0x00      # mov ah, 0x00
+  0xCD 0x16      # int 0x16
+
+Backspace:
+  0xB4 0x0E      # mov ah, 0x0E
+  0xB0 0x08      # mov al, 0x08 (backspace)
+  0xCD 0x10      # int 0x10
+  0xB0 0x20      # mov al, 0x20 (space to erase)
+  0xCD 0x10      # int 0x10
+  0xB0 0x08      # mov al, 0x08 (backspace again)
+  0xCD 0x10      # int 0x10
+
+## RESPONSE FORMAT (NON-NEGOTIABLE)
+
+✅ CORRECT:
+{
+  "feature": "Add backspace support",
+  "primitives": [...]
+}
+
+❌ INCORRECT:
+Here's the code for backspace:
+WRITE 0x7E00 0xB4
+...
+
+Free-form text will be REJECTED. Only JSON is accepted.
+"""
+
         self.bridge.append_interaction(
-            "What is the pxOS primitive system?",
-            self.knowledge_base
+            "What is the pxOS primitive JSON contract?",
+            knowledge
         )
 
     def generate_primitives(
         self,
         feature_description: str,
         start_address: Optional[int] = None,
-        max_attempts: int = 3
-    ) -> Tuple[bool, List[str], str]:
+        max_attempts: int = 3,
+        constraints: Optional[Dict] = None
+    ) -> Tuple[bool, Optional[Dict], str]:
         """
-        Generate primitive commands for a feature.
+        Generate primitive commands for a feature (JSON-validated).
+
+        Args:
+            feature_description: What to implement
+            start_address: Optional starting address
+            max_attempts: Max retry attempts for invalid JSON
+            constraints: Additional constraints (e.g., max_address)
 
         Returns:
-            (success, primitive_lines, explanation)
+            (success, validated_json_dict, raw_response)
         """
         print(f"\n🤖 Generating primitives for: {feature_description}")
 
-        # Build detailed prompt
-        prompt = self._build_generation_prompt(feature_description, start_address)
+        for attempt in range(max_attempts):
+            # Build prompt
+            prompt = self._build_json_prompt(feature_description, start_address, constraints)
 
-        # Query LM Studio
-        response = self.bridge.ask_lm_studio(prompt, use_context=True)
+            # Query LM Studio
+            response = self.bridge.ask_lm_studio(prompt, use_context=True)
 
-        # Extract primitives from response
-        primitives = self._extract_primitives(response)
+            # Try to extract and validate JSON
+            success, validated, error = self._validate_json_response(response)
 
-        if not primitives:
-            print("⚠️  No valid primitives found in LLM response")
-            return False, [], response
+            if success:
+                print(f"✅ Generated valid JSON with {len(validated['primitives'])} primitives")
 
-        # Validate primitives
-        valid, errors = self._validate_primitives(primitives)
+                # Learn from successful generation
+                self.bridge.append_interaction(
+                    f"Generate primitives for: {feature_description}",
+                    json.dumps(validated, indent=2)
+                )
 
-        if not valid:
-            print(f"❌ Validation errors: {errors}")
-            return False, primitives, response
+                return True, validated, response
 
-        print(f"✅ Generated {len(primitives)} primitive commands")
+            else:
+                print(f"⚠️  Attempt {attempt + 1}/{max_attempts} failed: {error}")
+                if attempt < max_attempts - 1:
+                    print("   Retrying with stricter prompt...")
 
-        # Learn from successful generation
-        self.bridge.append_interaction(feature_description, response)
+        print(f"❌ All {max_attempts} attempts failed validation")
+        return False, None, response
 
-        return True, primitives, response
-
-    def _build_generation_prompt(
+    def _build_json_prompt(
         self,
         feature: str,
-        start_addr: Optional[int]
+        start_addr: Optional[int],
+        constraints: Optional[Dict]
     ) -> str:
-        """Build a detailed prompt for primitive generation."""
+        """Build a strict JSON-enforcing prompt."""
 
-        addr_hint = f"Start at address 0x{start_addr:04X}." if start_addr else ""
+        addr_hint = f"Start at address 0x{start_addr:04X}." if start_addr else "Use addresses in 0x7E00-0x7FFF range."
 
-        prompt = f"""Generate pxOS primitive commands (WRITE/DEFINE/COMMENT) for this feature:
+        constraint_text = ""
+        if constraints:
+            constraint_text = "\nADDITIONAL CONSTRAINTS:\n"
+            for key, val in constraints.items():
+                constraint_text += f"- {key}: {val}\n"
+
+        prompt = f"""Generate pxOS primitive commands for this feature:
 
 FEATURE: {feature}
 
 REQUIREMENTS:
-1. Use only WRITE, DEFINE, COMMENT, and CALL commands
-2. Include COMMENT lines explaining each instruction
-3. Use proper x86 opcodes and BIOS interrupts
-4. Follow pxOS memory map conventions
-5. {addr_hint}
-6. Output ONLY the primitive commands, no extra explanation
+1. Respond with ONLY valid JSON (no explanation text before/after)
+2. JSON must conform to the pxOS primitive schema
+3. {addr_hint}
+4. Use known-good x86 opcodes from the knowledge base
+5. Include comments explaining each instruction{constraint_text}
 
-EXAMPLE FORMAT:
-COMMENT Add backspace support
-DEFINE backspace_handler 0x7C50
-WRITE 0x7C50 0xB4    COMMENT mov ah, 0x0E
-WRITE 0x7C51 0x0E
-WRITE 0x7C52 0xB0    COMMENT mov al, 0x08 (backspace)
-WRITE 0x7C53 0x08
-...
+RESPONSE FORMAT (MANDATORY):
+{{
+  "feature": "{feature}",
+  "primitives": [
+    {{"type": "COMMENT", "text": "Implementation of {feature}"}},
+    {{"type": "DEFINE", "label": "feature_label", "addr": "0xHHHH"}},
+    {{"type": "WRITE", "addr": "0xHHHH", "byte": "0xBB", "comment": "explanation"}}
+  ]
+}}
 
-Now generate the primitives:
+OUTPUT ONLY THE JSON, NOTHING ELSE:
 """
         return prompt
 
-    def _extract_primitives(self, llm_response: str) -> List[str]:
-        """Extract primitive command lines from LLM response."""
-        primitives = []
+    def _validate_json_response(self, response: str) -> Tuple[bool, Optional[Dict], str]:
+        """
+        Extract and validate JSON from LLM response.
 
-        lines = llm_response.split('\n')
-        for line in lines:
-            line = line.strip()
+        Returns:
+            (success, validated_dict, error_message)
+        """
+        # Try to extract JSON from response
+        json_str = self._extract_json(response)
 
-            # Look for lines starting with primitive commands
-            if line.startswith(('WRITE ', 'DEFINE ', 'COMMENT ', 'CALL ')):
-                primitives.append(line)
+        if not json_str:
+            return False, None, "No JSON found in response"
 
-            # Also check for lines that might have markdown code formatting
-            elif line.startswith('WRITE ') or line.startswith('DEFINE '):
-                primitives.append(line)
+        # Parse JSON
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            return False, None, f"Invalid JSON syntax: {e}"
 
-        return primitives
+        # Validate against schema
+        try:
+            jsonschema.validate(instance=data, schema=self.schema)
+        except jsonschema.ValidationError as e:
+            return False, None, f"Schema validation failed: {e.message}"
 
-    def _validate_primitives(self, primitives: List[str]) -> Tuple[bool, List[str]]:
-        """Validate primitive commands."""
+        # Additional pxOS-specific validation
+        valid, errors = self._validate_pxos_constraints(data)
+        if not valid:
+            return False, None, f"pxOS constraint violation: {errors}"
+
+        return True, data, ""
+
+    def _extract_json(self, text: str) -> Optional[str]:
+        """Extract JSON object from text (handles markdown code blocks, etc.)."""
+        import re
+
+        # Try to find JSON in markdown code block
+        match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Try to find raw JSON object
+        match = re.search(r'(\{.*\})', text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        return None
+
+    def _validate_pxos_constraints(self, data: Dict) -> Tuple[bool, List[str]]:
+        """Validate pxOS-specific constraints beyond schema."""
         errors = []
 
-        for i, line in enumerate(primitives):
-            parts = line.split()
-            if not parts:
-                continue
+        for prim in data.get('primitives', []):
+            if prim['type'] == 'WRITE':
+                addr_str = prim['addr']
+                addr = int(addr_str, 16)
 
-            cmd = parts[0].upper()
+                # Check boot sector writes (should require human review)
+                if 0x7C00 <= addr <= 0x7DFF:
+                    errors.append(f"Boot sector write at {addr_str} requires --allow-boot-edit")
 
-            if cmd == 'WRITE':
-                if len(parts) < 3:
-                    errors.append(f"Line {i+1}: WRITE needs address and value")
-                    continue
+                # Check boot signature
+                if addr in [0x1FE, 0x1FF]:
+                    errors.append(f"Boot signature write at {addr_str} is forbidden")
 
-                # Validate address
-                try:
-                    addr_str = parts[1]
-                    if addr_str.startswith('0x'):
-                        addr = int(addr_str, 16)
-                    else:
-                        addr = int(addr_str, 0)
-
-                    if addr >= 0x10000:
-                        errors.append(f"Line {i+1}: Address 0x{addr:X} out of bounds")
-                except ValueError:
-                    errors.append(f"Line {i+1}: Invalid address format")
-
-                # Validate byte value
-                try:
-                    val_str = parts[2]
-                    if val_str.startswith('0x'):
-                        val = int(val_str, 16)
-                    else:
-                        val = int(val_str, 0)
-
-                    if val > 0xFF:
-                        errors.append(f"Line {i+1}: Byte value 0x{val:X} > 0xFF")
-                except ValueError:
-                    errors.append(f"Line {i+1}: Invalid byte value")
-
-            elif cmd == 'DEFINE':
-                if len(parts) < 3:
-                    errors.append(f"Line {i+1}: DEFINE needs label and address")
+                # Check valid range
+                if addr >= 0x10000:
+                    errors.append(f"Address {addr_str} out of range")
 
         return len(errors) == 0, errors
 
+    def json_to_primitive_lines(self, data: Dict) -> List[str]:
+        """Convert validated JSON to primitive command lines."""
+        lines = []
+
+        # Header comment
+        lines.append(f"COMMENT {'=' * 70}")
+        lines.append(f"COMMENT AI-GENERATED: {data['feature']}")
+        lines.append(f"COMMENT {'=' * 70}")
+        lines.append("")
+
+        # Convert each primitive
+        for prim in data['primitives']:
+            ptype = prim['type']
+
+            if ptype == 'WRITE':
+                addr = prim['addr']
+                byte = prim['byte']
+                comment = prim.get('comment', '')
+                if comment:
+                    lines.append(f"WRITE {addr} {byte}    COMMENT {comment}")
+                else:
+                    lines.append(f"WRITE {addr} {byte}")
+
+            elif ptype == 'DEFINE':
+                label = prim['label']
+                addr = prim['addr']
+                lines.append(f"DEFINE {label} {addr}")
+
+            elif ptype == 'COMMENT':
+                text = prim['text']
+                lines.append(f"COMMENT {text}")
+
+            elif ptype == 'CALL':
+                label = prim['label']
+                comment = prim.get('comment', '')
+                if comment:
+                    lines.append(f"CALL {label}    COMMENT {comment}")
+                else:
+                    lines.append(f"CALL {label}")
+
+        return lines
+
     def append_to_commands_file(
         self,
-        primitives: List[str],
-        commands_file: Path,
-        section_name: str
+        data: Dict,
+        commands_file: Path
     ):
-        """Append generated primitives to pxos_commands.txt."""
+        """Append validated JSON primitives to pxos_commands.txt."""
+        lines = self.json_to_primitive_lines(data)
 
         with open(commands_file, 'a') as f:
-            f.write(f"\n\nCOMMENT {'='*70}\n")
-            f.write(f"COMMENT AI-GENERATED: {section_name}\n")
-            f.write(f"COMMENT {'='*70}\n")
-
-            for line in primitives:
+            f.write('\n\n')
+            for line in lines:
                 f.write(line + '\n')
 
-        print(f"✅ Appended {len(primitives)} lines to {commands_file}")
+        print(f"✅ Appended {len(data['primitives'])} primitives to {commands_file}")
 
 
 def main():
-    """Interactive AI primitive generator."""
+    """Interactive AI primitive generator with JSON validation."""
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="AI-Powered pxOS Primitive Generator",
+        description="AI-Powered pxOS Primitive Generator (JSON Schema-Based)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -329,6 +403,9 @@ Examples:
 
   # Specify starting address
   python3 tools/ai_primitive_generator.py --feature "Help command" --addr 0x7E00
+
+  # Machine mode (JSON output only, for agent chaining)
+  python3 tools/ai_primitive_generator.py --feature "clear screen" --machine
 """
     )
 
@@ -351,6 +428,11 @@ Examples:
         help="Interactive generation mode"
     )
     parser.add_argument(
+        "--machine",
+        action="store_true",
+        help="Machine mode: output only JSON, no human-friendly messages"
+    )
+    parser.add_argument(
         "--output",
         default="pxos-v1.0/pxos_commands.txt",
         help="Commands file to append to"
@@ -364,18 +446,20 @@ Examples:
         start_addr = int(args.addr, 16) if args.addr.startswith('0x') else int(args.addr, 0)
 
     # Initialize generator
-    print("🚀 Initializing AI Primitive Generator...")
+    if not args.machine:
+        print("🚀 Initializing AI Primitive Generator (JSON Schema Mode)...")
+
     generator = PrimitiveGenerator(
-        network_path=Path(args.network),
-        knowledge_base=generator._load_default_knowledge() if hasattr(PrimitiveGenerator, '_load_default_knowledge') else None
+        network_path=Path(args.network)
     )
 
     if args.interactive:
         # Interactive loop
         print("\n" + "="*70)
-        print("🎨 INTERACTIVE PRIMITIVE GENERATION")
+        print("🎨 INTERACTIVE PRIMITIVE GENERATION (JSON Schema-Validated)")
         print("="*70)
-        print("Describe features and I'll generate the primitives!")
+        print("Describe features and I'll generate primitives!")
+        print("All responses are JSON-validated for correctness.")
         print("Type 'exit' to quit.\n")
 
         while True:
@@ -388,7 +472,7 @@ Examples:
             if not feature or feature.lower() == 'exit':
                 break
 
-            success, primitives, explanation = generator.generate_primitives(
+            success, data, raw = generator.generate_primitives(
                 feature,
                 start_addr
             )
@@ -396,40 +480,51 @@ Examples:
             if success:
                 print("\n📝 Generated Primitives:")
                 print("-" * 70)
-                for line in primitives:
+                lines = generator.json_to_primitive_lines(data)
+                for line in lines:
                     print(line)
                 print("-" * 70)
+
+                print("\n📊 JSON Structure:")
+                print(json.dumps(data, indent=2))
 
                 save = input("\n💾 Append to commands file? (y/n): ").strip().lower()
                 if save == 'y':
                     generator.append_to_commands_file(
-                        primitives,
-                        Path(args.output),
-                        feature
+                        data,
+                        Path(args.output)
                     )
             else:
-                print("\n❌ Generation failed")
-                print(explanation[:500])
+                print("\n❌ Generation failed after max retries")
+                if not args.machine:
+                    print("Raw response:", raw[:500])
 
     elif args.feature:
         # Single feature generation
-        success, primitives, explanation = generator.generate_primitives(
+        success, data, raw = generator.generate_primitives(
             args.feature,
             start_addr
         )
 
         if success:
-            print("\n📝 Generated Primitives:")
-            for line in primitives:
-                print(line)
+            if args.machine:
+                # Machine mode: output only JSON
+                print(json.dumps(data))
+            else:
+                print("\n📝 Generated Primitives:")
+                lines = generator.json_to_primitive_lines(data)
+                for line in lines:
+                    print(line)
 
-            generator.append_to_commands_file(
-                primitives,
-                Path(args.output),
-                args.feature
-            )
+                generator.append_to_commands_file(
+                    data,
+                    Path(args.output)
+                )
         else:
-            print("\n❌ Generation failed")
+            if args.machine:
+                print(json.dumps({"error": "Generation failed", "raw": raw}))
+            else:
+                print("\n❌ Generation failed")
             sys.exit(1)
 
     else:

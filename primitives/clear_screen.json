@@ -1,0 +1,57 @@
+{
+  "name": "clear_screen",
+  "description": "Clear screen by setting video mode",
+  "parameters": {
+    "addr": "Starting address for this code"
+  },
+  "size_bytes": 6,
+  "template": {
+    "feature": "Clear screen",
+    "primitives": [
+      {
+        "type": "COMMENT",
+        "text": "Clear screen by re-setting video mode"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr}",
+        "byte": "0xB4",
+        "comment": "mov ah, 0x00 (set video mode)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+1}",
+        "byte": "0x00"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+2}",
+        "byte": "0xB0",
+        "comment": "mov al, 0x03 (80x25 text mode)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+3}",
+        "byte": "0x03"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+4}",
+        "byte": "0xCD",
+        "comment": "int 0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+5}",
+        "byte": "0x10"
+      }
+    ]
+  },
+  "side_effects": "Resets cursor to 0,0 and clears all screen content",
+  "example": {
+    "parameters": {
+      "addr": "0x7E30"
+    },
+    "result": "Screen cleared, cursor at top-left"
+  }
+}

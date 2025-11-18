@@ -9,5 +9,8 @@ requests>=2.28.0
 numpy>=1.21.0
 Pillow>=9.0.0
 
+# JSON schema validation (REQUIRED for v2 primitive generator)
+jsonschema>=4.0.0
+
 # Optional: Enhanced rendering
 # matplotlib>=3.5.0  # For visualization

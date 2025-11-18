@@ -1,0 +1,58 @@
+{
+  "name": "print_char",
+  "description": "Print a single character using BIOS INT 0x10 teletype",
+  "parameters": {
+    "addr": "Starting address for this code",
+    "char_value": "ASCII value of character to print (hex)"
+  },
+  "size_bytes": 6,
+  "template": {
+    "feature": "Print character",
+    "primitives": [
+      {
+        "type": "COMMENT",
+        "text": "Print character using INT 0x10 teletype"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr}",
+        "byte": "0xB4",
+        "comment": "mov ah, 0x0E (teletype)"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+1}",
+        "byte": "0x0E"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+2}",
+        "byte": "0xB0",
+        "comment": "mov al, {char_value}"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+3}",
+        "byte": "{char_value}"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+4}",
+        "byte": "0xCD",
+        "comment": "int 0x10"
+      },
+      {
+        "type": "WRITE",
+        "addr": "{addr+5}",
+        "byte": "0x10"
+      }
+    ]
+  },
+  "example": {
+    "parameters": {
+      "addr": "0x7E00",
+      "char_value": "0x41"
+    },
+    "result": "Prints 'A' to screen"
+  }
+}

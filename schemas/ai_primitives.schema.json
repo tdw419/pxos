@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pxos.dev/schemas/ai_primitives.schema.json",
+  "title": "pxOS AI-Generated Primitives",
+  "description": "Strict contract for LLM-generated pxOS primitive commands. All AI responses must conform to this schema.",
+  "type": "object",
+  "required": ["feature", "primitives"],
+  "properties": {
+    "feature": {
+      "type": "string",
+      "description": "Human-readable description of what this code implements",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "start_address": {
+      "type": "string",
+      "description": "Starting memory address (hex format: 0x7C00)",
+      "pattern": "^0x[0-9A-Fa-f]{4}$"
+    },
+    "primitives": {
+      "type": "array",
+      "description": "Ordered list of primitive commands",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/write_primitive"
+          },
+          {
+            "$ref": "#/definitions/define_primitive"
+          },
+          {
+            "$ref": "#/definitions/comment_primitive"
+          },
+          {
+            "$ref": "#/definitions/call_primitive"
+          }
+        ]
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Address and size constraints that were respected",
+      "properties": {
+        "max_address": {
+          "type": "string",
+          "pattern": "^0x[0-9A-Fa-f]{4}$"
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "description": "Suggested test cases for this feature",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "write_primitive": {
+      "type": "object",
+      "required": ["type", "addr", "byte"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "WRITE"
+        },
+        "addr": {
+          "type": "string",
+          "description": "Memory address in hex (e.g., 0x7C00)",
+          "pattern": "^0x[0-9A-Fa-f]{4}$"
+        },
+        "byte": {
+          "type": "string",
+          "description": "Byte value in hex (e.g., 0xB4)",
+          "pattern": "^0x[0-9A-Fa-f]{2}$"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional inline comment explaining this byte"
+        }
+      },
+      "additionalProperties": false
+    },
+    "define_primitive": {
+      "type": "object",
+      "required": ["type", "label", "addr"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "DEFINE"
+        },
+        "label": {
+          "type": "string",
+          "description": "Symbolic label name (alphanumeric, underscores)",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "addr": {
+          "type": "string",
+          "description": "Memory address in hex",
+          "pattern": "^0x[0-9A-Fa-f]{4}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "comment_primitive": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "COMMENT"
+        },
+        "text": {
+          "type": "string",
+          "description": "Comment text",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "call_primitive": {
+      "type": "object",
+      "required": ["type", "label"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "CALL"
+        },
+        "label": {
+          "type": "string",
+          "description": "Label to call (documentation only)",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        },
+        "comment": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "feature": "Add backspace support to shell",
+      "start_address": "0x7E00",
+      "primitives": [
+        {
+          "type": "COMMENT",
+          "text": "Backspace handler - erase last character"
+        },
+        {
+          "type": "DEFINE",
+          "label": "backspace_handler",
+          "addr": "0x7E00"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E00",
+          "byte": "0xB4",
+          "comment": "mov ah, 0x0E"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E01",
+          "byte": "0x0E"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E02",
+          "byte": "0xB0",
+          "comment": "mov al, 0x08 (backspace)"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E03",
+          "byte": "0x08"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E04",
+          "byte": "0xCD",
+          "comment": "int 0x10"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E05",
+          "byte": "0x10"
+        },
+        {
+          "type": "WRITE",
+          "addr": "0x7E06",
+          "byte": "0xC3",
+          "comment": "ret"
+        }
+      ],
+      "constraints": {
+        "max_address": "0x7E06",
+        "total_bytes": 7
+      },
+      "tests": [
+        {
+          "description": "Press backspace in shell",
+          "expected": "Cursor moves left, character erased"
+        }
+      ]
+    }
+  ]
+}
