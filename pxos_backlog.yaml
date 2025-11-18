@@ -1,0 +1,45 @@
+version: 1
+current_focus: "T003: GPU Execution with wgpu-py"
+tasks:
+  - id: T001
+    title: "Protocol Extension: Add Quantization Metadata Pixel"
+    status: "done"
+    type: "protocol"
+    priority: "critical"
+    notes: |
+      Problem: Naive uint8 quantization causes saturation.
+      Solution: Extend the Pixel Protocol to store float32 scale/offset metadata
+      for each matrix.
+      Implementation:
+      - A 2-pixel block at (X=1, Row) and (X=2, Row) will store metadata.
+      - (X=1, Row) R,G,B,A -> scale bytes 0,1,2,3
+      - (X=2, Row) R,G,B,A -> offset bytes 0,1,2,3
+      - Create pxvm/utils/quantization.py to handle packing/unpacking.
+
+  - id: T002
+    title: "Integrate Quantization into Assembler and Interpreter"
+    status: "done"
+    type: "implementation"
+    priority: "high"
+    notes: |
+      - Assembler: Calculate and pack metadata for each matrix.
+      - Interpreter: Unpack metadata and dequantize data before operations.
+      - Re-quantize results after operations.
+
+  - id: T003
+    title: "GPU Execution with wgpu-py"
+    status: "doing"
+    type: "feature"
+    priority: "critical"
+    notes: "Implement a WGSL-based interpreter to run pxVM programs on the GPU."
+
+  - id: T004
+    title: "Validate v0.1.1 Numeric Fidelity"
+    status: "done"
+    type: "validation"
+    priority: "critical"
+    notes: "Re-run validate_pixellm_accuracy.py and target >0.9 correlation."
+log:
+  - "2025-11-17T10:15Z: Infinite Concept Engine framework initialized"
+  - "2025-11-17T10:30Z: Tagged v0.1.0 (Proof of Concept)"
+  - "2025-11-17T10:32Z: Tagged v0.1.1 (Numerically Faithful Execution)"
