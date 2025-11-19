@@ -1,0 +1,24 @@
+{
+  "original_path": "docs/primitives.md",
+  "pixel_rgb": [
+    208,
+    75,
+    239
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".md",
+  "size_bytes": 9526,
+  "line_count": 469,
+  "content_preview": "# pxOS Primitive Command Reference\n\nThis document describes the primitive command language used to build pxOS.\n\n---\n\n## Overview\n\nThe pxOS primitive s..."
+}

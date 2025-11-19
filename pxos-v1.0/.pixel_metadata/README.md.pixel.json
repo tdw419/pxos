@@ -1,0 +1,24 @@
+{
+  "original_path": "README.md",
+  "pixel_rgb": [
+    160,
+    204,
+    67
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "architecture",
+    "primitives"
+  ],
+  "file_type": ".md",
+  "size_bytes": 7649,
+  "line_count": 306,
+  "content_preview": "# pxOS v1.0 \u2014 A Primitive-Built x86 Bootloader Shell\n\n**pxOS** is a **minimal interactive bootloader** that boots directly from BIOS, clears the scree..."
+}

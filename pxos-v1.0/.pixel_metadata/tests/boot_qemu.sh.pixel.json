@@ -1,0 +1,17 @@
+{
+  "original_path": "tests/boot_qemu.sh",
+  "pixel_rgb": [
+    238,
+    244,
+    40
+  ],
+  "semantic_concepts": [
+    "assembly_code",
+    "boot_system",
+    "networking"
+  ],
+  "file_type": ".sh",
+  "size_bytes": 433,
+  "line_count": 21,
+  "content_preview": "#!/bin/bash\n# pxOS QEMU Boot Script\n# Boots pxOS in QEMU emulator\n\n# Check if binary exists\nif [ ! -f \"../pxos.bin\" ]; then\n    echo \"Error: pxos.bin ..."
+}

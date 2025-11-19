@@ -1,0 +1,24 @@
+{
+  "original_path": "docs/extensions.md",
+  "pixel_rgb": [
+    182,
+    146,
+    77
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives"
+  ],
+  "file_type": ".md",
+  "size_bytes": 13175,
+  "line_count": 552,
+  "content_preview": "# Extending pxOS\n\nThis guide shows how to extend pxOS with new features, commands, and capabilities.\n\n---\n\n## Quick Extension Ideas\n\n| Difficulty | Fe..."
+}

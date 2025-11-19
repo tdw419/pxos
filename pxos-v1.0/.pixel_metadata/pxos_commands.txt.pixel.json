@@ -1,0 +1,21 @@
+{
+  "original_path": "pxos_commands.txt",
+  "pixel_rgb": [
+    34,
+    40,
+    162
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "drivers",
+    "kernel",
+    "primitives"
+  ],
+  "file_type": ".txt",
+  "size_bytes": 5123,
+  "line_count": 143,
+  "content_preview": "COMMENT ============================================================================\nCOMMENT pxOS v1.0 - Primitive Command File\nCOMMENT A minimal boot..."
+}

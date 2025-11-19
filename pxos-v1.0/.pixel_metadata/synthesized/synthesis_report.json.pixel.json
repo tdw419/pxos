@@ -1,0 +1,19 @@
+{
+  "original_path": "synthesized/synthesis_report.json",
+  "pixel_rgb": [
+    141,
+    113,
+    209
+  ],
+  "semantic_concepts": [
+    "configuration",
+    "scheduling",
+    "drivers",
+    "networking",
+    "primitives"
+  ],
+  "file_type": ".json",
+  "size_bytes": 624,
+  "line_count": 37,
+  "content_preview": "{\n  \"components_generated\": [\n    \"memory\",\n    \"scheduler\",\n    \"drivers\",\n    \"networking\",\n    \"architecture\"\n  ],\n  \"total_primitives\": 144,\n  \"me..."
+}

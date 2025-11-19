@@ -1,0 +1,21 @@
+{
+  "original_path": "examples/hello_world_module.txt",
+  "pixel_rgb": [
+    84,
+    8,
+    152
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "networking",
+    "kernel",
+    "primitives"
+  ],
+  "file_type": ".txt",
+  "size_bytes": 7442,
+  "line_count": 278,
+  "content_preview": "# Hello World Module Example\n\nThis example shows how to add a simple \"hello\" command to pxOS.\n\n## Goal\n\nWhen the user types \"hello\", the system respon..."
+}

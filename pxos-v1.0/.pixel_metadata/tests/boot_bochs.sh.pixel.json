@@ -1,0 +1,18 @@
+{
+  "original_path": "tests/boot_bochs.sh",
+  "pixel_rgb": [
+    126,
+    122,
+    43
+  ],
+  "semantic_concepts": [
+    "assembly_code",
+    "boot_system",
+    "filesystem",
+    "networking"
+  ],
+  "file_type": ".sh",
+  "size_bytes": 783,
+  "line_count": 32,
+  "content_preview": "#!/bin/bash\n# pxOS Bochs Boot Script\n# Boots pxOS in Bochs emulator (if installed)\n\n# Check if binary exists\nif [ ! -f \"../pxos.bin\" ]; then\n    echo ..."
+}

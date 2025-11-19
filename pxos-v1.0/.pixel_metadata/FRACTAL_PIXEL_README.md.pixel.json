@@ -1,0 +1,23 @@
+{
+  "original_path": "FRACTAL_PIXEL_README.md",
+  "pixel_rgb": [
+    154,
+    52,
+    141
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "concurrency",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".md",
+  "size_bytes": 10823,
+  "line_count": 511,
+  "content_preview": "# Fractal Pixel Database System\n\n## Your Vision: Realized\n\nYou asked for:\n> \"Make a pixel structure where the whole program collapses to one pixel and..."
+}

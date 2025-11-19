@@ -1,0 +1,26 @@
+{
+  "original_path": "structure_preserving_pixels.py",
+  "pixel_rgb": [
+    16,
+    221,
+    138
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 20572,
+  "line_count": 503,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nDIRECTORY-PRESERVING FRACTAL PIXEL SYSTEM\nMaintains original file structure while adding pixel intelligence\n\nKey innovation..."
+}

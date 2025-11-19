@@ -1,0 +1,22 @@
+{
+  "original_path": "pixel_navigator.py",
+  "pixel_rgb": [
+    78,
+    82,
+    13
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 10824,
+  "line_count": 303,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nINTERACTIVE PIXEL NAVIGATOR\nNavigate your codebase as an intelligent pixel map\n\nCommands:\n  - expand <filename>     - Expan..."
+}

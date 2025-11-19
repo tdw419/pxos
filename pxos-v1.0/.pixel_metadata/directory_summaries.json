@@ -1,0 +1,156 @@
+{
+  "docs": {
+    "file_count": 3,
+    "subdirectory_count": 0,
+    "total_size_bytes": 33366,
+    "top_concepts": {
+      "documentation": 3,
+      "memory_management": 3,
+      "boot_system": 3,
+      "filesystem": 3,
+      "drivers": 3
+    },
+    "representative_color": [
+      159,
+      145,
+      178
+    ],
+    "all_concepts": [
+      "documentation",
+      "concurrency",
+      "pixel_system",
+      "drivers",
+      "networking",
+      "memory_management",
+      "boot_system",
+      "primitives",
+      "kernel",
+      "filesystem",
+      "architecture"
+    ]
+  },
+  "tests": {
+    "file_count": 3,
+    "subdirectory_count": 0,
+    "total_size_bytes": 1922,
+    "top_concepts": {
+      "assembly_code": 3,
+      "boot_system": 3,
+      "networking": 2,
+      "filesystem": 1
+    },
+    "representative_color": [
+      154,
+      139,
+      109
+    ],
+    "all_concepts": [
+      "filesystem",
+      "boot_system",
+      "assembly_code",
+      "networking"
+    ]
+  },
+  "examples": {
+    "file_count": 1,
+    "subdirectory_count": 0,
+    "total_size_bytes": 7442,
+    "top_concepts": {
+      "documentation": 1,
+      "memory_management": 1,
+      "boot_system": 1,
+      "filesystem": 1,
+      "networking": 1
+    },
+    "representative_color": [
+      84,
+      8,
+      152
+    ],
+    "all_concepts": [
+      "documentation",
+      "networking",
+      "memory_management",
+      "boot_system",
+      "primitives",
+      "kernel",
+      "filesystem"
+    ]
+  },
+  "iso_boot": {
+    "file_count": 1,
+    "subdirectory_count": 0,
+    "total_size_bytes": 31833,
+    "top_concepts": {},
+    "representative_color": [
+      12,
+      100,
+      25
+    ],
+    "all_concepts": []
+  },
+  "synthesized": {
+    "file_count": 8,
+    "subdirectory_count": 0,
+    "total_size_bytes": 10315,
+    "top_concepts": {
+      "documentation": 7,
+      "primitives": 7,
+      "pixel_system": 6,
+      "drivers": 5,
+      "scheduling": 4
+    },
+    "representative_color": [
+      123,
+      118,
+      136
+    ],
+    "all_concepts": [
+      "documentation",
+      "scheduling",
+      "concurrency",
+      "pixel_system",
+      "drivers",
+      "networking",
+      "configuration",
+      "memory_management",
+      "primitives",
+      "boot_system",
+      "filesystem",
+      "architecture"
+    ]
+  },
+  ".": {
+    "file_count": 20,
+    "subdirectory_count": 5,
+    "total_size_bytes": 504875,
+    "top_concepts": {
+      "filesystem": 19,
+      "primitives": 18,
+      "boot_system": 17,
+      "networking": 17,
+      "drivers": 16
+    },
+    "representative_color": [
+      127,
+      134,
+      119
+    ],
+    "all_concepts": [
+      "documentation",
+      "scheduling",
+      "concurrency",
+      "pixel_system",
+      "drivers",
+      "networking",
+      "configuration",
+      "memory_management",
+      "boot_system",
+      "primitives",
+      "python_code",
+      "kernel",
+      "filesystem",
+      "architecture"
+    ]
+  }
+}

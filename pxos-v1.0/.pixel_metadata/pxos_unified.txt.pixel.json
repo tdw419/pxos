@@ -1,0 +1,26 @@
+{
+  "original_path": "pxos_unified.txt",
+  "pixel_rgb": [
+    25,
+    118,
+    8
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".txt",
+  "size_bytes": 10370,
+  "line_count": 309,
+  "content_preview": "COMMENT ============================================================================\nCOMMENT pxOS v2.0 - UNIFIED OS WITH SEMANTIC SYNTHESIS\nCOMMENT\nCO..."
+}

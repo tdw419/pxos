@@ -1,0 +1,16 @@
+{
+  "original_path": "tests/test_input.sh",
+  "pixel_rgb": [
+    100,
+    51,
+    244
+  ],
+  "semantic_concepts": [
+    "assembly_code",
+    "boot_system"
+  ],
+  "file_type": ".sh",
+  "size_bytes": 706,
+  "line_count": 42,
+  "content_preview": "#!/bin/bash\n# pxOS Automated Input Test\n# Tests basic keyboard input and echo functionality\n\nif ! command -v expect &> /dev/null; then\n    echo \"Error..."
+}

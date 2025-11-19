@@ -1,0 +1,182 @@
+{
+  "README.md": [
+    160,
+    204,
+    67
+  ],
+  "LICENSE": [
+    124,
+    143,
+    92
+  ],
+  "docs/architecture.md": [
+    87,
+    216,
+    220
+  ],
+  "docs/extensions.md": [
+    182,
+    146,
+    77
+  ],
+  "docs/primitives.md": [
+    208,
+    75,
+    239
+  ],
+  "build_pxos.py": [
+    210,
+    165,
+    27
+  ],
+  "tests/boot_qemu.sh": [
+    238,
+    244,
+    40
+  ],
+  "tests/test_input.sh": [
+    100,
+    51,
+    244
+  ],
+  "tests/boot_bochs.sh": [
+    126,
+    122,
+    43
+  ],
+  "examples/hello_world_module.txt": [
+    84,
+    8,
+    152
+  ],
+  "pxos_commands.txt": [
+    34,
+    40,
+    162
+  ],
+  "pxos.bin": [
+    240,
+    22,
+    132
+  ],
+  "iso_boot/pxos.bin": [
+    12,
+    100,
+    25
+  ],
+  "DISTRIBUTION_GUIDE.md": [
+    108,
+    139,
+    34
+  ],
+  "PACKAGE_SUMMARY.txt": [
+    78,
+    149,
+    182
+  ],
+  "structure_preserving_pixels.py": [
+    16,
+    221,
+    138
+  ],
+  "pxos_fractal_pixels.json": [
+    76,
+    59,
+    168
+  ],
+  "pixel_navigator.py": [
+    78,
+    82,
+    13
+  ],
+  "research_digestor.py": [
+    103,
+    127,
+    73
+  ],
+  "pxos_fractal_pixels.db": [
+    150,
+    246,
+    233
+  ],
+  "fractal_pixel_db.py": [
+    186,
+    216,
+    234
+  ],
+  "research_summary.json": [
+    53,
+    204,
+    185
+  ],
+  "semantic_synthesizer.py": [
+    162,
+    175,
+    147
+  ],
+  "PIXEL_LLM_SYNTHESIS.md": [
+    248,
+    176,
+    80
+  ],
+  "synthesized/scheduler_primitives.txt": [
+    47,
+    4,
+    201
+  ],
+  "synthesized/memory_primitives.txt": [
+    54,
+    63,
+    177
+  ],
+  "synthesized/drivers_primitives.txt": [
+    102,
+    167,
+    135
+  ],
+  "synthesized/all_components.txt": [
+    189,
+    103,
+    219
+  ],
+  "synthesized/architecture_primitives.txt": [
+    29,
+    57,
+    33
+  ],
+  "synthesized/integration.txt": [
+    244,
+    214,
+    38
+  ],
+  "synthesized/synthesis_report.json": [
+    141,
+    113,
+    209
+  ],
+  "synthesized/networking_primitives.txt": [
+    184,
+    225,
+    81
+  ],
+  "pixel_demo.py": [
+    178,
+    89,
+    27
+  ],
+  "pxos_unified.txt": [
+    25,
+    118,
+    8
+  ],
+  "INTEGRATION_SUCCESS.md": [
+    169,
+    53,
+    238
+  ],
+  "FRACTAL_PIXEL_README.md": [
+    154,
+    52,
+    141
+  ]
+}

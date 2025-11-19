@@ -1,0 +1,26 @@
+{
+  "original_path": "fractal_pixel_db.py",
+  "pixel_rgb": [
+    186,
+    216,
+    234
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 24906,
+  "line_count": 638,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nFRACTAL PIXEL FILE SYSTEM\nEach file collapses to one pixel, expands to infinite complexity\nEach pixel contains intelligence..."
+}

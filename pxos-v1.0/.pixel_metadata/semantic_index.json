@@ -1,0 +1,2480 @@
+{
+  "documentation": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/architecture_primitives.txt",
+      "pixel_rgb": [
+        29,
+        57,
+        33
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/drivers_primitives.txt",
+      "pixel_rgb": [
+        102,
+        167,
+        135
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/integration.txt",
+      "pixel_rgb": [
+        244,
+        214,
+        38
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    }
+  ],
+  "memory_management": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "LICENSE",
+      "pixel_rgb": [
+        124,
+        143,
+        92
+      ],
+      "file_type": ""
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    }
+  ],
+  "boot_system": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/drivers_primitives.txt",
+      "pixel_rgb": [
+        102,
+        167,
+        135
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "tests/boot_bochs.sh",
+      "pixel_rgb": [
+        126,
+        122,
+        43
+      ],
+      "file_type": ".sh"
+    },
+    {
+      "file": "tests/boot_qemu.sh",
+      "pixel_rgb": [
+        238,
+        244,
+        40
+      ],
+      "file_type": ".sh"
+    },
+    {
+      "file": "tests/test_input.sh",
+      "pixel_rgb": [
+        100,
+        51,
+        244
+      ],
+      "file_type": ".sh"
+    }
+  ],
+  "scheduling": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/integration.txt",
+      "pixel_rgb": [
+        244,
+        214,
+        38
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/synthesis_report.json",
+      "pixel_rgb": [
+        141,
+        113,
+        209
+      ],
+      "file_type": ".json"
+    }
+  ],
+  "filesystem": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "LICENSE",
+      "pixel_rgb": [
+        124,
+        143,
+        92
+      ],
+      "file_type": ""
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "tests/boot_bochs.sh",
+      "pixel_rgb": [
+        126,
+        122,
+        43
+      ],
+      "file_type": ".sh"
+    }
+  ],
+  "drivers": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/drivers_primitives.txt",
+      "pixel_rgb": [
+        102,
+        167,
+        135
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/integration.txt",
+      "pixel_rgb": [
+        244,
+        214,
+        38
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/synthesis_report.json",
+      "pixel_rgb": [
+        141,
+        113,
+        209
+      ],
+      "file_type": ".json"
+    }
+  ],
+  "networking": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/synthesis_report.json",
+      "pixel_rgb": [
+        141,
+        113,
+        209
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "tests/boot_bochs.sh",
+      "pixel_rgb": [
+        126,
+        122,
+        43
+      ],
+      "file_type": ".sh"
+    },
+    {
+      "file": "tests/boot_qemu.sh",
+      "pixel_rgb": [
+        238,
+        244,
+        40
+      ],
+      "file_type": ".sh"
+    }
+  ],
+  "kernel": [
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    }
+  ],
+  "architecture": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/architecture_primitives.txt",
+      "pixel_rgb": [
+        29,
+        57,
+        33
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    }
+  ],
+  "primitives": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PACKAGE_SUMMARY.txt",
+      "pixel_rgb": [
+        78,
+        149,
+        182
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "README.md",
+      "pixel_rgb": [
+        160,
+        204,
+        67
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "examples/hello_world_module.txt",
+      "pixel_rgb": [
+        84,
+        8,
+        152
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_commands.txt",
+      "pixel_rgb": [
+        34,
+        40,
+        162
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/architecture_primitives.txt",
+      "pixel_rgb": [
+        29,
+        57,
+        33
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/drivers_primitives.txt",
+      "pixel_rgb": [
+        102,
+        167,
+        135
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/synthesis_report.json",
+      "pixel_rgb": [
+        141,
+        113,
+        209
+      ],
+      "file_type": ".json"
+    }
+  ],
+  "concurrency": [
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/architecture.md",
+      "pixel_rgb": [
+        87,
+        216,
+        220
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/extensions.md",
+      "pixel_rgb": [
+        182,
+        146,
+        77
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    }
+  ],
+  "pixel_system": [
+    {
+      "file": "DISTRIBUTION_GUIDE.md",
+      "pixel_rgb": [
+        108,
+        139,
+        34
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "FRACTAL_PIXEL_README.md",
+      "pixel_rgb": [
+        154,
+        52,
+        141
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "INTEGRATION_SUCCESS.md",
+      "pixel_rgb": [
+        169,
+        53,
+        238
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "PIXEL_LLM_SYNTHESIS.md",
+      "pixel_rgb": [
+        248,
+        176,
+        80
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "docs/primitives.md",
+      "pixel_rgb": [
+        208,
+        75,
+        239
+      ],
+      "file_type": ".md"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pxos_fractal_pixels.db",
+      "pixel_rgb": [
+        150,
+        246,
+        233
+      ],
+      "file_type": ".db"
+    },
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "pxos_unified.txt",
+      "pixel_rgb": [
+        25,
+        118,
+        8
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "synthesized/all_components.txt",
+      "pixel_rgb": [
+        189,
+        103,
+        219
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/architecture_primitives.txt",
+      "pixel_rgb": [
+        29,
+        57,
+        33
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/drivers_primitives.txt",
+      "pixel_rgb": [
+        102,
+        167,
+        135
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/memory_primitives.txt",
+      "pixel_rgb": [
+        54,
+        63,
+        177
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/networking_primitives.txt",
+      "pixel_rgb": [
+        184,
+        225,
+        81
+      ],
+      "file_type": ".txt"
+    },
+    {
+      "file": "synthesized/scheduler_primitives.txt",
+      "pixel_rgb": [
+        47,
+        4,
+        201
+      ],
+      "file_type": ".txt"
+    }
+  ],
+  "python_code": [
+    {
+      "file": "build_pxos.py",
+      "pixel_rgb": [
+        210,
+        165,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "fractal_pixel_db.py",
+      "pixel_rgb": [
+        186,
+        216,
+        234
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_demo.py",
+      "pixel_rgb": [
+        178,
+        89,
+        27
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "pixel_navigator.py",
+      "pixel_rgb": [
+        78,
+        82,
+        13
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "research_digestor.py",
+      "pixel_rgb": [
+        103,
+        127,
+        73
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "semantic_synthesizer.py",
+      "pixel_rgb": [
+        162,
+        175,
+        147
+      ],
+      "file_type": ".py"
+    },
+    {
+      "file": "structure_preserving_pixels.py",
+      "pixel_rgb": [
+        16,
+        221,
+        138
+      ],
+      "file_type": ".py"
+    }
+  ],
+  "assembly_code": [
+    {
+      "file": "tests/boot_bochs.sh",
+      "pixel_rgb": [
+        126,
+        122,
+        43
+      ],
+      "file_type": ".sh"
+    },
+    {
+      "file": "tests/boot_qemu.sh",
+      "pixel_rgb": [
+        238,
+        244,
+        40
+      ],
+      "file_type": ".sh"
+    },
+    {
+      "file": "tests/test_input.sh",
+      "pixel_rgb": [
+        100,
+        51,
+        244
+      ],
+      "file_type": ".sh"
+    }
+  ],
+  "configuration": [
+    {
+      "file": "pxos_fractal_pixels.json",
+      "pixel_rgb": [
+        76,
+        59,
+        168
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "research_summary.json",
+      "pixel_rgb": [
+        53,
+        204,
+        185
+      ],
+      "file_type": ".json"
+    },
+    {
+      "file": "synthesized/synthesis_report.json",
+      "pixel_rgb": [
+        141,
+        113,
+        209
+      ],
+      "file_type": ".json"
+    }
+  ]
+}

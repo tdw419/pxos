@@ -1,0 +1,21 @@
+{
+  "original_path": "pixel_demo.py",
+  "pixel_rgb": [
+    178,
+    89,
+    27
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "boot_system",
+    "filesystem",
+    "networking",
+    "concurrency",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 9885,
+  "line_count": 302,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nFRACTAL PIXEL SYSTEM DEMONSTRATION\nShows the power of the intelligent pixel database\n\"\"\"\n\nimport pickle\nfrom fractal_pixel_..."
+}

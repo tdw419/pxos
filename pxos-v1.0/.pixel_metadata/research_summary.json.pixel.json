@@ -1,0 +1,24 @@
+{
+  "original_path": "research_summary.json",
+  "pixel_rgb": [
+    53,
+    204,
+    185
+  ],
+  "semantic_concepts": [
+    "configuration",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".json",
+  "size_bytes": 4280,
+  "line_count": 195,
+  "content_preview": "{\n  \"total_files_analyzed\": 15,\n  \"coverage_report\": {\n    \"bootloader\": {\n      \"description\": \"System initialization and boot\",\n      \"coverage\": 13..."
+}

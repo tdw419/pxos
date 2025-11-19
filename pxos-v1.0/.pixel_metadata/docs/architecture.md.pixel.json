@@ -1,0 +1,24 @@
+{
+  "original_path": "docs/architecture.md",
+  "pixel_rgb": [
+    87,
+    216,
+    220
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives"
+  ],
+  "file_type": ".md",
+  "size_bytes": 10665,
+  "line_count": 376,
+  "content_preview": "# pxOS Architecture\n\nThis document describes the internal architecture, memory layout, and design decisions of pxOS v1.0.\n\n---\n\n## Overview\n\npxOS is a..."
+}

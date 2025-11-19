@@ -1,0 +1,17 @@
+{
+  "original_path": "synthesized/integration.txt",
+  "pixel_rgb": [
+    244,
+    214,
+    38
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "scheduling",
+    "drivers"
+  ],
+  "file_type": ".txt",
+  "size_bytes": 581,
+  "line_count": 21,
+  "content_preview": "COMMENT ========================================\nCOMMENT INTEGRATION LAYER\nCOMMENT Connects all synthesized components\nCOMMENT =======================..."
+}

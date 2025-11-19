@@ -1,0 +1,121 @@
+{
+  "path": "/home/user/pxos/pxos-v1.0",
+  "name": "pxos-v1.0",
+  "child_dirs": [
+    {
+      "path": "/home/user/pxos/pxos-v1.0/docs",
+      "name": "docs",
+      "child_dirs": [],
+      "child_files": [
+        "docs/architecture.md",
+        "docs/extensions.md",
+        "docs/primitives.md"
+      ],
+      "file_count": 3,
+      "total_files": 3,
+      "representative_color": [
+        159,
+        145,
+        178
+      ]
+    },
+    {
+      "path": "/home/user/pxos/pxos-v1.0/tests",
+      "name": "tests",
+      "child_dirs": [],
+      "child_files": [
+        "tests/boot_qemu.sh",
+        "tests/test_input.sh",
+        "tests/boot_bochs.sh"
+      ],
+      "file_count": 3,
+      "total_files": 3,
+      "representative_color": [
+        154,
+        139,
+        109
+      ]
+    },
+    {
+      "path": "/home/user/pxos/pxos-v1.0/examples",
+      "name": "examples",
+      "child_dirs": [],
+      "child_files": [
+        "examples/hello_world_module.txt"
+      ],
+      "file_count": 1,
+      "total_files": 1,
+      "representative_color": [
+        84,
+        8,
+        152
+      ]
+    },
+    {
+      "path": "/home/user/pxos/pxos-v1.0/iso_boot",
+      "name": "iso_boot",
+      "child_dirs": [],
+      "child_files": [
+        "iso_boot/pxos.bin"
+      ],
+      "file_count": 1,
+      "total_files": 1,
+      "representative_color": [
+        12,
+        100,
+        25
+      ]
+    },
+    {
+      "path": "/home/user/pxos/pxos-v1.0/synthesized",
+      "name": "synthesized",
+      "child_dirs": [],
+      "child_files": [
+        "synthesized/scheduler_primitives.txt",
+        "synthesized/memory_primitives.txt",
+        "synthesized/drivers_primitives.txt",
+        "synthesized/all_components.txt",
+        "synthesized/architecture_primitives.txt",
+        "synthesized/integration.txt",
+        "synthesized/synthesis_report.json",
+        "synthesized/networking_primitives.txt"
+      ],
+      "file_count": 8,
+      "total_files": 8,
+      "representative_color": [
+        123,
+        118,
+        136
+      ]
+    }
+  ],
+  "child_files": [
+    "README.md",
+    "LICENSE",
+    "build_pxos.py",
+    "pxos_commands.txt",
+    "pxos.bin",
+    "DISTRIBUTION_GUIDE.md",
+    "PACKAGE_SUMMARY.txt",
+    "structure_preserving_pixels.py",
+    "pxos_fractal_pixels.json",
+    "pixel_navigator.py",
+    "research_digestor.py",
+    "pxos_fractal_pixels.db",
+    "fractal_pixel_db.py",
+    "research_summary.json",
+    "semantic_synthesizer.py",
+    "PIXEL_LLM_SYNTHESIS.md",
+    "pixel_demo.py",
+    "pxos_unified.txt",
+    "INTEGRATION_SUCCESS.md",
+    "FRACTAL_PIXEL_README.md"
+  ],
+  "file_count": 20,
+  "total_files": 36,
+  "representative_color": [
+    127,
+    134,
+    119
+  ]
+}

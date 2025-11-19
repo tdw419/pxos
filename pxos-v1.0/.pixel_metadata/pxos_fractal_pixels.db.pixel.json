@@ -1,0 +1,24 @@
+{
+  "original_path": "pxos_fractal_pixels.db",
+  "pixel_rgb": [
+    150,
+    246,
+    233
+  ],
+  "semantic_concepts": [
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".db",
+  "size_bytes": 74560,
+  "line_count": 153,
+  "content_preview": "\u0004\u0018\u0001\u0000\u0000\u0000\u0000\u0000}(\broot_dir\u0019/home/user/pxos/pxos-v1.0\u000bpixels_data](}(\tfile_path!/home/user/pxos/pxos-v1.0/LICENSE\u000fcollapsed_pixelKK\u000eK0\fcontent_hash b408c316d6..."
+}

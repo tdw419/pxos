@@ -1,0 +1,26 @@
+{
+  "original_path": "semantic_synthesizer.py",
+  "pixel_rgb": [
+    162,
+    175,
+    147
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 24914,
+  "line_count": 571,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nPIXEL LLM SEMANTIC SYNTHESIZER\nGenerates OS components from semantic intents using pixel-based reasoning\n\nThis synthesizer:..."
+}

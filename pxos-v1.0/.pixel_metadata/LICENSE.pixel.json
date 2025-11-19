@@ -1,0 +1,16 @@
+{
+  "original_path": "LICENSE",
+  "pixel_rgb": [
+    124,
+    143,
+    92
+  ],
+  "semantic_concepts": [
+    "memory_management",
+    "filesystem"
+  ],
+  "file_type": "",
+  "size_bytes": 1078,
+  "line_count": 21,
+  "content_preview": "MIT License\n\nCopyright (c) 2025 pxOS Development Team\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software a..."
+}

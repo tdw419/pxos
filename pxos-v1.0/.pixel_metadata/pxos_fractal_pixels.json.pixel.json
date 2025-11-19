@@ -1,0 +1,24 @@
+{
+  "original_path": "pxos_fractal_pixels.json",
+  "pixel_rgb": [
+    76,
+    59,
+    168
+  ],
+  "semantic_concepts": [
+    "configuration",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".json",
+  "size_bytes": 196145,
+  "line_count": 240,
+  "content_preview": "{\n  \"root_dir\": \"/home/user/pxos/pxos-v1.0\",\n  \"total_pixels\": 30,\n  \"concepts\": [\n    \"memory\",\n    \"filesystem\",\n    \"kernel\",\n    \"boot\",\n    \"sche..."
+}

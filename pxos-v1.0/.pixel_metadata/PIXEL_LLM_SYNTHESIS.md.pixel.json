@@ -1,0 +1,25 @@
+{
+  "original_path": "PIXEL_LLM_SYNTHESIS.md",
+  "pixel_rgb": [
+    248,
+    176,
+    80
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".md",
+  "size_bytes": 15906,
+  "line_count": 523,
+  "content_preview": "# Pixel LLM Research Digestion & Semantic Synthesis\n\n## The Problem: Scattered Research\n\nMany OS development projects suffer from \"scattered research ..."
+}

@@ -1,0 +1,26 @@
+{
+  "original_path": "research_digestor.py",
+  "pixel_rgb": [
+    103,
+    127,
+    73
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".py",
+  "size_bytes": 21618,
+  "line_count": 522,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\nPIXEL LLM RESEARCH DIGESTION PIPELINE\nConverts scattered OS research into semantic concepts for synthesis\n\nThis pipeline:\n1..."
+}

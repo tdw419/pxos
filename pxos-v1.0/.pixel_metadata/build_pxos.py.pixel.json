@@ -1,0 +1,20 @@
+{
+  "original_path": "build_pxos.py",
+  "pixel_rgb": [
+    210,
+    165,
+    27
+  ],
+  "semantic_concepts": [
+    "python_code",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "networking",
+    "primitives"
+  ],
+  "file_type": ".py",
+  "size_bytes": 6330,
+  "line_count": 192,
+  "content_preview": "#!/usr/bin/env python3\n\"\"\"\npxOS Builder v1.0\nConverts WRITE/DEFINE/CALL primitives into a bootable .bin\n\nThis builder demonstrates pxOS's unique primi..."
+}

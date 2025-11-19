@@ -1,0 +1,24 @@
+{
+  "original_path": "DISTRIBUTION_GUIDE.md",
+  "pixel_rgb": [
+    108,
+    139,
+    34
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".md",
+  "size_bytes": 11361,
+  "line_count": 512,
+  "content_preview": "# pxOS v1.0 Distribution Guide\n\nThis guide explains how to package and distribute pxOS v1.0.\n\n---\n\n## Package Contents\n\n```\npxos-v1.0/\n\u251c\u2500\u2500 README.md  ..."
+}

@@ -1,0 +1,22 @@
+{
+  "original_path": "PACKAGE_SUMMARY.txt",
+  "pixel_rgb": [
+    78,
+    149,
+    182
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "filesystem",
+    "drivers",
+    "networking",
+    "architecture",
+    "primitives"
+  ],
+  "file_type": ".txt",
+  "size_bytes": 4869,
+  "line_count": 148,
+  "content_preview": "================================================================================\n                        pxOS v1.0 - PACKAGE COMPLETE\n================..."
+}

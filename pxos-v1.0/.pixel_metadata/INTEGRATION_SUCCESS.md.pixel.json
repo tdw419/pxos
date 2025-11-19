@@ -1,0 +1,26 @@
+{
+  "original_path": "INTEGRATION_SUCCESS.md",
+  "pixel_rgb": [
+    169,
+    53,
+    238
+  ],
+  "semantic_concepts": [
+    "documentation",
+    "memory_management",
+    "boot_system",
+    "scheduling",
+    "filesystem",
+    "drivers",
+    "networking",
+    "kernel",
+    "concurrency",
+    "architecture",
+    "primitives",
+    "pixel_system"
+  ],
+  "file_type": ".md",
+  "size_bytes": 11829,
+  "line_count": 413,
+  "content_preview": "# Pixel LLM Integration Success Report\n\n## Mission Accomplished\n\n**Problem Solved:** Scattered research across multiple files, directories, and format..."
+}
