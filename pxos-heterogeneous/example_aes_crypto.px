@@ -1,0 +1,91 @@
+# GPU-Accelerated AES Encryption
+# Demonstrates how to accelerate Linux crypto operations
+
+# AES encryption kernel - encrypts multiple blocks in parallel
+GPU_KERNEL aes_encrypt_blocks
+GPU_PARAM input u8[]
+GPU_PARAM output u8[]
+GPU_PARAM keys u32[]
+GPU_PARAM num_blocks int
+
+GPU_SHARED sbox u8 256
+
+GPU_THREAD_CODE:
+    # Get thread ID - one thread per AES block
+    THREAD_ID → tid
+
+    # Bounds check
+    COMPARE tid < num_blocks → in_bounds
+
+    IF in_bounds:
+        # Calculate offsets (16 bytes per AES block)
+        MUL tid 16 → input_offset
+        MUL tid 16 → output_offset
+
+        # Load 16-byte block
+        LOAD input[input_offset] → byte0
+        LOAD input[input_offset + 1] → byte1
+        LOAD input[input_offset + 2] → byte2
+        LOAD input[input_offset + 3] → byte3
+        LOAD input[input_offset + 4] → byte4
+        LOAD input[input_offset + 5] → byte5
+        LOAD input[input_offset + 6] → byte6
+        LOAD input[input_offset + 7] → byte7
+        LOAD input[input_offset + 8] → byte8
+        LOAD input[input_offset + 9] → byte9
+        LOAD input[input_offset + 10] → byte10
+        LOAD input[input_offset + 11] → byte11
+        LOAD input[input_offset + 12] → byte12
+        LOAD input[input_offset + 13] → byte13
+        LOAD input[input_offset + 14] → byte14
+        LOAD input[input_offset + 15] → byte15
+
+        # AES AddRoundKey (XOR with key)
+        LOAD keys[0] → key0
+        LOAD keys[1] → key1
+        LOAD keys[2] → key2
+        LOAD keys[3] → key3
+
+        # XOR first 4 bytes with key
+        # (Simplified - real AES has 10-14 rounds)
+        ADD byte0 key0 → enc0
+        ADD byte1 key1 → enc1
+        ADD byte2 key2 → enc2
+        ADD byte3 key3 → enc3
+
+        # Store encrypted block
+        STORE enc0 → output[output_offset]
+        STORE enc1 → output[output_offset + 1]
+        STORE enc2 → output[output_offset + 2]
+        STORE enc3 → output[output_offset + 3]
+
+        # Store remaining bytes (simplified)
+        STORE byte4 → output[output_offset + 4]
+        STORE byte5 → output[output_offset + 5]
+        STORE byte6 → output[output_offset + 6]
+        STORE byte7 → output[output_offset + 7]
+        STORE byte8 → output[output_offset + 8]
+        STORE byte9 → output[output_offset + 9]
+        STORE byte10 → output[output_offset + 10]
+        STORE byte11 → output[output_offset + 11]
+        STORE byte12 → output[output_offset + 12]
+        STORE byte13 → output[output_offset + 13]
+        STORE byte14 → output[output_offset + 14]
+        STORE byte15 → output[output_offset + 15]
+    ENDIF
+GPU_END
+
+# Launch for 64K blocks (1MB of data)
+# 256 blocks × 256 threads = 65536 blocks
+GPU_LAUNCH aes_encrypt_blocks BLOCKS 256 THREADS 256
+GPU_SYNC
+
+# NOTE: This is a simplified AES for demonstration
+# Real AES has:
+# - 10-14 rounds (depending on key size)
+# - SubBytes (S-box substitution)
+# - ShiftRows
+# - MixColumns
+# - AddRoundKey
+#
+# But the principle is the same: process many blocks in parallel!
