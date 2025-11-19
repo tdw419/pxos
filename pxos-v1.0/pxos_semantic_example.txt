@@ -1,0 +1,33 @@
+
+# pxOS Semantic Build Example
+# ===========================
+# This demonstrates mixing traditional primitives with semantic intents
+
+COMMENT Boot sector setup using SEMANTIC intents
+ADDRESS 0x7C00
+
+COMMENT Entry point: disable interrupts for safety
+INTENT critical_section reason="boot_initialization"
+
+COMMENT Setup stack using traditional primitives
+WRITE 0x7C01 0xB8    COMMENT mov ax, 0x9000
+WRITE 0x7C02 0x00
+WRITE 0x7C03 0x90
+WRITE 0x7C04 0x8E    COMMENT mov ss, ax
+WRITE 0x7C05 0xD0
+WRITE 0x7C06 0xBC    COMMENT mov sp, 0xFFFF
+WRITE 0x7C07 0xFF
+WRITE 0x7C08 0xFF
+
+COMMENT Re-enable interrupts after stack setup
+ASM sti
+
+COMMENT Memory allocation intent (generates platform-specific code)
+INTENT memory_allocation size=4096 purpose=kernel alignment=page_boundary
+
+COMMENT I/O operation intent
+INTENT io_operation device=VGA operation=write
+
+COMMENT Boot signature
+WRITE 0x7DFE 0x55
+WRITE 0x7DFF 0xAA
