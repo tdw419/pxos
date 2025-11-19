@@ -3,9 +3,12 @@
 
 BITS 16
 
+SERIAL_PORT equ 0x3F8
+
 ;-----------------------------------------------------------------------------
 ; print16 - Print null-terminated string (16-bit real mode)
 ; Input: SI = pointer to string
+; CRITICAL: Uses serial port with AH-save fix from kernel debugging
 ;-----------------------------------------------------------------------------
 print16:
     pusha
@@ -13,12 +16,36 @@ print16:
     lodsb
     test al, al
     jz .done
-    mov ah, 0x0E
-    mov bh, 0
-    int 0x10
+    call write_serial
     jmp .loop
 .done:
     popa
+    ret
+
+;-----------------------------------------------------------------------------
+; write_serial - Write character to serial port
+; Input: AL = character to write
+; CRITICAL FIX: Save character in AH before status check!
+;-----------------------------------------------------------------------------
+write_serial:
+    push ax
+    push dx
+
+    mov ah, al              ; CRITICAL: Save character in AH before status read
+
+    ; Wait for transmit buffer to be empty
+    mov dx, SERIAL_PORT + 5
+.wait:
+    in al, dx               ; Read line status (OVERWRITES AL!)
+    test al, 0x20           ; Check if transmit buffer empty
+    jz .wait
+
+    mov al, ah              ; Restore character from AH
+    mov dx, SERIAL_PORT
+    out dx, al              ; Send character
+
+    pop dx
+    pop ax
     ret
 
 ;-----------------------------------------------------------------------------
@@ -37,8 +64,7 @@ print_hex16:
     jle .print
     add al, 7               ; 'A'-'9'-1
 .print:
-    mov ah, 0x0E
-    int 0x10
+    call write_serial
     pop ax
     loop .digit
     popa
@@ -54,10 +80,9 @@ print_hex32:
     ; Print "0x" prefix
     push eax
     mov al, '0'
-    mov ah, 0x0E
-    int 0x10
+    call write_serial
     mov al, 'x'
-    int 0x10
+    call write_serial
     pop eax
 
     ; Print 8 hex digits
@@ -71,8 +96,7 @@ print_hex32:
     jle .print
     add al, 7
 .print:
-    mov ah, 0x0E
-    int 0x10
+    call write_serial
     pop eax
     loop .digit
     popa
@@ -83,11 +107,10 @@ print_hex32:
 ;-----------------------------------------------------------------------------
 newline:
     pusha
-    mov ah, 0x0E
     mov al, 13              ; Carriage return
-    int 0x10
+    call write_serial
     mov al, 10              ; Line feed
-    int 0x10
+    call write_serial
     popa
     ret
 

@@ -20,13 +20,16 @@ detect_gpu:
     call print16
 
     ; Scan bus 0, devices 0-31
-    xor bx, bx              ; BH = bus 0, BL = device 0
+    mov byte [.current_dev], 0
 
 .scan_device:
     ; Read vendor ID using PCI BIOS
+    ; BH = bus, BL = device<<3 | function, DI = register
     mov ax, 0xB109          ; Read config word
-    mov cx, 0               ; Register 0 (vendor ID)
-    mov di, 0               ; Function 0
+    mov bh, 0               ; Bus 0
+    mov bl, [.current_dev]  ; Device number
+    shl bl, 3               ; Shift to bits 7-3
+    mov di, 0               ; Register 0 (vendor ID)
     int 0x1A
     jc .next_device         ; Skip if error
 
@@ -34,23 +37,59 @@ detect_gpu:
     cmp cx, 0xFFFF
     je .next_device
 
-    ; Device exists - read class code to check if it's VGA
+    ; DEBUG: Print device found
+    push bx
+    push cx
+    mov si, msg_dev_found
+    call print16
+    mov al, [.current_dev]
+    xor ah, ah
+    call print_hex16
+    mov si, msg_vendor_debug
+    call print16
+    pop cx
+    push cx
+    mov ax, cx
+    call print_hex16
+    call newline
+    pop cx
+    pop bx
+
+    ; Device exists - read class/subclass word
+    ; Offset 0x0A contains: subclass (low byte) + base class (high byte)
     mov ax, 0xB109
-    mov cx, 0x0A            ; Register 0x0A (class code high byte)
+    mov bh, 0               ; Bus 0
+    mov bl, [.current_dev]
+    shl bl, 3               ; Device << 3
+    mov di, 0x0A            ; Register 0x0A (subclass + class)
     int 0x1A
     jc .next_device
 
-    ; Check if class code is 0x03 (Display controller)
-    mov al, ch              ; Class code is in CH
-    cmp al, 0x03
+    ; DEBUG: Print class code (CL = subclass, CH = base class)
+    push bx
+    push cx
+    mov si, msg_class
+    call print16
+    mov al, ch              ; Base class in CH
+    xor ah, ah
+    call print_hex16
+    mov al, cl              ; Subclass in CL
+    xor ah, ah
+    call print_hex16
+    call newline
+    pop cx
+    pop bx
+
+    ; Check if base class is 0x03 (Display controller)
+    cmp ch, 0x03
     jne .next_device
 
     ; Found a VGA device!
     jmp .found_gpu
 
 .next_device:
-    inc bl                  ; Next device
-    cmp bl, 32              ; Scanned all 32 devices?
+    inc byte [.current_dev]  ; Next device
+    cmp byte [.current_dev], 32  ; Scanned all 32 devices?
     jb .scan_device
 
     ; No GPU found
@@ -60,23 +99,32 @@ detect_gpu:
     stc
     ret
 
+.current_dev: db 0
+
 .found_gpu:
     mov si, msg_found
     call print16
 
     ; Save device location
-    mov [gpu_bus], bh
-    mov [gpu_dev], bl
+    mov al, [.current_dev]
+    mov [gpu_dev], al
+    mov byte [gpu_bus], 0
 
     ; Read vendor ID
     mov ax, 0xB109
-    mov cx, 0
+    mov bh, 0
+    mov bl, [.current_dev]
+    shl bl, 3
+    mov di, 0               ; Register 0 (vendor ID)
     int 0x1A
     mov [gpu_vendor], cx
 
     ; Read device ID
     mov ax, 0xB109
-    mov cx, 2               ; Register 2 (device ID)
+    mov bh, 0
+    mov bl, [.current_dev]
+    shl bl, 3
+    mov di, 2               ; Register 2 (device ID)
     int 0x1A
     mov [gpu_device], cx
 
@@ -94,8 +142,9 @@ detect_gpu:
 
     ; Read BAR0 (register 0x10)
     mov ax, 0xB10A          ; Read config dword
-    mov bh, [gpu_bus]
-    mov bl, [gpu_dev]
+    mov bh, 0               ; Bus 0
+    mov bl, [.current_dev]
+    shl bl, 3               ; Device << 3
     mov di, 0x10            ; BAR0 register
     int 0x1A
     jc .bar0_error
@@ -137,8 +186,11 @@ gpu_dev:    db 0
 gpu_bar0:   dd 0
 
 ; Messages
-msg_scanning:    db "Scanning for GPU... ", 0
-msg_found:       db "Found!", 13, 10, 0
+msg_scanning:    db "Scanning for GPU... ", 13, 10, 0
+msg_dev_found:   db "  Dev ", 0
+msg_vendor_debug: db " vendor=", 0
+msg_class:       db "    class=", 0
+msg_found:       db "Found GPU!", 13, 10, 0
 msg_no_gpu:      db "No GPU found!", 13, 10, 0
 msg_vendor:      db "  Vendor: 0x", 0
 msg_device:      db " Device: 0x", 0

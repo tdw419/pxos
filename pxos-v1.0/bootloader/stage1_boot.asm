@@ -61,21 +61,48 @@ halt:
     jmp halt
 
 ;-----------------------------------------------------------------------------
-; print - Print null-terminated string
+; print - Print null-terminated string to serial port
 ; Input: SI = pointer to string
+; CRITICAL: Uses AH-save pattern learned from kernel debugging!
 ;-----------------------------------------------------------------------------
+SERIAL_PORT equ 0x3F8
+
 print:
     pusha
 .loop:
     lodsb                   ; Load byte from [SI] into AL, increment SI
     test al, al             ; Check if null terminator
     jz .done
-    mov ah, 0x0E            ; BIOS teletype output
-    mov bh, 0               ; Page 0
-    int 0x10                ; BIOS video services
+    call write_serial       ; Write character to serial port
     jmp .loop
 .done:
     popa
+    ret
+
+;-----------------------------------------------------------------------------
+; write_serial - Write character to serial port
+; Input: AL = character to write
+; CRITICAL FIX: Save character in AH before status check!
+;-----------------------------------------------------------------------------
+write_serial:
+    push ax
+    push dx
+
+    mov ah, al              ; CRITICAL: Save character in AH before status read
+
+    ; Wait for transmit buffer to be empty
+    mov dx, SERIAL_PORT + 5
+.wait:
+    in al, dx               ; Read line status (OVERWRITES AL!)
+    test al, 0x20           ; Check if transmit buffer empty
+    jz .wait
+
+    mov al, ah              ; Restore character from AH
+    mov dx, SERIAL_PORT
+    out dx, al              ; Send character
+
+    pop dx
+    pop ax
     ret
 
 ;-----------------------------------------------------------------------------
