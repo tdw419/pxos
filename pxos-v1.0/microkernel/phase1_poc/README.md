@@ -8,6 +8,7 @@ This is the **Phase 2 Proof of Concept** for pxOS, a GPU-centric operating syste
 - ✅ **Long Mode (64-bit)** transition
 - ✅ **PCIe Enumeration** to discover GPU
 - ✅ **BAR0 Memory Mapping** for GPU MMIO access
+- ✅ **Hardware Mailbox Protocol** for CPU-GPU communication
 - ✅ **Page Table Setup** with 2MB pages
 - ✅ **Serial Port Debug Output**
 - ✅ **VGA Text Mode** status markers
@@ -59,8 +60,10 @@ When booting, you should see VGA markers on screen:
 8. Scan PCIe bus for GPU (VGA class 0x0300)
 9. Read GPU BAR0 physical address
 10. Map BAR0 into kernel virtual address space
-11. Print "Hello from GPU OS!"
-12. Halt
+11. Initialize hardware mailbox protocol
+12. Test mailbox with UART write command
+13. Print "Hello from GPU OS!"
+14. Halt
 ```
 
 ### Memory Map
@@ -91,6 +94,7 @@ Uses **2MB huge pages** for simplicity:
 |------|-------------|
 | `microkernel_multiboot.asm` | Main kernel source (NASM assembly) |
 | `map_gpu_bar0.asm` | BAR0 memory mapping implementation |
+| `mailbox_protocol.asm` | Hardware mailbox protocol implementation |
 | `linker.ld` | Linker script for multiboot layout |
 | `test_grub_multiboot.sh` | Build script |
 | `run_qemu.sh` | QEMU test runner |
@@ -98,6 +102,7 @@ Uses **2MB huge pages** for simplicity:
 | `build/microkernel.bin` | Compiled kernel binary |
 | `build/pxos.iso` | Bootable ISO image |
 | `BAR0_MAPPING.md` | BAR0 mapping technical documentation |
+| `MAILBOX_PROTOCOL.md` | Mailbox protocol technical documentation |
 
 ---
 
