@@ -12,6 +12,54 @@ This is the **Phase 2 Proof of Concept** for pxOS, a GPU-centric operating syste
 - ✅ **Page Table Setup** with 2MB pages
 - ✅ **Serial Port Debug Output**
 - ✅ **VGA Text Mode** status markers
+- ✅ **Pixel LLM Integration** - AI-assisted development with autonomous architect
+- ✅ **WGSL GPU Runtime** - Compute shaders for mailbox protocol and neural network primitives
+- ✅ **God Pixel Compression** - 16,384:1 compression ratio for kernel modules
+
+---
+
+## 🆕 Pixel LLM Integration
+
+Phase 2 now includes the **Pixel LLM infrastructure** for AI-assisted kernel development!
+
+### What's New
+
+**AI-Powered Development:**
+- **pxOS Kernel Architect** - Autonomous LLM agent that helps develop the kernel
+- **Interactive Mode** - Ask the AI to implement features, optimize code, or generate documentation
+- **Autonomous Mode** - Let the AI continuously improve the kernel
+
+**GPU-Accelerated Primitives:**
+- **WGSL Compute Shaders** - Transformer attention, neural network activations
+- **Mailbox GPU Runtime** - GPU-side mailbox protocol handler in WGSL
+- **WebGPU Integration** - Execute GPU kernels from Python
+
+**Extreme Compression:**
+- **God Pixel** - One pixel compresses entire programs (16,384:1 ratio)
+- **Pixel VM** - Execute bytecode programs from pixel images
+- **Hypervisor** - Run pixel-native code with sandboxing
+
+### Quick Start with AI Architect
+
+```bash
+# 1. Install LM Studio and load a model
+#    Download from: https://lmstudio.ai/
+
+# 2. Run the kernel architect in interactive mode
+cd /home/user/pxos
+python3 pxos-v1.0/pixel_llm/tools/pxos_kernel_architect.py --mode interactive
+
+# 3. Give it tasks!
+What should I work on? > Add support for memory allocation via mailbox
+```
+
+**Example AI tasks:**
+- "Optimize mailbox latency to <500ns"
+- "Generate WGSL shader for GPU memory allocator"
+- "Create documentation for PCIe enumeration"
+- "Add performance counters to track syscalls"
+
+See `pxos-v1.0/pixel_llm/README.md` for complete documentation.
 
 ---
 
