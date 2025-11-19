@@ -1,0 +1,21 @@
+COMMENT ========================================
+COMMENT INTEGRATION LAYER
+COMMENT Connects all synthesized components
+COMMENT ========================================
+
+DEFINE os_init 0x8040
+COMMENT Initialize all OS components
+
+COMMENT Initialize memory
+CALL memory_init    COMMENT Future: actual call
+
+COMMENT Initialize scheduler
+CALL scheduler_init    COMMENT Future: actual call
+
+COMMENT Initialize drivers
+CALL drivers_init    COMMENT Future: actual call
+
+COMMENT Initialize architecture
+CALL architecture_init    COMMENT Future: actual call
+
+WRITE 0x8040 0xC3    COMMENT RET

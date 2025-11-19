@@ -1,0 +1,37 @@
+{
+  "components_generated": [
+    "memory",
+    "scheduler",
+    "drivers",
+    "networking",
+    "architecture"
+  ],
+  "total_primitives": 144,
+  "memory_layout": {
+    "memory": {
+      "start": "0x7EDC",
+      "end": "0x7F00",
+      "size": 36
+    },
+    "scheduler": {
+      "start": "0x7F60",
+      "end": "0x7F80",
+      "size": 32
+    },
+    "drivers": {
+      "start": "0x7FC1",
+      "end": "0x7FE0",
+      "size": 31
+    },
+    "networking": {
+      "start": "0x7FEB",
+      "end": "0x8000",
+      "size": 21
+    },
+    "architecture": {
+      "start": "0x8028",
+      "end": "0x8040",
+      "size": 24
+    }
+  }
+}

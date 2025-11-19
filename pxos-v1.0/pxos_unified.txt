@@ -1,0 +1,309 @@
+COMMENT ============================================================================
+COMMENT pxOS v2.0 - UNIFIED OS WITH SEMANTIC SYNTHESIS
+COMMENT
+COMMENT This OS combines:
+COMMENT   - Original pxOS v1.0 bootloader (hand-crafted)
+COMMENT   - Semantically synthesized components (Pixel LLM generated)
+COMMENT
+COMMENT Components:
+COMMENT   [0x7C00-0x7DFF] Boot sector (original)
+COMMENT   [0x7E00-0x7F00] Memory allocator (synthesized)
+COMMENT   [0x7F00-0x7F80] Task scheduler (synthesized)
+COMMENT   [0x7F80-0x7FE0] Device drivers (synthesized)
+COMMENT   [0x7FE0-0x8000] Networking (synthesized)
+COMMENT   [0x8000-0x8040] Architecture (synthesized)
+COMMENT ============================================================================
+
+COMMENT ============================================================================
+COMMENT BOOT SECTOR - Original pxOS v1.0
+COMMENT ============================================================================
+
+COMMENT Define memory locations
+DEFINE boot_start 0x7C00
+DEFINE video_mem 0xB800
+DEFINE cursor_pos 0x0050
+DEFINE shell_prompt 0x7E00
+DEFINE input_buffer 0x7E10
+
+COMMENT Set up stack
+WRITE 0x7C00 0xFA           COMMENT cli (disable interrupts)
+WRITE 0x7C01 0xB8           COMMENT mov ax, 0x9000
+WRITE 0x7C02 0x00
+WRITE 0x7C03 0x90
+WRITE 0x7C04 0x8E           COMMENT mov ss, ax
+WRITE 0x7C05 0xD0
+WRITE 0x7C06 0xBC           COMMENT mov sp, 0xFFFF
+WRITE 0x7C07 0xFF
+WRITE 0x7C08 0xFF
+WRITE 0x7C09 0xFB           COMMENT sti (enable interrupts)
+
+COMMENT Clear screen by filling with spaces
+WRITE 0x7C0A 0xB8           COMMENT mov ax, 0xB800
+WRITE 0x7C0B 0x00
+WRITE 0x7C0C 0xB8
+WRITE 0x7C0D 0x8E           COMMENT mov es, ax
+WRITE 0x7C0E 0xC0
+WRITE 0x7C0F 0x31           COMMENT xor di, di
+WRITE 0x7C10 0xFF
+WRITE 0x7C11 0xB9           COMMENT mov cx, 2000 (80x25)
+WRITE 0x7C12 0xD0
+WRITE 0x7C13 0x07
+WRITE 0x7C14 0xB0           COMMENT mov al, ' '
+WRITE 0x7C15 0x20
+WRITE 0x7C16 0xB4           COMMENT mov ah, 0x07 (white on black)
+WRITE 0x7C17 0x07
+WRITE 0x7C18 0xF3           COMMENT rep stosw
+WRITE 0x7C19 0xAB
+
+COMMENT Print welcome message "pxOS v2>"
+WRITE 0x7C1A 0xBE           COMMENT mov si, welcome_msg
+WRITE 0x7C1B 0x40
+WRITE 0x7C1C 0x7C
+WRITE 0x7C1D 0xE8           COMMENT call print_string
+WRITE 0x7C1E 0x08
+WRITE 0x7C1F 0x00
+
+COMMENT Jump to shell loop
+WRITE 0x7C20 0xE9           COMMENT jmp shell_loop
+WRITE 0x7C21 0x15
+WRITE 0x7C22 0x00
+
+COMMENT ============================================================================
+COMMENT print_string function - prints null-terminated string from SI
+COMMENT ============================================================================
+DEFINE print_string 0x7C28
+
+WRITE 0x7C28 0xAC           COMMENT lodsb (load byte from SI)
+WRITE 0x7C29 0x08           COMMENT or al, al
+WRITE 0x7C2A 0xC0
+WRITE 0x7C2B 0x74           COMMENT jz done (jump if zero)
+WRITE 0x7C2C 0x06
+WRITE 0x7C2D 0xB4           COMMENT mov ah, 0x0E (BIOS teletype)
+WRITE 0x7C2E 0x0E
+WRITE 0x7C2F 0xCD           COMMENT int 0x10
+WRITE 0x7C30 0x10
+WRITE 0x7C31 0xEB           COMMENT jmp print_string
+WRITE 0x7C32 0xF5
+WRITE 0x7C33 0xC3           COMMENT ret
+
+COMMENT ============================================================================
+COMMENT Welcome message
+COMMENT ============================================================================
+DEFINE welcome_msg 0x7C40
+
+WRITE 0x7C40 0x70           COMMENT 'p'
+WRITE 0x7C41 0x78           COMMENT 'x'
+WRITE 0x7C42 0x4F           COMMENT 'O'
+WRITE 0x7C43 0x53           COMMENT 'S'
+WRITE 0x7C44 0x20           COMMENT ' '
+WRITE 0x7C45 0x76           COMMENT 'v'
+WRITE 0x7C46 0x32           COMMENT '2'
+WRITE 0x7C47 0x3E           COMMENT '>'
+WRITE 0x7C48 0x20           COMMENT ' '
+WRITE 0x7C49 0x00           COMMENT null terminator
+
+COMMENT ============================================================================
+COMMENT Shell loop - read and echo characters
+COMMENT ============================================================================
+DEFINE shell_loop 0x7C38
+
+WRITE 0x7C38 0xB4           COMMENT mov ah, 0x00 (read key)
+WRITE 0x7C39 0x00
+WRITE 0x7C3A 0xCD           COMMENT int 0x16 (keyboard interrupt)
+WRITE 0x7C3B 0x16
+
+COMMENT Echo character
+WRITE 0x7C3C 0x3C           COMMENT cmp al, 0x0D (check for Enter)
+WRITE 0x7C3D 0x0D
+WRITE 0x7C3E 0x74           COMMENT je newline
+WRITE 0x7C3F 0x08
+
+COMMENT Regular character - echo it
+WRITE 0x7C40 0xB4           COMMENT mov ah, 0x0E (teletype)
+WRITE 0x7C41 0x0E
+WRITE 0x7C42 0xCD           COMMENT int 0x10
+WRITE 0x7C43 0x10
+WRITE 0x7C44 0xEB           COMMENT jmp shell_loop
+WRITE 0x7C45 0xF1
+
+COMMENT Handle newline
+WRITE 0x7C47 0xB0           COMMENT mov al, 0x0D (carriage return)
+WRITE 0x7C48 0x0D
+WRITE 0x7C49 0xB4           COMMENT mov ah, 0x0E
+WRITE 0x7C4A 0x0E
+WRITE 0x7C4B 0xCD           COMMENT int 0x10
+WRITE 0x7C4C 0x10
+WRITE 0x7C4D 0xB0           COMMENT mov al, 0x0A (line feed)
+WRITE 0x7C4E 0x0A
+WRITE 0x7C4F 0xCD           COMMENT int 0x10
+WRITE 0x7C50 0x10
+WRITE 0x7C51 0xBE           COMMENT mov si, welcome_msg (print prompt again)
+WRITE 0x7C52 0x40
+WRITE 0x7C53 0x7C
+WRITE 0x7C54 0xE8           COMMENT call print_string
+WRITE 0x7C55 0xD0
+WRITE 0x7C56 0xFF
+WRITE 0x7C57 0xEB           COMMENT jmp shell_loop
+WRITE 0x7C58 0xDE
+
+COMMENT ============================================================================
+COMMENT SYNTHESIZED COMPONENTS - Generated by Pixel LLM
+COMMENT ============================================================================
+
+COMMENT ========================================
+COMMENT MEMORY ALLOCATOR - Generated by Semantic Synthesis
+COMMENT Pixel encoding: (0, 0, 255)
+COMMENT ========================================
+
+DEFINE mem_manager 0x7E00
+DEFINE mem_free_list 0x7E10
+DEFINE mem_heap_start 0x7F00
+
+COMMENT Initialize memory manager
+WRITE 0x7E00 0x00    COMMENT Heap start low byte
+WRITE 0x7E01 0x80    COMMENT Heap start high byte (0x8000)
+WRITE 0x7E02 0x00    COMMENT Heap size low byte
+WRITE 0x7E03 0x10    COMMENT Heap size high byte (4KB)
+WRITE 0x7E04 0xFF    COMMENT Free list head (NULL)
+WRITE 0x7E05 0xFF
+
+DEFINE mem_alloc 0x7E50
+COMMENT Simple malloc - allocates 16-byte aligned blocks
+WRITE 0x7E50 0xA0    COMMENT MOV AL, [mem_free_list]
+WRITE 0x7E51 0x04
+WRITE 0x7E52 0x7E
+WRITE 0x7E53 0x3C    COMMENT CMP AL, 0xFF
+WRITE 0x7E54 0xFF
+WRITE 0x7E55 0x74    COMMENT JE alloc_from_heap
+WRITE 0x7E56 0x05
+WRITE 0x7E57 0x89    COMMENT MOV BX, AX
+WRITE 0x7E58 0xC3
+WRITE 0x7E59 0xC3    COMMENT RET
+
+DEFINE mem_free 0x7E70
+COMMENT Simple free - adds block to free list
+WRITE 0x7E70 0xA2    COMMENT MOV [mem_free_list], AL
+WRITE 0x7E71 0x04
+WRITE 0x7E72 0x7E
+WRITE 0x7E73 0xC3    COMMENT RET
+
+COMMENT ========================================
+COMMENT TASK SCHEDULER - Generated by Semantic Synthesis
+COMMENT Pixel encoding: (0, 255, 0)
+COMMENT ========================================
+
+DEFINE sched_current_task 0x7F00
+DEFINE sched_task_list 0x7F10
+DEFINE sched_num_tasks 0x7F02
+
+COMMENT Initialize scheduler
+WRITE 0x7F00 0x00    COMMENT Current task ID = 0
+WRITE 0x7F01 0x00
+WRITE 0x7F02 0x01    COMMENT Number of tasks = 1
+
+DEFINE sched_yield 0x7F50
+COMMENT Yield CPU to next task
+WRITE 0x7F50 0xA0    COMMENT MOV AL, [sched_current_task]
+WRITE 0x7F51 0x00
+WRITE 0x7F52 0x7F
+WRITE 0x7F53 0xFE    COMMENT INC AL
+WRITE 0x7F54 0xC0
+WRITE 0x7F55 0x3A    COMMENT CMP AL, [sched_num_tasks]
+WRITE 0x7F56 0x06
+WRITE 0x7F57 0x02
+WRITE 0x7F58 0x7F
+WRITE 0x7F59 0x72    COMMENT JB no_wrap
+WRITE 0x7F5A 0x02
+WRITE 0x7F5B 0x30    COMMENT XOR AL, AL (wrap to 0)
+WRITE 0x7F5C 0xC0
+WRITE 0x7F5D 0xA2    COMMENT MOV [sched_current_task], AL
+WRITE 0x7F5E 0x00
+WRITE 0x7F5F 0x7F
+WRITE 0x7F60 0xC3    COMMENT RET
+
+COMMENT ========================================
+COMMENT DEVICE DRIVERS - Generated by Semantic Synthesis
+COMMENT Pixel encoding: (255, 255, 0)
+COMMENT ========================================
+
+DEFINE driver_keyboard 0x7F80
+DEFINE driver_video 0x7FA0
+DEFINE driver_disk 0x7FC0
+
+COMMENT Keyboard driver - BIOS INT 16h wrapper
+WRITE 0x7F80 0xB4    COMMENT MOV AH, 0x00 (read key)
+WRITE 0x7F81 0x00
+WRITE 0x7F82 0xCD    COMMENT INT 0x16
+WRITE 0x7F83 0x16
+WRITE 0x7F84 0xC3    COMMENT RET (AL = character)
+
+COMMENT Video driver - BIOS INT 10h wrapper
+WRITE 0x7FA0 0xB4    COMMENT MOV AH, 0x0E (teletype)
+WRITE 0x7FA1 0x0E
+WRITE 0x7FA2 0xCD    COMMENT INT 0x10
+WRITE 0x7FA3 0x10
+WRITE 0x7FA4 0xC3    COMMENT RET
+
+COMMENT Disk driver - BIOS INT 13h wrapper
+WRITE 0x7FC0 0xB4    COMMENT MOV AH, 0x02 (read sectors)
+WRITE 0x7FC1 0x02
+WRITE 0x7FC2 0xB0    COMMENT MOV AL, 1 (1 sector)
+WRITE 0x7FC3 0x01
+WRITE 0x7FC4 0xCD    COMMENT INT 0x13
+WRITE 0x7FC5 0x13
+WRITE 0x7FC6 0xC3    COMMENT RET
+
+COMMENT ========================================
+COMMENT NETWORKING STACK - Generated by Semantic Synthesis
+COMMENT Pixel encoding: (0, 255, 255)
+COMMENT (Placeholder - requires NIC driver)
+COMMENT ========================================
+
+DEFINE net_mac_addr 0x7FE0
+DEFINE net_ip_addr 0x7FE6
+
+COMMENT MAC Address (00:11:22:33:44:55)
+WRITE 0x7FE0 0x00
+WRITE 0x7FE1 0x11
+WRITE 0x7FE2 0x22
+WRITE 0x7FE3 0x33
+WRITE 0x7FE4 0x44
+WRITE 0x7FE5 0x55
+
+COMMENT IP Address (192.168.1.100)
+WRITE 0x7FE6 0xC0    COMMENT 192
+WRITE 0x7FE7 0xA8    COMMENT 168
+WRITE 0x7FE8 0x01    COMMENT 1
+WRITE 0x7FE9 0x64    COMMENT 100
+
+COMMENT ========================================
+COMMENT ARCHITECTURE (x86) - Generated by Semantic Synthesis
+COMMENT Pixel encoding: (128, 128, 128)
+COMMENT ========================================
+
+DEFINE arch_enable_a20 0x8000
+DEFINE arch_get_cpuid 0x8020
+
+COMMENT Enable A20 line via keyboard controller
+WRITE 0x8000 0xE4    COMMENT IN AL, 0x64 (status)
+WRITE 0x8001 0x64
+WRITE 0x8002 0xA8    COMMENT TEST AL, 2 (wait for ready)
+WRITE 0x8003 0x02
+WRITE 0x8004 0x75    COMMENT JNZ (wait)
+WRITE 0x8005 0xF9
+WRITE 0x8006 0xB0    COMMENT MOV AL, 0xD1 (write output)
+WRITE 0x8007 0xD1
+WRITE 0x8008 0xE6    COMMENT OUT 0x64, AL
+WRITE 0x8009 0x64
+WRITE 0x800A 0xB0    COMMENT MOV AL, 0xDF (enable A20)
+WRITE 0x800B 0xDF
+WRITE 0x800C 0xE6    COMMENT OUT 0x60, AL
+WRITE 0x800D 0x60
+WRITE 0x800E 0xC3    COMMENT RET
+
+COMMENT ============================================================================
+COMMENT Boot signature (required at offset 0x1FE-0x1FF)
+COMMENT This is added automatically by build_pxos.py
+COMMENT ============================================================================
+
+COMMENT End of pxOS v2.0 unified primitives
