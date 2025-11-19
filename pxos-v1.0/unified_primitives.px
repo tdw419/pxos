@@ -1,0 +1,31 @@
+# unified_primitives.px - Single source for CPU and GPU code
+
+# --- CPU Primitives (Bootloader) ---
+DEFINE BOOT_MSG 0x1000
+WRITE BOOT_MSG 0x48 # H
+WRITE BOOT_MSG+1 0x65 # e
+WRITE BOOT_MSG+2 0x6C # l
+WRITE BOOT_MSG+3 0x6C # l
+WRITE BOOT_MSG+4 0x6F # o
+WRITE BOOT_MSG+5 0x20 #
+WRITE BOOT_MSG+6 0x43 # C
+WRITE BOOT_MSG+7 0x50 # P
+WRITE BOOT_MSG+8 0x55 # U
+
+# --- GPU Primitives (Vector Addition) ---
+GPU_KERNEL vector_add
+    GPU_PARAM a float[]
+    GPU_PARAM b float[]
+    GPU_PARAM c float[]
+    GPU_PARAM n int
+
+    GPU_THREAD_CODE:
+        THREAD_ID -> tid
+        IF tid < n:
+            LOAD a[tid] -> val_a
+            LOAD b[tid] -> val_b
+            ADD val_a val_b -> sum
+            STORE sum -> c[tid]
+GPU_END
+
+GPU_LAUNCH vector_add 1024 256
