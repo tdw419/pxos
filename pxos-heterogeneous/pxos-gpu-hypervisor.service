@@ -1,0 +1,40 @@
+[Unit]
+Description=pxOS GPU Hypervisor Service
+Documentation=https://github.com/tdw419/pxos
+After=network.target multi-user.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/pxos/pxos-heterogeneous
+
+# Load kernel module first (if needed)
+ExecStartPre=-/sbin/modprobe nvidia
+ExecStartPre=-/sbin/modprobe amdgpu
+
+# Start the hypervisor daemon
+ExecStart=/usr/bin/python3 /opt/pxos/pxos-heterogeneous/gpu_hypervisor.py --daemon
+
+# Restart policy
+Restart=on-failure
+RestartSec=5s
+
+# Security hardening (optional)
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/run /var/log
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pxos-gpu-hypervisor
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
