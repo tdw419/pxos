@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Generated CUDA files (examples kept for reference)
+*.o
+*.out
+
+# Executables
+vector_add
+saxpy
+test_kernel
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

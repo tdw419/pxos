@@ -1,0 +1,34 @@
+# Example: Vector Addition using GPU Primitives
+# pxOS Heterogeneous Computing System
+
+# Define vector addition kernel
+GPU_KERNEL vector_add
+GPU_PARAM a float[]
+GPU_PARAM b float[]
+GPU_PARAM c float[]
+GPU_PARAM n int
+
+GPU_THREAD_CODE:
+    # Get thread ID
+    THREAD_ID → tid
+
+    # Bounds check
+    COMPARE tid < n → in_bounds
+
+    IF in_bounds:
+        # Load inputs from global memory
+        LOAD a[tid] → val_a
+        LOAD b[tid] → val_b
+
+        # Compute sum
+        ADD val_a val_b → sum
+
+        # Store result to global memory
+        STORE sum → c[tid]
+    ENDIF
+GPU_END
+
+# Launch configuration
+# For 65536 elements: 256 blocks × 256 threads = 65536 threads
+GPU_LAUNCH vector_add BLOCKS 256 THREADS 256
+GPU_SYNC
