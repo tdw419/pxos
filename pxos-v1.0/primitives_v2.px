@@ -1,0 +1,24 @@
+# primitives_v2.px - Proof of Concept for Unified Primitives
+
+# --- CPU Primitives ---
+DEFINE BOOT_MSG 0x1000
+WRITE BOOT_MSG 0x48 # H
+WRITE BOOT_MSG+1 0x65 # e
+WRITE BOOT_MSG+2 0x6C # l
+WRITE BOOT_MSG+3 0x6C # l
+WRITE BOOT_MSG+4 0x6F # o
+WRITE BOOT_MSG+5 0x20 #
+WRITE BOOT_MSG+6 0x43 # C
+WRITE BOOT_MSG+7 0x50 # P
+WRITE BOOT_MSG+8 0x55 # U
+
+# --- GPU Primitives ---
+GPU_KERNEL fill_array
+    GPU_PARAM array int[]
+    GPU_PARAM value int
+    GPU_PARAM size int
+    GPU_THREAD_CODE:
+        THREAD_ID -> tid
+        IF tid < size:
+            STORE value -> array[tid]
+GPU_END

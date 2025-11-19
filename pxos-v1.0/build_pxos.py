@@ -14,14 +14,65 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from enum import Enum
+from dataclasses import dataclass, field
+
 MEMORY_SIZE = 0x10000  # 64KB
 VGA_TEXT_BUFFER = 0xB8000  # VGA text mode buffer (for reference)
 
-class PxOSBuilder:
+class ParamType(Enum):
+    """GPU kernel parameter types"""
+    INT = "int"
+    FLOAT = "float"
+    INT_ARRAY = "int[]"
+    FLOAT_ARRAY = "float[]"
+
+@dataclass
+class GPUKernel:
+    name: str
+    params: List[Dict] = field(default_factory=list)
+    code: List[str] = field(default_factory=list)
+
+@dataclass
+class GPULaunch:
+    kernel_name: str
+    blocks: int
+    threads: int
+
+class CUDAGenerator:
+    def __init__(self, kernels: List[GPUKernel], launches: List[GPULaunch]):
+        self.kernels = kernels
+        self.launches = launches
+
+    def generate(self) -> str:
+        # Placeholder for CUDA code generation
+        return "// CUDA code generation not yet implemented"
+
+class LLMAnalyzer:
+    def __init__(self, provider: str = "local"):
+        self.provider = provider
+
+    def analyze(self, kernels: List[GPUKernel], launches: List[GPULaunch]) -> bool:
+        """
+        Analyzes the primitives and decides if GPU code should be generated.
+        For this PoC, it's a simple rule: if there are GPU kernels, generate code.
+        """
+        if kernels:
+            print("\n🤖 LLM Analyzer: GPU kernels detected. Recommending GPU code generation.")
+            return True
+        else:
+            print("\n🤖 LLM Analyzer: No GPU kernels detected. Skipping GPU code generation.")
+            return False
+
+class UnifiedBuilder:
     def __init__(self):
         self.memory = bytearray(MEMORY_SIZE)
         self.symbols: Dict[str, int] = {}
+        self.gpu_kernels: List[GPUKernel] = []
+        self.gpu_launches: List[GPULaunch] = []
         self.operations_count = 0
+        self._in_gpu_kernel = False
+        self._current_gpu_kernel: Optional[GPUKernel] = None
 
     def parse_line(self, line: str, line_num: int) -> None:
         """Parse a single line of pxOS primitive commands"""
@@ -41,7 +92,32 @@ class PxOSBuilder:
 
         cmd = parts[0].upper()
 
-        if cmd == 'WRITE':
+        if self._in_gpu_kernel:
+            if cmd == 'GPU_PARAM':
+                if len(parts) < 3:
+                    raise ValueError("GPU_PARAM requires a name and type")
+                self._current_gpu_kernel.params.append({'name': parts[1], 'type': parts[2]})
+            elif cmd == 'GPU_END':
+                self._in_gpu_kernel = False
+                self.gpu_kernels.append(self._current_gpu_kernel)
+                self._current_gpu_kernel = None
+            else:
+                self._current_gpu_kernel.code.append(line)
+            return
+
+        if cmd == 'GPU_KERNEL':
+            if len(parts) < 2:
+                raise ValueError("GPU_KERNEL requires a name")
+            self._in_gpu_kernel = True
+            self._current_gpu_kernel = GPUKernel(name=parts[1])
+
+        elif cmd == 'GPU_LAUNCH':
+            if len(parts) < 4:
+                raise ValueError("GPU_LAUNCH requires kernel_name, blocks, and threads")
+            launch = GPULaunch(kernel_name=parts[1], blocks=int(parts[2]), threads=int(parts[3]))
+            self.gpu_launches.append(launch)
+
+        elif cmd == 'WRITE':
             # WRITE <address> <byte_value>
             if len(parts) < 3:
                 raise ValueError(f"WRITE requires 2 arguments: address and value")
@@ -78,20 +154,18 @@ class PxOSBuilder:
             pass
 
     def _parse_value(self, value_str: str) -> int:
-        """Parse a numeric value (hex or decimal)"""
+        """Parse a numeric value (hex, decimal, or symbol expression)"""
         value_str = value_str.strip()
 
-        # Check if it's a symbol reference
-        if value_str in self.symbols:
-            return self.symbols[value_str]
+        # Handle simple expressions like SYMBOL+1
+        for symbol, value in self.symbols.items():
+            value_str = value_str.replace(symbol, str(value))
 
-        # Try to parse as hex (0x prefix) or decimal
         try:
-            if value_str.startswith('0x') or value_str.startswith('0X'):
-                return int(value_str, 16)
-            else:
-                return int(value_str, 0)  # Auto-detect base
-        except ValueError:
+            # Use eval for simplicity. For a production system, a proper
+            # expression parser would be safer.
+            return eval(value_str)
+        except Exception:
             raise ValueError(f"Cannot parse value: {value_str}")
 
     def build(self, input_file: Path) -> None:
@@ -162,28 +236,57 @@ class PxOSBuilder:
             print(f"  (ISO creation failed: {e})")
             return False
 
+    def generate_cuda(self, output_file: Path):
+        """Generates a CUDA source file from the parsed GPU primitives."""
+        if not self.gpu_kernels:
+            return
+
+        print(f"\nGenerating CUDA code to {output_file}...")
+        generator = CUDAGenerator(self.gpu_kernels, self.gpu_launches)
+        cuda_code = generator.generate()
+        output_file.write_text(cuda_code)
+        print(f"  ✅ CUDA code generated.")
+
     def print_summary(self) -> None:
         """Print build summary"""
         print("\n=== Build Summary ===")
-        print(f"Operations: {self.operations_count}")
-        print(f"Symbols defined: {len(self.symbols)}")
+        print(f"CPU Operations: {self.operations_count}")
+        print(f"CPU Symbols defined: {len(self.symbols)}")
+        print(f"GPU Kernels defined: {len(self.gpu_kernels)}")
 
         if self.symbols:
-            print("\nSymbol Table:")
+            print("\nCPU Symbol Table:")
             for label, addr in sorted(self.symbols.items(), key=lambda x: x[1]):
                 print(f"  {label:20s} = 0x{addr:04X}")
+
+        if self.gpu_kernels:
+            print("\nGPU Kernels:")
+            for kernel in self.gpu_kernels:
+                print(f"  - {kernel.name} ({len(kernel.params)} params, {len(kernel.code)} lines)")
+                for param in kernel.params:
+                    print(f"    - IN: {param['name']} ({param['type']})")
+
+        if self.gpu_launches:
+            print("\nGPU Launches:")
+            for launch in self.gpu_launches:
+                print(f"  - {launch.kernel_name} (blocks: {launch.blocks}, threads: {launch.threads})")
 
         print("\nBoot with: qemu-system-i386 -fda pxos.bin")
 
 def main():
-    input_file = Path("pxos_commands.txt")
+    input_file = Path("unified_primitives.px")
     output_bin = Path("pxos.bin")
     output_iso = Path("pxos.iso")
 
-    builder = PxOSBuilder()
+    builder = UnifiedBuilder()
     builder.build(input_file)
     builder.write_binary(output_bin)
     builder.create_iso(output_bin, output_iso)
+
+    analyzer = LLMAnalyzer()
+    if analyzer.analyze(builder.gpu_kernels, builder.gpu_launches):
+        builder.generate_cuda(Path("kernel.cu"))
+
     builder.print_summary()
 
     print("\npxOS v1.0 built successfully!")
