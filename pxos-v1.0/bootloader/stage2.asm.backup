@@ -195,7 +195,7 @@ gdt_end:
 
 gdt_descriptor:
     dw gdt_end - gdt_start - 1
-    dd 0x7E00 + gdt_start - $$
+    dd gdt_start
 
 ; 64-bit GDT
 align 16
@@ -223,7 +223,7 @@ gdt64_end:
 
 gdt64_descriptor:
     dw gdt64_end - gdt64_start - 1
-    dd 0x7E00 + gdt64_start - $$
+    dd gdt64_start
 
 ;-----------------------------------------------------------------------------
 ; Messages

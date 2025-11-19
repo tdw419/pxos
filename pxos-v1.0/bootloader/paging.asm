@@ -100,8 +100,15 @@ setup_page_tables:
 ;-----------------------------------------------------------------------------
 ; enable_paging - Enable PAE and paging
 ;-----------------------------------------------------------------------------
+;-----------------------------------------------------------------------------
+; enable_paging - Enable PAE and paging (32-BIT CODE)
+;-----------------------------------------------------------------------------
+[BITS 32]
 enable_paging:
-    pusha
+    ; Save registers manually (not pusha - we're in 32-bit!)
+    push eax
+    push ecx
+    push edx
 
     ; Enable PAE (Physical Address Extension)
     mov eax, cr4
@@ -119,8 +126,12 @@ enable_paging:
     or eax, 1 << 31         ; Set PG bit
     mov cr0, eax
 
-    popa
+    pop edx
+    pop ecx
+    pop eax
     ret
+
+[BITS 16]  ; Return to 16-bit for rest of file
 
 ;-----------------------------------------------------------------------------
 ; Data
