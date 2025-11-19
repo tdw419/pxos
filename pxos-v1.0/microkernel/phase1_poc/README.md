@@ -7,6 +7,7 @@ This is the **Phase 2 Proof of Concept** for pxOS, a GPU-centric operating syste
 - ✅ **GRUB Multiboot2** bootloader support
 - ✅ **Long Mode (64-bit)** transition
 - ✅ **PCIe Enumeration** to discover GPU
+- ✅ **BAR0 Memory Mapping** for GPU MMIO access
 - ✅ **Page Table Setup** with 2MB pages
 - ✅ **Serial Port Debug Output**
 - ✅ **VGA Text Mode** status markers
@@ -56,9 +57,10 @@ When booting, you should see VGA markers on screen:
 6. Enable PAE + Long Mode
 7. Jump to 64-bit code
 8. Scan PCIe bus for GPU (VGA class 0x0300)
-9. Read GPU BAR0 address
-10. Print "Hello from GPU OS!"
-11. Halt
+9. Read GPU BAR0 physical address
+10. Map BAR0 into kernel virtual address space
+11. Print "Hello from GPU OS!"
+12. Halt
 ```
 
 ### Memory Map
@@ -88,12 +90,14 @@ Uses **2MB huge pages** for simplicity:
 | File | Description |
 |------|-------------|
 | `microkernel_multiboot.asm` | Main kernel source (NASM assembly) |
+| `map_gpu_bar0.asm` | BAR0 memory mapping implementation |
 | `linker.ld` | Linker script for multiboot layout |
 | `test_grub_multiboot.sh` | Build script |
 | `run_qemu.sh` | QEMU test runner |
 | `iso/boot/grub/grub.cfg` | GRUB configuration |
 | `build/microkernel.bin` | Compiled kernel binary |
 | `build/pxos.iso` | Bootable ISO image |
+| `BAR0_MAPPING.md` | BAR0 mapping technical documentation |
 
 ---
 
