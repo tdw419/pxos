@@ -31,6 +31,14 @@ msg_map_success:   db "OK (virt=0x", 0
 msg_map_failed:    db "FAILED (BAR0 not found)", 13, 10, 0
 msg_closing_paren: db ")", 13, 10, 0
 
+; Static page tables for MMIO mapping
+; BAR0 at ~4GB is outside the boot identity mapping (1GB)
+section .bss
+align 4096
+mmio_pdp:  resb 4096   ; PDP for high memory (entry in PML4)
+mmio_pd:   resb 4096   ; PD for BAR0 region (entry in PDP)
+mmio_pt:   resb 4096   ; PT for 4KB pages (entry in PD)
+
 section .text
 extern serial_print_64
 extern serial_putc_64
@@ -128,17 +136,106 @@ map_mmio_page:
     shr rcx, 30
     and rcx, 0x1FF
 
-    ; For simplicity, we use existing page tables set up during boot
-    ; In production, you'd walk page tables and create new ones if needed
+    ; Save physical address before we use rax for page table walk
+    push r8
+    push r9
+    push r10
+    push r11
 
-    ; Build page table entry
-    ; Flags: Present | Write | Cache-Disable | Writethrough (for UC)
-    mov rax, rdi                    ; Physical address
-    or rax, PAGE_PRESENT | PAGE_WRITE | PAGE_CACHE_DISABLE | PAGE_WRITETHROUGH
+    mov r8, rdi                     ; R8 = physical address
+    mov r9, rsi                     ; R9 = virtual address (already in rax)
 
-    ; This is a simplified version
-    ; Real implementation would walk page tables and install PTE
-    ; For now, we rely on the 2MB identity mapping covering BAR0
+    ;-------------------------------------------------------------------------
+    ; Walk page table hierarchy: PML4 → PDP → PD → PT
+    ; Implementation based on KernelGuru expert via God Pixel Network
+    ;-------------------------------------------------------------------------
+
+    ; Step 1: Get PML4 base from CR3
+    mov rax, cr3
+    and rax, ~0xFFF
+
+    ; Step 2: Get PDP from PML4[rbx]
+    lea rax, [rax + rbx * 8]
+    mov r10, rax                    ; Save PML4 entry address
+    mov rax, [rax]
+
+    test rax, PAGE_PRESENT
+    jnz .pdp_exists
+
+    ; Create PDP using static mmio_pdp
+    lea rax, [rel mmio_pdp]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [r10], rax
+
+.pdp_exists:
+    and rax, ~0xFFF                 ; Extract PDP base
+
+    ; Step 3: Get PD from PDP[rcx]
+    lea rax, [rax + rcx * 8]
+    mov r10, rax                    ; Save PDP entry address
+    mov rax, [rax]
+
+    test rax, PAGE_PRESENT
+    jnz .pd_exists
+
+    ; Create PD using static mmio_pd
+    lea rax, [rel mmio_pd]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [r10], rax
+
+.pd_exists:
+    and rax, ~0xFFF                 ; Extract PD base
+
+    ; PD index (bits 21-29) - calculate it now
+    mov rdx, r9
+    shr rdx, 21
+    and rdx, 0x1FF
+
+    ; Step 4: Get PT from PD[rdx]
+    lea rax, [rax + rdx * 8]
+    mov r10, rax                    ; Save PD entry address
+    mov rax, [rax]
+
+    test rax, PAGE_PRESENT
+    jnz .pt_exists
+
+    ; Create PT using static mmio_pt
+    lea rax, [rel mmio_pt]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [r10], rax
+    and rax, ~0xFFF
+    jmp .install_pte
+
+.pt_exists:
+    ; Check for 2MB huge page
+    test rax, PAGE_SIZE_2MB
+    jnz .done_ok
+
+    and rax, ~0xFFF                 ; Extract PT base
+
+.install_pte:
+    ; PT index (bits 12-20)
+    mov r11, r9
+    shr r11, 12
+    and r11, 0x1FF
+
+    ; Step 5: Install PTE at PT[r11]
+    lea rax, [rax + r11 * 8]
+
+    ; Build PTE with UC memory type (Present | Writable | PCD | PWT)
+    mov r10, r8                     ; Physical address
+    or r10, PAGE_PRESENT | PAGE_WRITE | PAGE_CACHE_DISABLE | PAGE_WRITETHROUGH
+    mov [rax], r10
+
+    ; Step 6: Flush TLB for this page
+    mov rax, r9
+    invlpg [rax]
+
+.done_ok:
+    pop r11
+    pop r10
+    pop r9
+    pop r8
 
     pop rsi
     pop rdi
@@ -146,6 +243,7 @@ map_mmio_page:
     pop rcx
     pop rbx
     pop rax
+    xor rax, rax                    ; Return success
     ret
 
 ;-----------------------------------------------------------------------------

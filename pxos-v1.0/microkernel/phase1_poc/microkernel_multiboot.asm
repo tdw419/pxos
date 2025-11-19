@@ -389,13 +389,11 @@ long_mode_start:
     ; Scan PCIe bus
     call pcie_scan_64
 
-    ; DEBUG: Skip BAR0 mapping to test if kernel boots
     ; Map GPU BAR0 into kernel address space
-    ; call map_gpu_bar0
+    call map_gpu_bar0
 
-    ; DEBUG: Skip mailbox for now
     ; Initialize mailbox protocol
-    ; call mailbox_init
+    call mailbox_init
 
     ; Test mailbox with UART write
     call mailbox_test
