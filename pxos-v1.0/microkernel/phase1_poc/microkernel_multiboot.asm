@@ -55,6 +55,11 @@ gpu_dev     db 0
 gpu_func    db 0
 gpu_bar0    dd 0
 
+; External symbols from map_gpu_bar0.asm
+extern gpu_bar0_phys
+extern gpu_bar0_virt
+extern map_gpu_bar0
+
 ; Page table pointers
 pml4_table  equ 0x1000
 pdp_table   equ 0x2000
@@ -74,6 +79,9 @@ stack_top:
 ; ==============================================================================
 section .text
 global _start
+global serial_print_64
+global serial_putc_64
+
 _start:
     ; Clear interrupts
     cli
@@ -350,6 +358,9 @@ long_mode_start:
     ; Scan PCIe bus
     call pcie_scan_64
 
+    ; Map GPU BAR0 into kernel address space
+    call map_gpu_bar0
+
     ; Print hello message
     call print_hello_64
 
@@ -433,6 +444,10 @@ pcie_scan_64:
 
     and eax, 0xFFFFFFF0                     ; Mask off flags
     mov [gpu_bar0], eax
+
+    ; Save to 64-bit variable for BAR mapping
+    mov rdx, rax
+    mov [rel gpu_bar0_phys], rdx
 
     ; Mark GPU found
     mov byte [VGA_BUFFER + 8], 'G'
