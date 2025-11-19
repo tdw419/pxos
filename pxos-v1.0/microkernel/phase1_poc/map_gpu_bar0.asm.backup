@@ -1,0 +1,309 @@
+; map_gpu_bar0.asm - GPU BAR0 Memory Mapping for pxOS
+; Maps GPU MMIO region into kernel address space with proper caching attributes
+
+BITS 64
+
+; Page table flags
+%define PAGE_PRESENT       0x001
+%define PAGE_WRITE         0x002
+%define PAGE_USER          0x004
+%define PAGE_WRITETHROUGH  0x008
+%define PAGE_CACHE_DISABLE 0x010
+%define PAGE_SIZE_2MB      0x080
+%define PAGE_GLOBAL        0x100
+
+; PAT index for uncacheable (UC) memory
+%define PAT_UC             0x000
+
+section .data
+align 8
+global gpu_bar0_phys
+global gpu_bar0_virt
+global gpu_bar0_size
+
+gpu_bar0_phys: dq 0        ; Set by PCIe scan
+gpu_bar0_virt: dq 0        ; Set by mapper
+gpu_bar0_size: dq 0x1000000 ; Default 16MB
+
+; Debug messages
+msg_map_bar0:      db "Mapping GPU BAR0... ", 0
+msg_map_success:   db "OK (virt=0x", 0
+msg_map_failed:    db "FAILED (BAR0 not found)", 13, 10, 0
+msg_closing_paren: db ")", 13, 10, 0
+
+; Static page tables for MMIO mapping
+; We need these because BAR0 (~4GB) is outside the boot identity mapping (1GB)
+section .bss
+align 4096
+mmio_pdp:  resb 4096   ; PDP for high memory regions
+mmio_pd:   resb 4096   ; PD for BAR0 region
+mmio_pt:   resb 4096   ; PT for BAR0 fine-grained mapping
+
+section .text
+extern serial_print_64
+extern serial_putc_64
+
+global map_gpu_bar0
+global map_mmio_page
+
+;-----------------------------------------------------------------------------
+; map_gpu_bar0()
+; Map GPU BAR0 into kernel address space with UC (uncacheable) attributes
+; Called after PCIe scan sets gpu_bar0_phys
+;-----------------------------------------------------------------------------
+map_gpu_bar0:
+    push rax
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+
+    ; Debug output
+    lea rsi, [rel msg_map_bar0]
+    call serial_print_64
+
+    ; Check if BAR0 was discovered by PCIe scan
+    mov rax, [rel gpu_bar0_phys]
+    test rax, rax
+    jz .no_bar
+
+    ; For now: identity map BAR0 (phys = virt)
+    ; This is simple and works for early bring-up
+    mov [rel gpu_bar0_virt], rax
+
+    ; Map first 4KB page (enough for mailbox registers)
+    ; For production: map multiple pages to cover full BAR
+    mov rdi, rax                    ; phys_addr = BAR0 base
+    mov rsi, rax                    ; virt_addr = BAR0 base (identity)
+    mov rdx, PAT_UC                 ; Uncacheable for MMIO
+    call map_mmio_page
+
+    ; Success - print virtual address
+    lea rsi, [rel msg_map_success]
+    call serial_print_64
+
+    mov rax, [rel gpu_bar0_virt]
+    call print_hex_64
+
+    lea rsi, [rel msg_closing_paren]
+    call serial_print_64
+
+    jmp .done
+
+.no_bar:
+    ; PCIe scan didn't find GPU or BAR0
+    lea rsi, [rel msg_map_failed]
+    call serial_print_64
+
+.done:
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
+; map_mmio_page(phys_addr, virt_addr, pat_index)
+; Map a single 4KB MMIO page into kernel page tables
+; Input:
+;   RDI = physical address
+;   RSI = virtual address
+;   RDX = PAT index (0=UC, 1=WC, etc.)
+;
+; FIXED v2: Creates missing page table entries using static mmio_* tables
+; This handles BAR0 at ~4GB which is outside the boot identity mapping
+; Solution provided by KernelGuru expert via God Pixel Network
+;-----------------------------------------------------------------------------
+map_mmio_page:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rdi
+    push rsi
+    push r8
+    push r9
+    push r10
+    push r11
+
+    ; Align addresses to 4KB boundary
+    and rdi, ~0xFFF                 ; RDI = aligned physical address
+    and rsi, ~0xFFF                 ; RSI = aligned virtual address
+
+    ; Save parameters
+    mov r8, rdi                     ; R8 = physical address
+    mov r9, rsi                     ; R9 = virtual address
+    mov r10, rdx                    ; R10 = PAT index
+
+    ; Extract page table indices from virtual address
+    mov rax, r9                     ; RAX = virtual address
+
+    ; PML4 index (bits 39-47)
+    mov rbx, rax
+    shr rbx, 39
+    and rbx, 0x1FF                  ; RBX = PML4 index
+
+    ; PDP index (bits 30-38)
+    mov rcx, rax
+    shr rcx, 30
+    and rcx, 0x1FF                  ; RCX = PDP index
+
+    ; PD index (bits 21-29)
+    mov rdx, rax
+    shr rdx, 21
+    and rdx, 0x1FF                  ; RDX = PD index
+
+    ; PT index (bits 12-20)
+    mov r11, rax
+    shr r11, 12
+    and r11, 0x1FF                  ; R11 = PT index
+
+    ;-------------------------------------------------------------------------
+    ; Step 1: Get PML4 base from CR3 and navigate to PDP
+    ;-------------------------------------------------------------------------
+    mov rax, cr3
+    and rax, ~0xFFF                 ; PML4 base
+
+    ; Get PML4 entry
+    lea rax, [rax + rbx * 8]        ; Address of PML4[index]
+    mov rsi, rax                    ; Save PML4 entry address
+    mov rax, [rax]                  ; Load PML4 entry value
+
+    test rax, PAGE_PRESENT
+    jnz .pdp_exists
+
+    ; Create new PDP using mmio_pdp
+    lea rax, [rel mmio_pdp]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [rsi], rax                  ; Install PML4 entry
+    and rax, ~0xFFF                 ; Extract base
+
+.pdp_exists:
+    and rax, ~0xFFF                 ; Extract PDP base
+
+    ;-------------------------------------------------------------------------
+    ; Step 2: Navigate to PD
+    ;-------------------------------------------------------------------------
+    lea rax, [rax + rcx * 8]        ; Address of PDP[index]
+    mov rsi, rax                    ; Save PDP entry address
+    mov rax, [rax]                  ; Load PDP entry value
+
+    test rax, PAGE_PRESENT
+    jnz .pd_exists
+
+    ; Create new PD using mmio_pd
+    lea rax, [rel mmio_pd]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [rsi], rax                  ; Install PDP entry
+    and rax, ~0xFFF                 ; Extract base
+
+.pd_exists:
+    and rax, ~0xFFF                 ; Extract PD base
+
+    ;-------------------------------------------------------------------------
+    ; Step 3: Navigate to PT
+    ;-------------------------------------------------------------------------
+    lea rax, [rax + rdx * 8]        ; Address of PD[index]
+    mov rsi, rax                    ; Save PD entry address
+    mov rax, [rax]                  ; Load PD entry value
+
+    test rax, PAGE_PRESENT
+    jnz .pt_exists
+
+    ; Create new PT using mmio_pt
+    lea rax, [rel mmio_pt]
+    or rax, PAGE_PRESENT | PAGE_WRITE
+    mov [rsi], rax                  ; Install PD entry
+    and rax, ~0xFFF                 ; Extract base
+    jmp .install_pte
+
+.pt_exists:
+    ; Check if this is a 2MB huge page (PS bit)
+    test rax, PAGE_SIZE_2MB
+    jnz .is_huge_page
+
+    and rax, ~0xFFF                 ; Extract PT base
+    jmp .install_pte
+
+.is_huge_page:
+    ; Already mapped as 2MB page - just return success
+    ; (The address is accessible, even if not ideal)
+    jmp .done_success
+
+.install_pte:
+    ;-------------------------------------------------------------------------
+    ; Step 4: Install PTE (Page Table Entry)
+    ;-------------------------------------------------------------------------
+    lea rax, [rax + r11 * 8]        ; Address of PT[index]
+
+    ; Build PTE value
+    ; For UC MMIO: physical_addr | Present | Writable | PCD | PWT
+    mov rbx, r8                     ; Physical address
+    or rbx, PAGE_PRESENT            ; Bit 0: Present
+    or rbx, PAGE_WRITE              ; Bit 1: Writable
+    or rbx, PAGE_WRITETHROUGH       ; Bit 3: PWT
+    or rbx, PAGE_CACHE_DISABLE      ; Bit 4: PCD
+
+    ; Install the PTE
+    mov [rax], rbx
+
+    ;-------------------------------------------------------------------------
+    ; Step 5: Flush TLB
+    ;-------------------------------------------------------------------------
+    mov rax, r9                     ; Virtual address
+    invlpg [rax]                    ; Invalidate TLB entry
+
+.done_success:
+    xor rax, rax                    ; Return 0 (success)
+    jmp .return
+
+.return:
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rsi
+    pop rdi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+
+;-----------------------------------------------------------------------------
+; print_hex_64(value)
+; Print 64-bit value in hexadecimal
+; Input: RAX = value
+;-----------------------------------------------------------------------------
+print_hex_64:
+    push rax
+    push rbx
+    push rcx
+    push rdx
+
+    mov rbx, rax
+    mov rcx, 16         ; 16 hex digits
+
+.loop:
+    rol rbx, 4          ; Rotate next nibble into position
+    mov rax, rbx
+    and rax, 0xF
+
+    ; Convert to ASCII hex digit
+    cmp al, 10
+    jl .digit
+    add al, 'A' - 10
+    jmp .output
+.digit:
+    add al, '0'
+
+.output:
+    call serial_putc_64
+    loop .loop
+
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
