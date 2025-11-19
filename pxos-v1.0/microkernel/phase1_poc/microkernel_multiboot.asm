@@ -90,11 +90,23 @@ _start:
     ; Clear interrupts
     cli
 
+    ; VERY EARLY DEBUG: Write '0' to VGA to prove we got here
+    mov byte [VGA_BUFFER], '0'
+    mov byte [VGA_BUFFER + 1], 0x0F
+
     ; Set up stack
     mov esp, stack_top
 
+    ; DEBUG: Write '1' after stack setup
+    mov byte [VGA_BUFFER + 2], '1'
+    mov byte [VGA_BUFFER + 3], 0x0F
+
     ; Initialize serial port
     call init_serial
+
+    ; DEBUG: Write '2' after serial init
+    mov byte [VGA_BUFFER + 4], '2'
+    mov byte [VGA_BUFFER + 5], 0x0F
 
     ; Clear screen and show boot message
     call clear_screen
@@ -107,8 +119,16 @@ _start:
     call serial_print
     call serial_newline
 
+    ; DEBUG: Write '3' before page table setup
+    mov byte [VGA_BUFFER + 6], '3'
+    mov byte [VGA_BUFFER + 7], 0x0F
+
     ; Set up page tables for long mode
     call setup_page_tables
+
+    ; DEBUG: Write '4' after page table setup
+    mov byte [VGA_BUFFER + 8], '4'
+    mov byte [VGA_BUFFER + 9], 0x0F
 
     ; Enter long mode
     mov esi, msg_longmode
@@ -118,6 +138,10 @@ _start:
     mov esi, msg_longmode
     call serial_print
     call serial_newline
+
+    ; DEBUG: Write '5' before entering long mode
+    mov byte [VGA_BUFFER + 10], '5'
+    mov byte [VGA_BUFFER + 11], 0x0F
 
     call enter_long_mode
 
@@ -186,17 +210,20 @@ serial_putc:
     push eax
     push edx
 
+    ; Wait for transmit buffer to be empty
     mov dx, SERIAL_PORT + 5
 .wait:
     in al, dx
-    and al, 0x20
+    test al, 0x20          ; Test transmit empty bit
     jz .wait
 
+    ; Restore character and send it
     pop edx
-    push edx
-    mov dx, SERIAL_PORT
     pop eax
     push eax
+    push edx
+
+    mov dx, SERIAL_PORT
     out dx, al
 
     pop edx
@@ -362,11 +389,13 @@ long_mode_start:
     ; Scan PCIe bus
     call pcie_scan_64
 
+    ; DEBUG: Skip BAR0 mapping to test if kernel boots
     ; Map GPU BAR0 into kernel address space
-    call map_gpu_bar0
+    ; call map_gpu_bar0
 
+    ; DEBUG: Skip mailbox for now
     ; Initialize mailbox protocol
-    call mailbox_init
+    ; call mailbox_init
 
     ; Test mailbox with UART write
     call mailbox_test
@@ -515,15 +544,20 @@ serial_putc_64:
     push rax
     push rdx
 
+    ; Wait for transmit buffer empty
     mov dx, SERIAL_PORT + 5
 .wait:
     in al, dx
     test al, 0x20
     jz .wait
 
-    mov dx, SERIAL_PORT
+    ; Restore character and send
+    pop rdx
     pop rax
     push rax
+    push rdx
+
+    mov dx, SERIAL_PORT
     out dx, al
 
     pop rdx
