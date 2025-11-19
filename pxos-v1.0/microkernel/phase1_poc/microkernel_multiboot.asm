@@ -60,6 +60,10 @@ extern gpu_bar0_phys
 extern gpu_bar0_virt
 extern map_gpu_bar0
 
+; External symbols from mailbox_protocol.asm
+extern mailbox_init
+extern mailbox_test
+
 ; Page table pointers
 pml4_table  equ 0x1000
 pdp_table   equ 0x2000
@@ -360,6 +364,12 @@ long_mode_start:
 
     ; Map GPU BAR0 into kernel address space
     call map_gpu_bar0
+
+    ; Initialize mailbox protocol
+    call mailbox_init
+
+    ; Test mailbox with UART write
+    call mailbox_test
 
     ; Print hello message
     call print_hello_64
