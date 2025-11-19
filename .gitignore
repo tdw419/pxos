@@ -1,0 +1,6 @@
+# Linux test files (can be re-downloaded)
+vmlinuz-test
+corepure64.gz
+core.gz
+*.gz
+*.img
