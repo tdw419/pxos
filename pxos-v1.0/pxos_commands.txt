@@ -78,18 +78,18 @@ WRITE 0x7C33 0xC3           COMMENT ret
 COMMENT ============================================================================
 COMMENT Welcome message
 COMMENT ============================================================================
-DEFINE welcome_msg 0x7C40
+DEFINE welcome_msg 0x7C60
 
-WRITE 0x7C40 0x70           COMMENT 'p'
-WRITE 0x7C41 0x78           COMMENT 'x'
-WRITE 0x7C42 0x4F           COMMENT 'O'
-WRITE 0x7C43 0x53           COMMENT 'S'
-WRITE 0x7C44 0x20           COMMENT ' '
-WRITE 0x7C45 0x76           COMMENT 'v'
-WRITE 0x7C46 0x31           COMMENT '1'
-WRITE 0x7C47 0x3E           COMMENT '>'
-WRITE 0x7C48 0x20           COMMENT ' '
-WRITE 0x7C49 0x00           COMMENT null terminator
+WRITE 0x7C60 0x70           COMMENT 'p'
+WRITE 0x7C61 0x78           COMMENT 'x'
+WRITE 0x7C62 0x4F           COMMENT 'O'
+WRITE 0x7C63 0x53           COMMENT 'S'
+WRITE 0x7C64 0x20           COMMENT ' '
+WRITE 0x7C65 0x76           COMMENT 'v'
+WRITE 0x7C66 0x31           COMMENT '1'
+WRITE 0x7C67 0x3E           COMMENT '>'
+WRITE 0x7C68 0x20           COMMENT ' '
+WRITE 0x7C69 0x00           COMMENT null terminator
 
 COMMENT ============================================================================
 COMMENT Shell loop - read and echo characters
