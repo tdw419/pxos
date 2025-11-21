@@ -1,0 +1,14 @@
+# pxOS Simulated VRAM Substrate Requirements
+
+# Core dependencies
+numpy>=1.21.0
+Pillow>=9.0.0
+PyYAML>=6.0
+
+# For viewport (should be included with Python)
+# tkinter - usually comes with Python, but on some Linux systems:
+# sudo apt-get install python3-tk
+
+# Optional: for future LLM integration
+# openai>=1.0.0
+# anthropic>=0.3.0

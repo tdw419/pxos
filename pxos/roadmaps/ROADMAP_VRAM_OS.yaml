@@ -1,0 +1,62 @@
+# ROADMAP_VRAM_OS.yaml
+#
+# Roadmap for building pxOS Stage 1 in simulated VRAM.
+#
+# This defines the sequence of steps that transform blank VRAM
+# into a bootable OS image.
+
+metadata:
+  name: "pxOS Stage 1 - VRAM Substrate"
+  version: "1.0"
+  description: |
+    First generation VRAM OS with basic layout and boot sequence.
+
+    Includes:
+    - Region layout (metadata, kernel, syscalls, processes, programs)
+    - Opcode palette
+    - Minimal hello world program
+
+  vram_width: 512
+  vram_height: 512
+  generation: 1
+
+steps:
+  # Step 1: Initialize background
+  - name: "init_background"
+    module: "pxos.agent.steps.basic_layout"
+    function: "step_init_background"
+    description: "Clear VRAM to base background color"
+    params:
+      background_color: [10, 10, 10, 255]
+
+  # Step 2: Paint region layout
+  - name: "layout_regions"
+    module: "pxos.agent.steps.basic_layout"
+    function: "step_layout_regions"
+    description: "Paint colored bands to mark OS regions"
+
+  # Step 3: Write boot banner
+  - name: "write_boot_banner"
+    module: "pxos.agent.steps.basic_layout"
+    function: "step_write_boot_banner"
+    description: "Write boot status indicator"
+    params:
+      boot_banner_color: [0, 255, 0, 255]
+
+  # Step 4: Write opcode palette
+  - name: "write_opcode_palette"
+    module: "pxos.agent.steps.basic_layout"
+    function: "step_write_opcode_palette"
+    description: "Encode instruction opcodes as colored pixels"
+
+  # Step 5: Write hello program
+  - name: "write_hello_program"
+    module: "pxos.agent.steps.basic_layout"
+    function: "step_write_hello_program"
+    description: "Write minimal test program"
+    params:
+      hello_program_x: 32
+
+output:
+  png_path: "artifacts/vram_os_stage1.png"
+  save_intermediate: false
