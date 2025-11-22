@@ -1,0 +1,5 @@
+# Pure Pixel Kernel Requirements
+# Python >= 3.8
+
+pygame>=2.0.0
+numpy>=1.20.0
