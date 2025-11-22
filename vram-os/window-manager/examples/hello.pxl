@@ -1,0 +1,43 @@
+; hello.pxl - Simple "Hello VRAM!" program
+; Tests the Pixel ISA assembler and basic instruction encoding
+
+START:
+    ; Load message address into R1
+    LOADI R1, #0x20
+    LOADI R2, #0x00
+    SHL R1, #8
+    OR R1, R2              ; R1 = 0x2000 (message address)
+
+    ; Call print_string subroutine
+    CALL PRINT_STRING
+
+    ; Halt execution
+    HALT
+
+; === PRINT_STRING SUBROUTINE ===
+; Prints a null-terminated string to UART
+; Input: R1 = address of string
+PRINT_STRING:
+    LOADI R3, #0x10        ; UART base address high byte
+    LOADI R4, #0x00
+    SHL R3, #8
+    OR R3, R4              ; R3 = 0x1000 (UART address)
+
+PRINT_LOOP:
+    LOAD R2, R1            ; R2 = character at [R1]
+    CMP R2, #0             ; Check for null terminator
+    JEQ PRINT_DONE
+
+    STORE R3, R2           ; Write character to UART
+
+    LOADI R4, #1
+    ADD R1, R4             ; R1++ (next character)
+
+    JMP PRINT_LOOP
+
+PRINT_DONE:
+    RET
+
+; === DATA SECTION ===
+ORG 0x2000
+DATA "Hello VRAM!", 0

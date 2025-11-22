@@ -1,0 +1,164 @@
+; pxl_wm_create_window.pxl - Create a new window
+; Creates a new window entry in the Window Table
+;
+; Input:
+;   R1 = Width (in 8-pixel units, 0-255)
+;   R2 = Height (in 8-pixel units, 0-255)
+;   R3 = Title string address
+; Output:
+;   R0 = Window ID (or 0xFF if failed)
+
+; Constants
+WINDOW_TABLE_BASE EQU 0x1000
+MAX_WINDOWS EQU 32
+ENTRY_SIZE EQU 16
+FREE_STATE EQU 0xFF
+WINDOW_COUNT_ADDR EQU 0x0F00   ; Address storing current window count
+
+CREATE_WINDOW:
+    ; Save input parameters
+    PUSH R1                    ; Save width
+    PUSH R2                    ; Save height
+    PUSH R3                    ; Save title address
+
+    ; === FIND FREE SLOT ===
+    LOADI R4, #WINDOW_TABLE_BASE
+    LOADI R5, #MAX_WINDOWS     ; Counter
+
+FIND_SLOT:
+    ; Check if this slot is free
+    ; Free slots have State=0xFF at offset 7
+    LOADI R6, #7
+    ADD R6, R4                 ; R6 = address of State byte
+    LOAD R7, R6                ; R7 = State value
+    CMP R7, #FREE_STATE
+    JEQ SLOT_FOUND             ; Found a free slot!
+
+    ; Move to next entry
+    LOADI R6, #ENTRY_SIZE
+    ADD R4, R6                 ; R4 += 16 (next entry)
+
+    LOADI R6, #1
+    SUB R5, R6                 ; Decrement counter
+    CMP R5, #0
+    JGT FIND_SLOT              ; Continue searching
+
+    ; No free slots available
+    JMP NO_SPACE
+
+SLOT_FOUND:
+    ; R4 now points to the free entry
+    ; Calculate Window ID from position
+    LOADI R5, #WINDOW_TABLE_BASE
+    MOV R6, R4
+    SUB R6, R5                 ; R6 = offset from base
+    ; Window ID = offset / ENTRY_SIZE
+    ; Simplified: just use low bits
+    LOADI R7, #4
+    SHR R6, R7                 ; R6 = Window ID
+
+    ; === WRITE WINDOW METADATA ===
+    ; Restore parameters
+    POP R3                     ; R3 = title address
+    POP R2                     ; R2 = height
+    POP R1                     ; R1 = width
+
+    ; Pixel 0: Window ID, X=50, Y=50, Flags=0x01 (Visible)
+    STORE R4, R6               ; [R4+0] = Window ID
+    LOADI R5, #1
+    ADD R4, R5
+    LOADI R7, #50
+    STORE R4, R7               ; [R4+1] = X = 50
+    ADD R4, R5
+    STORE R4, R7               ; [R4+2] = Y = 50
+    ADD R4, R5
+    LOADI R7, #0x0F            ; Flags = 0x0F (Visible, Focused, Decorated, Resizable, Movable)
+    STORE R4, R7               ; [R4+3] = Flags
+
+    ; Pixel 1: Width, Height, Z-order=10, State=0x00 (Normal)
+    ADD R4, R5
+    STORE R4, R1               ; [R4+4] = Width
+    ADD R4, R5
+    STORE R4, R2               ; [R4+5] = Height
+    ADD R4, R5
+    LOADI R7, #10              ; Default Z-order
+    STORE R4, R7               ; [R4+6] = Z-order
+    ADD R4, R5
+    LOADI R7, #0
+    STORE R4, R7               ; [R4+7] = State = Normal
+
+    ; Pixel 2: Title pointer
+    ADD R4, R5
+    MOV R7, R3
+    LOADI R1, #8
+    SHR R7, R1                 ; R7 = high byte of title address
+    STORE R4, R7               ; [R4+8] = Title ptr high
+    ADD R4, R5
+    MOV R7, R3
+    LOADI R1, #0xFF
+    AND R7, R1                 ; R7 = low byte of title address
+    STORE R4, R7               ; [R4+9] = Title ptr low
+    ADD R4, R5
+    LOADI R7, #10              ; Assume title length = 10
+    STORE R4, R7               ; [R4+10] = Title length
+    ADD R4, R5
+    LOADI R7, #0               ; ASCII encoding
+    STORE R4, R7               ; [R4+11] = Encoding
+
+    ; Pixel 3: Content buffer pointer
+    ; Allocate VRAM for content: base = 0x30000 + (Window ID * 0x1000)
+    LOADI R1, #0x30            ; High byte of content base
+    LOADI R2, #0x10
+    MUL R6, R2                 ; R6 = Window ID * 16
+    ADD R1, R6                 ; R1 = content buffer high byte
+
+    ADD R4, R5
+    STORE R4, R1               ; [R4+12] = Content ptr high
+    ADD R4, R5
+    LOADI R7, #0
+    STORE R4, R7               ; [R4+13] = Content ptr low
+    ADD R4, R5
+    LOADI R7, #2               ; Owner PID = 2 (current process)
+    STORE R4, R7               ; [R4+14] = Owner PID
+    ADD R4, R5
+    LOADI R7, #0x1F            ; Full permissions
+    STORE R4, R7               ; [R4+15] = Permissions
+
+    ; === INCREMENT WINDOW COUNT ===
+    LOADI R4, #WINDOW_COUNT_ADDR
+    LOAD R5, R4                ; R5 = current count
+    LOADI R7, #1
+    ADD R5, R7                 ; R5++
+    STORE R4, R5               ; Store new count
+
+    ; === RETURN WINDOW ID ===
+    MOV R0, R6                 ; R0 = Window ID
+    RET
+
+NO_SPACE:
+    ; Return error code
+    LOADI R0, #0xFF            ; R0 = 0xFF (error)
+    POP R3                     ; Clean up stack
+    POP R2
+    POP R1
+    RET
+
+; === EXAMPLE USAGE ===
+MAIN:
+    ; Create a window: 40x30 pixels, title at 0x2100
+    LOADI R1, #40              ; Width = 40 (320px)
+    LOADI R2, #30              ; Height = 30 (240px)
+    LOADI R3, #0x2100          ; Title address
+
+    CALL CREATE_WINDOW
+
+    ; Check result
+    CMP R0, #0xFF
+    JEQ FAILED
+
+    ; Success!
+    HALT
+
+FAILED:
+    ; Handle error
+    HALT

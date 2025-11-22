@@ -1,0 +1,153 @@
+; pxl_wm_init.pxl - Window Manager Initialization
+; Initializes the Window Table in VRAM for the VRAM OS window system
+
+; Constants
+WINDOW_TABLE_BASE EQU 0x1000   ; Base address of Window Table in VRAM
+MAX_WINDOWS EQU 32             ; Maximum number of windows
+ENTRY_SIZE EQU 16              ; 16 bytes (4 pixels) per entry
+FREE_STATE EQU 0xFF            ; Marker for free/unused window slot
+
+START:
+    ; Initialize registers
+    LOADI R0, #0               ; R0 = always zero (by convention)
+
+    ; === CLEAR WINDOW TABLE ===
+    LOADI R1, #WINDOW_TABLE_BASE  ; R1 = base address
+    LOADI R2, #MAX_WINDOWS     ; R2 = counter (32 entries)
+    LOADI R3, #FREE_STATE      ; R3 = 0xFF (free marker)
+
+CLEAR_LOOP:
+    ; Write 4 pixels (16 bytes) per entry
+    ; Pixel 0: All zeros
+    STORE R1, #0               ; [R1+0] = 0 (Window ID=0, X=0, Y=0, Flags=0)
+
+    LOADI R4, #1
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+1] = 0
+
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+2] = 0
+
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+3] = 0
+
+    ; Pixel 1: Width=0, Height=0, Z=0, State=0xFF
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+4] = 0
+
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+5] = 0
+
+    ADD R1, R4                 ; R1++
+    STORE R1, #0               ; [R1+6] = 0
+
+    ADD R1, R4                 ; R1++
+    STORE R1, R3               ; [R1+7] = 0xFF (FREE)
+
+    ; Pixels 2 & 3: Clear
+    LOADI R5, #8
+CLEAR_REST:
+    ADD R1, R4                 ; R1++
+    STORE R1, #0
+    LOADI R6, #1
+    SUB R5, R6
+    CMP R5, #0
+    JGT CLEAR_REST
+
+    ; Move to next entry
+    ADD R1, R4                 ; R1 now points to next entry
+
+    ; Decrement counter
+    LOADI R6, #1
+    SUB R2, R6
+    CMP R2, #0
+    JGT CLEAR_LOOP             ; Continue if more entries
+
+    ; === INITIALIZE DESKTOP WINDOW (Entry 0) ===
+    LOADI R1, #WINDOW_TABLE_BASE
+
+    ; Pixel 0: Window ID=0, X=0, Y=0, Flags=0x01 (Visible)
+    STORE R1, #0               ; Window ID = 0
+    LOADI R4, #1
+    ADD R1, R4
+    STORE R1, #0               ; X-pos = 0
+    ADD R1, R4
+    STORE R1, #0               ; Y-pos = 0
+    ADD R1, R4
+    STORE R1, #1               ; Flags = 0x01 (Visible)
+
+    ; Pixel 1: Width=255 (2040px), Height=255, Z=0, State=0x00 (Normal)
+    ADD R1, R4
+    LOADI R5, #255
+    STORE R1, R5               ; Width = 255 (max)
+    ADD R1, R4
+    STORE R1, R5               ; Height = 255 (max)
+    ADD R1, R4
+    STORE R1, #0               ; Z-order = 0 (bottom)
+    ADD R1, R4
+    STORE R1, #0               ; State = 0x00 (Normal)
+
+    ; Pixel 2: Title pointer (points to "Desktop" string)
+    ADD R1, R4
+    LOADI R5, #0x20            ; Title address high byte
+    STORE R1, R5
+    ADD R1, R4
+    LOADI R5, #0x00            ; Title address low byte
+    STORE R1, R5
+    ADD R1, R4
+    LOADI R5, #7               ; Title length = 7 ("Desktop")
+    STORE R1, R5
+    ADD R1, R4
+    STORE R1, #0               ; ASCII encoding
+
+    ; Pixel 3: Content buffer pointer
+    ADD R1, R4
+    LOADI R5, #0x03            ; Content address high
+    STORE R1, R5
+    ADD R1, R4
+    LOADI R5, #0x00            ; Content address low
+    STORE R1, R5
+    ADD R1, R4
+    STORE R1, #1               ; Owner PID = 1 (system)
+    ADD R1, R4
+    STORE R1, #0x1F            ; Permissions = 0x1F (public read/write)
+
+    ; === INITIALIZATION COMPLETE ===
+    LOADI R1, #0x50            ; Load success message address
+    CALL PRINT_STRING
+
+    JMP MAIN_LOOP
+
+; === PRINT_STRING SUBROUTINE ===
+; Input: R1 = address of null-terminated string
+; Clobbers: R2, R3
+PRINT_STRING:
+    LOADI R3, #0x1000          ; UART address (for output)
+
+PRINT_LOOP:
+    LOAD R2, R1                ; R2 = [R1] (load character)
+    CMP R2, #0                 ; Check for null terminator
+    JEQ PRINT_DONE
+
+    STORE R3, R2               ; Write character to UART
+
+    LOADI R4, #1
+    ADD R1, R4                 ; R1++ (next character)
+    JMP PRINT_LOOP
+
+PRINT_DONE:
+    RET
+
+; === MAIN LOOP ===
+; Continuously check for window events and handle them
+MAIN_LOOP:
+    ; TODO: Implement event handling
+    ; For now, just halt
+    JMP MAIN_LOOP              ; Infinite loop
+
+    HALT
+
+; === DATA SECTION ===
+; Success message (stored at 0x2000)
+ORG 0x2000
+DATA "Window Manager Initialized", 0
