@@ -1,0 +1,422 @@
+COMMENT ============================================================================
+COMMENT pxOS v1.1 - Enhanced Primitive Command File
+COMMENT Features: Backspace, Command Buffer, Help & Clear commands
+COMMENT ============================================================================
+
+COMMENT Define memory locations
+DEFINE boot_start 0x7C00
+DEFINE video_mem 0xB800
+DEFINE cursor_pos 0x0050
+DEFINE input_buffer 0x7E10
+DEFINE buffer_index 0x7E50
+
+COMMENT ============================================================================
+COMMENT Boot Loader - Entry Point at 0x7C00
+COMMENT ============================================================================
+
+COMMENT Set up stack
+WRITE 0x7C00 0xFA           COMMENT cli (disable interrupts)
+WRITE 0x7C01 0xB8           COMMENT mov ax, 0x9000
+WRITE 0x7C02 0x00
+WRITE 0x7C03 0x90
+WRITE 0x7C04 0x8E           COMMENT mov ss, ax
+WRITE 0x7C05 0xD0
+WRITE 0x7C06 0xBC           COMMENT mov sp, 0xFFFF
+WRITE 0x7C07 0xFF
+WRITE 0x7C08 0xFF
+WRITE 0x7C09 0xFB           COMMENT sti (enable interrupts)
+
+COMMENT Clear screen by filling with spaces
+WRITE 0x7C0A 0xE8           COMMENT call clear_screen
+WRITE 0x7C0B 0x65
+WRITE 0x7C0C 0x00
+
+COMMENT Print welcome message "pxOS v1.1> "
+WRITE 0x7C0F 0xBE           COMMENT mov si, welcome_msg
+WRITE 0x7C10 0x00
+WRITE 0x7C11 0x7D
+WRITE 0x7C12 0xE8           COMMENT call print_string
+WRITE 0x7C13 0x13
+WRITE 0x7C14 0x00
+
+COMMENT Initialize buffer index to 0
+WRITE 0x7C17 0xC6           COMMENT mov byte [buffer_index], 0
+WRITE 0x7C18 0x06
+WRITE 0x7C19 0x50
+WRITE 0x7C1A 0x7E
+WRITE 0x7C1B 0x00
+
+COMMENT Jump to shell loop
+WRITE 0x7C1C 0xE9           COMMENT jmp shell_loop
+WRITE 0x7C1D 0x3E
+WRITE 0x7C1E 0x00
+
+COMMENT ============================================================================
+COMMENT print_string function - prints null-terminated string from SI
+COMMENT ============================================================================
+DEFINE print_string 0x7C28
+
+WRITE 0x7C28 0xAC           COMMENT lodsb (load byte from SI)
+WRITE 0x7C29 0x08           COMMENT or al, al
+WRITE 0x7C2A 0xC0
+WRITE 0x7C2B 0x74           COMMENT jz done (jump if zero)
+WRITE 0x7C2C 0x06
+WRITE 0x7C2D 0xB4           COMMENT mov ah, 0x0E (BIOS teletype)
+WRITE 0x7C2E 0x0E
+WRITE 0x7C2F 0xCD           COMMENT int 0x10
+WRITE 0x7C30 0x10
+WRITE 0x7C31 0xEB           COMMENT jmp print_string
+WRITE 0x7C32 0xF5
+WRITE 0x7C33 0xC3           COMMENT ret
+
+COMMENT ============================================================================
+COMMENT Shell loop - read, buffer, and process characters
+COMMENT ============================================================================
+DEFINE shell_loop 0x7C5D
+
+WRITE 0x7C5D 0xB4           COMMENT mov ah, 0x00 (read key)
+WRITE 0x7C5E 0x00
+WRITE 0x7C5F 0xCD           COMMENT int 0x16 (keyboard interrupt)
+WRITE 0x7C60 0x16
+
+COMMENT Check for Enter key (0x0D)
+WRITE 0x7C61 0x3C           COMMENT cmp al, 0x0D
+WRITE 0x7C62 0x0D
+WRITE 0x7C63 0x74           COMMENT je process_command
+WRITE 0x7C64 0x32
+
+COMMENT Check for Backspace (0x08)
+WRITE 0x7C65 0x3C           COMMENT cmp al, 0x08
+WRITE 0x7C66 0x08
+WRITE 0x7C67 0x74           COMMENT je handle_backspace
+WRITE 0x7C68 0x0A
+
+COMMENT Regular character - add to buffer and echo
+WRITE 0x7C69 0xBF           COMMENT mov di, input_buffer
+WRITE 0x7C6A 0x10
+WRITE 0x7C6B 0x7E
+WRITE 0x7C6C 0x03           COMMENT add di, [buffer_index]
+WRITE 0x7C6D 0x3E
+WRITE 0x7C6E 0x50
+WRITE 0x7C6F 0x7E
+WRITE 0x7C70 0x88           COMMENT mov [di], al
+WRITE 0x7C71 0x05
+WRITE 0x7C72 0xFE           COMMENT inc byte [buffer_index]
+WRITE 0x7C73 0x06
+WRITE 0x7C74 0x50
+WRITE 0x7C75 0x7E
+WRITE 0x7C76 0xB4           COMMENT mov ah, 0x0E (echo character)
+WRITE 0x7C77 0x0E
+WRITE 0x7C78 0xCD           COMMENT int 0x10
+WRITE 0x7C79 0x10
+WRITE 0x7C7A 0xEB           COMMENT jmp shell_loop
+WRITE 0x7C7B 0xE1
+
+COMMENT ============================================================================
+COMMENT Handle backspace - erase character from buffer and screen
+COMMENT ============================================================================
+DEFINE handle_backspace 0x7C73
+
+WRITE 0x7C73 0x80           COMMENT cmp byte [buffer_index], 0
+WRITE 0x7C74 0x3E
+WRITE 0x7C75 0x50
+WRITE 0x7C76 0x7E
+WRITE 0x7C77 0x00
+WRITE 0x7C78 0x74           COMMENT je shell_loop (if buffer empty, ignore)
+WRITE 0x7C79 0xE2
+
+WRITE 0x7C7A 0xFE           COMMENT dec byte [buffer_index]
+WRITE 0x7C7B 0x0E
+WRITE 0x7C7C 0x50
+WRITE 0x7C7D 0x7E
+
+COMMENT Print backspace sequence: backspace, space, backspace
+WRITE 0x7C7E 0xB4           COMMENT mov ah, 0x0E
+WRITE 0x7C7F 0x0E
+WRITE 0x7C80 0xB0           COMMENT mov al, 0x08
+WRITE 0x7C81 0x08
+WRITE 0x7C82 0xCD           COMMENT int 0x10
+WRITE 0x7C83 0x10
+WRITE 0x7C84 0xB0           COMMENT mov al, ' '
+WRITE 0x7C85 0x20
+WRITE 0x7C86 0xCD           COMMENT int 0x10
+WRITE 0x7C87 0x10
+WRITE 0x7C88 0xB0           COMMENT mov al, 0x08
+WRITE 0x7C89 0x08
+WRITE 0x7C8A 0xCD           COMMENT int 0x10
+WRITE 0x7C8B 0x10
+WRITE 0x7C8C 0xEB           COMMENT jmp shell_loop
+WRITE 0x7C8D 0xCE
+
+COMMENT ============================================================================
+COMMENT Process command - parse buffer and execute
+COMMENT ============================================================================
+DEFINE process_command 0x7C97
+
+COMMENT Null-terminate the buffer
+WRITE 0x7C97 0xBF           COMMENT mov di, input_buffer
+WRITE 0x7C98 0x10
+WRITE 0x7C99 0x7E
+WRITE 0x7C9A 0x03           COMMENT add di, [buffer_index]
+WRITE 0x7C9B 0x3E
+WRITE 0x7C9C 0x50
+WRITE 0x7C9D 0x7E
+WRITE 0x7C9E 0xC6           COMMENT mov byte [di], 0
+WRITE 0x7C9F 0x05
+WRITE 0x7CA0 0x00
+
+COMMENT Print newline
+WRITE 0x7CA1 0xB0           COMMENT mov al, 0x0D
+WRITE 0x7CA2 0x0D
+WRITE 0x7CA3 0xB4           COMMENT mov ah, 0x0E
+WRITE 0x7CA4 0x0E
+WRITE 0x7CA5 0xCD           COMMENT int 0x10
+WRITE 0x7CA6 0x10
+WRITE 0x7CA7 0xB0           COMMENT mov al, 0x0A
+WRITE 0x7CA8 0x0A
+WRITE 0x7CA9 0xCD           COMMENT int 0x10
+WRITE 0x7CAA 0x10
+
+COMMENT Check for "help" command
+WRITE 0x7CAB 0xBE           COMMENT mov si, input_buffer
+WRITE 0x7CAC 0x10
+WRITE 0x7CAD 0x7E
+WRITE 0x7CAE 0xBF           COMMENT mov di, cmd_help
+WRITE 0x7CAF 0x30
+WRITE 0x7CB0 0x7D
+WRITE 0x7CB1 0xE8           COMMENT call strcmp
+WRITE 0x7CB2 0x2E
+WRITE 0x7CB3 0x00
+WRITE 0x7CB4 0x74           COMMENT je exec_help
+WRITE 0x7CB5 0x08
+
+COMMENT Check for "clear" command
+WRITE 0x7CB6 0xBE           COMMENT mov si, input_buffer
+WRITE 0x7CB7 0x10
+WRITE 0x7CB8 0x7E
+WRITE 0x7CB9 0xBF           COMMENT mov di, cmd_clear
+WRITE 0x7CBA 0x36
+WRITE 0x7CBB 0x7D
+WRITE 0x7CBC 0xE8           COMMENT call strcmp
+WRITE 0x7CBD 0x23
+WRITE 0x7CBE 0x00
+WRITE 0x7CBF 0x74           COMMENT je exec_clear
+WRITE 0x7CC0 0x15
+
+COMMENT Unknown command - just reset
+WRITE 0x7CC1 0xEB           COMMENT jmp reset_prompt
+WRITE 0x7CC2 0x1E
+
+COMMENT Execute help command
+DEFINE exec_help 0x7CBE
+
+WRITE 0x7CBE 0xBE           COMMENT mov si, help_msg
+WRITE 0x7CBF 0x3D
+WRITE 0x7CC0 0x7D
+WRITE 0x7CC1 0xE8           COMMENT call print_string
+WRITE 0x7CC2 0x64
+WRITE 0x7CC3 0xFF
+WRITE 0x7CC4 0xEB           COMMENT jmp reset_prompt
+WRITE 0x7CC5 0x14
+
+COMMENT Execute clear command
+DEFINE exec_clear 0x7CD7
+
+WRITE 0x7CD7 0xE8           COMMENT call clear_screen
+WRITE 0x7CD8 0x98
+WRITE 0x7CD9 0xFF
+WRITE 0x7CDA 0xEB           COMMENT jmp reset_prompt
+WRITE 0x7CDB 0x04
+
+COMMENT Reset prompt and buffer
+DEFINE reset_prompt 0x7CE1
+
+WRITE 0x7CE1 0xC6           COMMENT mov byte [buffer_index], 0
+WRITE 0x7CE2 0x06
+WRITE 0x7CE3 0x50
+WRITE 0x7CE4 0x7E
+WRITE 0x7CE5 0x00
+
+WRITE 0x7CE6 0xBE           COMMENT mov si, welcome_msg
+WRITE 0x7CE7 0x00
+WRITE 0x7CE8 0x7D
+WRITE 0x7CE9 0xE8           COMMENT call print_string
+WRITE 0x7CEA 0x3C
+WRITE 0x7CEB 0xFF
+WRITE 0x7CEC 0xE9           COMMENT jmp shell_loop
+WRITE 0x7CED 0x6E
+WRITE 0x7CEE 0xFF
+
+COMMENT ============================================================================
+COMMENT strcmp - compare strings at SI and DI, set ZF if equal
+COMMENT ============================================================================
+DEFINE strcmp 0x7CE2
+
+WRITE 0x7CE2 0xAC           COMMENT lodsb
+WRITE 0x7CE3 0x3A           COMMENT cmp al, [di]
+WRITE 0x7CE4 0x05
+WRITE 0x7CE5 0x75           COMMENT jne not_equal
+WRITE 0x7CE6 0x05
+WRITE 0x7CE7 0x08           COMMENT or al, al
+WRITE 0x7CE8 0xC0
+WRITE 0x7CE9 0x74           COMMENT jz strings_equal
+WRITE 0x7CEA 0x04
+WRITE 0x7CEB 0x47           COMMENT inc di
+WRITE 0x7CEC 0xEB           COMMENT jmp strcmp
+WRITE 0x7CED 0xF3
+WRITE 0x7CEE 0x31           COMMENT xor ax, ax (ZF=1, equal)
+WRITE 0x7CEF 0xC0
+WRITE 0x7CF0 0xC3           COMMENT ret
+WRITE 0x7CF1 0xB8           COMMENT mov ax, 1 (ZF=0, not equal)
+WRITE 0x7CF2 0x01
+WRITE 0x7CF3 0x00
+WRITE 0x7CF4 0xC3           COMMENT ret
+
+COMMENT ============================================================================
+COMMENT clear_screen - Clear VGA text buffer
+COMMENT ============================================================================
+DEFINE clear_screen 0x7C72
+
+WRITE 0x7C72 0xB8           COMMENT mov ax, 0xB800
+WRITE 0x7C73 0x00
+WRITE 0x7C74 0xB8
+WRITE 0x7C75 0x8E           COMMENT mov es, ax
+WRITE 0x7C76 0xC0
+WRITE 0x7C77 0x31           COMMENT xor di, di
+WRITE 0x7C78 0xFF
+WRITE 0x7C79 0xB9           COMMENT mov cx, 2000 (80x25)
+WRITE 0x7C7A 0xD0
+WRITE 0x7C7B 0x07
+WRITE 0x7C7C 0xB0           COMMENT mov al, ' '
+WRITE 0x7C7D 0x20
+WRITE 0x7C7E 0xB4           COMMENT mov ah, 0x07 (white on black)
+WRITE 0x7C7F 0x07
+WRITE 0x7C80 0xF3           COMMENT rep stosw
+WRITE 0x7C81 0xAB
+WRITE 0x7C82 0xC3           COMMENT ret
+
+COMMENT ============================================================================
+COMMENT Messages and Data
+COMMENT ============================================================================
+DEFINE welcome_msg 0x7D00
+
+WRITE 0x7D00 0x70           COMMENT 'p'
+WRITE 0x7D01 0x78           COMMENT 'x'
+WRITE 0x7D02 0x4F           COMMENT 'O'
+WRITE 0x7D03 0x53           COMMENT 'S'
+WRITE 0x7D04 0x20           COMMENT ' '
+WRITE 0x7D05 0x76           COMMENT 'v'
+WRITE 0x7D06 0x31           COMMENT '1'
+WRITE 0x7D07 0x2E           COMMENT '.'
+WRITE 0x7D08 0x31           COMMENT '1'
+WRITE 0x7D09 0x3E           COMMENT '>'
+WRITE 0x7D0A 0x20           COMMENT ' '
+WRITE 0x7D0B 0x00           COMMENT null terminator
+
+DEFINE cmd_help 0x7D30
+
+WRITE 0x7D30 0x68           COMMENT 'h'
+WRITE 0x7D31 0x65           COMMENT 'e'
+WRITE 0x7D32 0x6C           COMMENT 'l'
+WRITE 0x7D33 0x70           COMMENT 'p'
+WRITE 0x7D34 0x00           COMMENT null terminator
+
+DEFINE cmd_clear 0x7D36
+
+WRITE 0x7D36 0x63           COMMENT 'c'
+WRITE 0x7D37 0x6C           COMMENT 'l'
+WRITE 0x7D38 0x65           COMMENT 'e'
+WRITE 0x7D39 0x61           COMMENT 'a'
+WRITE 0x7D3A 0x72           COMMENT 'r'
+WRITE 0x7D3B 0x00           COMMENT null terminator
+
+DEFINE help_msg 0x7D3D
+
+WRITE 0x7D3D 0x70           COMMENT 'p'
+WRITE 0x7D3E 0x78           COMMENT 'x'
+WRITE 0x7D3F 0x4F           COMMENT 'O'
+WRITE 0x7D40 0x53           COMMENT 'S'
+WRITE 0x7D41 0x20           COMMENT ' '
+WRITE 0x7D42 0x76           COMMENT 'v'
+WRITE 0x7D43 0x31           COMMENT '1'
+WRITE 0x7D44 0x2E           COMMENT '.'
+WRITE 0x7D45 0x31           COMMENT '1'
+WRITE 0x7D46 0x20           COMMENT ' '
+WRITE 0x7D47 0x2D           COMMENT '-'
+WRITE 0x7D48 0x20           COMMENT ' '
+WRITE 0x7D49 0x43           COMMENT 'C'
+WRITE 0x7D4A 0x6F           COMMENT 'o'
+WRITE 0x7D4B 0x6D           COMMENT 'm'
+WRITE 0x7D4C 0x6D           COMMENT 'm'
+WRITE 0x7D4D 0x61           COMMENT 'a'
+WRITE 0x7D4E 0x6E           COMMENT 'n'
+WRITE 0x7D4F 0x64           COMMENT 'd'
+WRITE 0x7D50 0x73           COMMENT 's'
+WRITE 0x7D51 0x3A           COMMENT ':'
+WRITE 0x7D52 0x0D           COMMENT CR
+WRITE 0x7D53 0x0A           COMMENT LF
+WRITE 0x7D54 0x20           COMMENT ' '
+WRITE 0x7D55 0x20           COMMENT ' '
+WRITE 0x7D56 0x68           COMMENT 'h'
+WRITE 0x7D57 0x65           COMMENT 'e'
+WRITE 0x7D58 0x6C           COMMENT 'l'
+WRITE 0x7D59 0x70           COMMENT 'p'
+WRITE 0x7D5A 0x20           COMMENT ' '
+WRITE 0x7D5B 0x20           COMMENT ' '
+WRITE 0x7D5C 0x2D           COMMENT '-'
+WRITE 0x7D5D 0x20           COMMENT ' '
+WRITE 0x7D5E 0x53           COMMENT 'S'
+WRITE 0x7D5F 0x68           COMMENT 'h'
+WRITE 0x7D60 0x6F           COMMENT 'o'
+WRITE 0x7D61 0x77           COMMENT 'w'
+WRITE 0x7D62 0x20           COMMENT ' '
+WRITE 0x7D63 0x74           COMMENT 't'
+WRITE 0x7D64 0x68           COMMENT 'h'
+WRITE 0x7D65 0x69           COMMENT 'i'
+WRITE 0x7D66 0x73           COMMENT 's'
+WRITE 0x7D67 0x20           COMMENT ' '
+WRITE 0x7D68 0x6D           COMMENT 'm'
+WRITE 0x7D69 0x65           COMMENT 'e'
+WRITE 0x7D6A 0x73           COMMENT 's'
+WRITE 0x7D6B 0x73           COMMENT 's'
+WRITE 0x7D6C 0x61           COMMENT 'a'
+WRITE 0x7D6D 0x67           COMMENT 'g'
+WRITE 0x7D6E 0x65           COMMENT 'e'
+WRITE 0x7D6F 0x0D           COMMENT CR
+WRITE 0x7D70 0x0A           COMMENT LF
+WRITE 0x7D71 0x20           COMMENT ' '
+WRITE 0x7D72 0x20           COMMENT ' '
+WRITE 0x7D73 0x63           COMMENT 'c'
+WRITE 0x7D74 0x6C           COMMENT 'l'
+WRITE 0x7D75 0x65           COMMENT 'e'
+WRITE 0x7D76 0x61           COMMENT 'a'
+WRITE 0x7D77 0x72           COMMENT 'r'
+WRITE 0x7D78 0x20           COMMENT ' '
+WRITE 0x7D79 0x2D           COMMENT '-'
+WRITE 0x7D7A 0x20           COMMENT ' '
+WRITE 0x7D7B 0x43           COMMENT 'C'
+WRITE 0x7D7C 0x6C           COMMENT 'l'
+WRITE 0x7D7D 0x65           COMMENT 'e'
+WRITE 0x7D7E 0x61           COMMENT 'a'
+WRITE 0x7D7F 0x72           COMMENT 'r'
+WRITE 0x7D80 0x20           COMMENT ' '
+WRITE 0x7D81 0x74           COMMENT 't'
+WRITE 0x7D82 0x68           COMMENT 'h'
+WRITE 0x7D83 0x65           COMMENT 'e'
+WRITE 0x7D84 0x20           COMMENT ' '
+WRITE 0x7D85 0x73           COMMENT 's'
+WRITE 0x7D86 0x63           COMMENT 'c'
+WRITE 0x7D87 0x72           COMMENT 'r'
+WRITE 0x7D88 0x65           COMMENT 'e'
+WRITE 0x7D89 0x65           COMMENT 'e'
+WRITE 0x7D8A 0x6E           COMMENT 'n'
+WRITE 0x7D8B 0x0D           COMMENT CR
+WRITE 0x7D8C 0x0A           COMMENT LF
+WRITE 0x7D8D 0x00           COMMENT null terminator
+
+COMMENT ============================================================================
+COMMENT Boot signature (required at offset 0x1FE-0x1FF)
+COMMENT This is added automatically by build_pxos.py
+COMMENT ============================================================================
+
+COMMENT End of pxOS v1.1 primitive commands
