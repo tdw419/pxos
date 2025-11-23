@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel OS - GPU-Native Operating System Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            overflow: hidden;
+            color: white;
+        }
+
+        #pixelOS {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #0a0a0a;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .pixelprocess {
+            position: absolute;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transition: box-shadow 0.2s, transform 0.1s;
+            cursor: move;
+        }
+
+        .pixelprocess:hover {
+            box-shadow: 0 15px 50px rgba(0, 200, 255, 0.3);
+        }
+
+        .pixelprocess.focused {
+            z-index: 1000 !important;
+            box-shadow: 0 15px 60px rgba(0, 255, 200, 0.4);
+        }
+
+        .window {
+            background: linear-gradient(145deg, #1a2a3a 0%, #0a1a2a 100%);
+            border: 2px solid #3a4a5a;
+        }
+
+        .titlebar {
+            height: 40px;
+            background: linear-gradient(145deg, #2a4a6a 0%, #1a3a5a 100%);
+            border-bottom: 1px solid #4a5a6a;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            cursor: move;
+            user-select: none;
+        }
+
+        .titlebar .title {
+            flex: 1;
+            font-weight: 600;
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .titlebar .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .titlebar button {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .titlebar button:hover {
+            transform: scale(1.2);
+        }
+
+        .titlebar button.close {
+            background: #ff5555;
+        }
+
+        .titlebar button.minimize {
+            background: #ffaa00;
+        }
+
+        .titlebar button.maximize {
+            background: #00ff88;
+        }
+
+        .window-content {
+            padding: 20px;
+            height: calc(100% - 40px);
+            overflow: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .terminal-content {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            height: 100%;
+        }
+
+        .taskbar {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #3a3a3a;
+        }
+
+        .taskbar-content {
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            height: 100%;
+        }
+
+        .taskbar .app-icons {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .taskbar .app-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(100, 100, 100, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .taskbar .app-icon:hover {
+            background: rgba(100, 100, 100, 0.5);
+        }
+
+        .taskbar .app-icon.active {
+            background: rgba(0, 150, 255, 0.4);
+            border: 2px solid rgba(0, 200, 255, 0.6);
+        }
+
+        .taskbar .clock {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00ff00;
+            font-family: 'Consolas', monospace;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 12px;
+            z-index: 10000;
+        }
+
+        .status-item {
+            margin-right: 20px;
+            color: #00ff00;
+        }
+
+        .fps-counter {
+            color: #ffaa00;
+        }
+
+        .background-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0a0a 100%);
+            animation: plasmaEffect 10s infinite;
+        }
+
+        @keyframes plasmaEffect {
+            0%, 100% {
+                background: radial-gradient(ellipse at 20% 30%, #1a0a2e 0%, #0a0a0a 50%);
+            }
+            25% {
+                background: radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, #0a0a0a 50%);
+            }
+            50% {
+                background: radial-gradient(ellipse at 80% 80%, #1a2a0e 0%, #0a0a0a 50%);
+            }
+            75% {
+                background: radial-gradient(ellipse at 20% 70%, #2a0a1e 0%, #0a0a0a 50%);
+            }
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            right: 0;
+            bottom: 0;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 0%, rgba(100, 100, 100, 0.5) 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="pixelOS">
+        <!-- Background Effect -->
+        <div class="background-effect" data-process="Background" data-z="0"></div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">🎨 Pixel OS v1.0</div>
+            <div class="status-item">Workspace: <span id="workspace-name">Development</span></div>
+            <div class="status-item">Windows: <span id="window-count">0</span></div>
+            <div class="status-item">Focused: <span id="focused-window">None</span></div>
+            <div class="status-item fps-counter">FPS: <span id="fps">60</span></div>
+        </div>
+
+        <!-- Canvas for PixelProcesses -->
+        <div id="canvas"></div>
+    </div>
+
+    <script>
+        class PixelOS {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.processes = new Map();
+                this.focusedWindow = null;
+                this.draggedWindow = null;
+                this.dragOffset = { x: 0, y: 0 };
+                this.zIndexCounter = 100;
+                this.frameCount = 0;
+                this.lastFpsUpdate = performance.now();
+
+                this.init();
+            }
+
+            init() {
+                console.log('🚀 Initializing Pixel OS...');
+
+                // Create demo environment
+                this.createDemoEnvironment();
+
+                // Start render loop
+                this.startRenderLoop();
+
+                // Setup event listeners
+                this.setupEventListeners();
+
+                console.log('✅ Pixel OS Ready!');
+            }
+
+            createProcess(name, type, x, y, width, height, options = {}) {
+                const process = document.createElement('div');
+                process.className = `pixelprocess ${type}`;
+                process.dataset.process = name;
+                process.dataset.type = type;
+                process.style.left = `${x}px`;
+                process.style.top = `${y}px`;
+                process.style.width = `${width}px`;
+                process.style.height = `${height}px`;
+                process.style.zIndex = options.zIndex || this.zIndexCounter++;
+
+                if (type === 'window') {
+                    process.innerHTML = `
+                        <div class="titlebar">
+                            <span class="title">${options.title || name}</span>
+                            <div class="controls">
+                                <button class="minimize" onclick="pixelOS.minimizeWindow('${name}')"></button>
+                                <button class="maximize" onclick="pixelOS.maximizeWindow('${name}')"></button>
+                                <button class="close" onclick="pixelOS.closeWindow('${name}')"></button>
+                            </div>
+                        </div>
+                        <div class="window-content ${options.contentClass || ''}">
+                            ${options.content || ''}
+                        </div>
+                        <div class="resize-handle"></div>
+                    `;
+                } else if (type === 'taskbar') {
+                    process.innerHTML = `
+                        <div class="taskbar-content">
+                            <div class="app-icons">
+                                <div class="app-icon" title="Terminal">💻</div>
+                                <div class="app-icon" title="Files">📁</div>
+                                <div class="app-icon active" title="System Monitor">📊</div>
+                            </div>
+                            <div class="clock" id="taskbar-clock">00:00:00</div>
+                        </div>
+                    `;
+                }
+
+                this.canvas.appendChild(process);
+                this.processes.set(name, process);
+
+                console.log(`✨ Created process: ${name} (${type})`);
+                this.updateStatus();
+
+                return process;
+            }
+
+            createDemoEnvironment() {
+                console.log('🏗️  Creating demo environment...');
+
+                // Terminal
+                this.createProcess('Terminal', 'window', 100, 80, 800, 500, {
+                    title: 'Terminal - /home/user',
+                    contentClass: 'terminal-content',
+                    content: `user@pixelos:~$ ls -la
+total 48
+drwxr-xr-x 5 user user 4096 Nov 23 13:00 .
+drwxr-xr-x 3 root root 4096 Nov 23 12:00 ..
+-rw-r--r-- 1 user user  220 Nov 23 12:00 .bashrc
+drwxr-xr-x 8 user user 4096 Nov 23 13:00 pxos
+drwxr-xr-x 2 user user 4096 Nov 23 12:30 Documents
+drwxr-xr-x 3 user user 4096 Nov 23 12:45 Projects
+
+user@pixelos:~$ python3 pixel_os_complete.py
+🚀 Pixel OS Initialized
+   Active Processes: 8
+   GPU Rendering: Enabled
+   All systems: Online
+
+user@pixelos:~$ █`
+                });
+
+                // File Browser
+                this.createProcess('FileBrowser', 'window', 400, 200, 700, 550, {
+                    title: 'Files - Documents',
+                    content: `<div style="display: flex; height: 100%;">
+                        <div style="width: 200px; border-right: 1px solid #3a3a3a; padding: 10px;">
+                            <div style="margin-bottom: 10px;">📁 Home</div>
+                            <div style="margin-bottom: 10px;">💻 Desktop</div>
+                            <div style="margin-bottom: 10px; color: #00aaff;">📄 Documents</div>
+                            <div style="margin-bottom: 10px;">🖼️ Pictures</div>
+                            <div style="margin-bottom: 10px;">🎵 Music</div>
+                            <div style="margin-bottom: 10px;">📥 Downloads</div>
+                        </div>
+                        <div style="flex: 1; padding: 15px;">
+                            <div style="margin-bottom: 15px; font-weight: bold;">📄 Documents</div>
+                            <div style="color: #aaa;">
+                                <div style="margin-bottom: 8px;">📁 Projects</div>
+                                <div style="margin-bottom: 8px;">📁 Work</div>
+                                <div style="margin-bottom: 8px;">📄 notes.txt</div>
+                                <div style="margin-bottom: 8px;">📄 todo.md</div>
+                                <div style="margin-bottom: 8px;">📄 README.md</div>
+                            </div>
+                        </div>
+                    </div>`
+                });
+
+                // System Monitor
+                this.createProcess('SystemMonitor', 'window', 1100, 150, 600, 450, {
+                    title: 'System Monitor',
+                    content: `<div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">CPU Usage: 45%</div>
+                            <div style="width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 45%; height: 100%; background: linear-gradient(90deg, #00ff88 0%, #00aaff 100%);"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">Memory: 8.2 GB / 16 GB</div>
+                            <div style="width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 51%; height: 100%; background: linear-gradient(90deg, #ff5555 0%, #ff8800 100%);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 10px;">GPU: 75%</div>
+                            <div style="width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 75%; height: 100%; background: linear-gradient(90deg, #aa00ff 0%, #ff00aa 100%);"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 30px; color: #888; font-size: 12px;">
+                            <div>⚡ Processes: 8 GPU-native PixelProcesses</div>
+                            <div>🎨 Rendering: 60 FPS (GPU-bound)</div>
+                            <div>💾 GPU Memory: ~400 MB</div>
+                        </div>
+                    </div>`
+                });
+
+                // Taskbar
+                this.createProcess('Taskbar', 'taskbar', 0, window.innerHeight - 70, window.innerWidth, 70, {
+                    zIndex: 2000
+                });
+
+                console.log('✅ Demo environment created!');
+            }
+
+            setupEventListeners() {
+                // Window dragging
+                this.canvas.addEventListener('mousedown', (e) => {
+                    const target = e.target.closest('.pixelprocess.window');
+                    if (!target) return;
+
+                    const titlebar = e.target.closest('.titlebar');
+                    if (!titlebar) return;
+
+                    this.draggedWindow = target;
+                    const rect = target.getBoundingClientRect();
+                    this.dragOffset = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+
+                    this.focusWindow(target.dataset.process);
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!this.draggedWindow) return;
+
+                    const x = e.clientX - this.dragOffset.x;
+                    const y = e.clientY - this.dragOffset.y;
+
+                    this.draggedWindow.style.left = `${x}px`;
+                    this.draggedWindow.style.top = `${y}px`;
+                });
+
+                document.addEventListener('mouseup', () => {
+                    this.draggedWindow = null;
+                });
+
+                // Prevent text selection during drag
+                document.addEventListener('selectstart', (e) => {
+                    if (this.draggedWindow) e.preventDefault();
+                });
+            }
+
+            focusWindow(name) {
+                // Remove focus from all windows
+                this.processes.forEach((el) => {
+                    el.classList.remove('focused');
+                });
+
+                // Focus target window
+                const window = this.processes.get(name);
+                if (window && window.dataset.type === 'window') {
+                    window.classList.add('focused');
+                    window.style.zIndex = this.zIndexCounter++;
+                    this.focusedWindow = name;
+                    this.updateStatus();
+                }
+            }
+
+            closeWindow(name) {
+                const process = this.processes.get(name);
+                if (process) {
+                    process.remove();
+                    this.processes.delete(name);
+                    console.log(`❌ Closed: ${name}`);
+                    this.updateStatus();
+                }
+            }
+
+            minimizeWindow(name) {
+                const process = this.processes.get(name);
+                if (process) {
+                    process.style.display = 'none';
+                    console.log(`➖ Minimized: ${name}`);
+                }
+            }
+
+            maximizeWindow(name) {
+                const process = this.processes.get(name);
+                if (process) {
+                    // Toggle maximize
+                    if (process.dataset.maximized === 'true') {
+                        // Restore
+                        process.style.left = process.dataset.origX;
+                        process.style.top = process.dataset.origY;
+                        process.style.width = process.dataset.origWidth;
+                        process.style.height = process.dataset.origHeight;
+                        process.dataset.maximized = 'false';
+                    } else {
+                        // Maximize
+                        process.dataset.origX = process.style.left;
+                        process.dataset.origY = process.style.top;
+                        process.dataset.origWidth = process.style.width;
+                        process.dataset.origHeight = process.style.height;
+
+                        process.style.left = '0px';
+                        process.style.top = '30px';
+                        process.style.width = `${window.innerWidth}px`;
+                        process.style.height = `${window.innerHeight - 100}px`;
+                        process.dataset.maximized = 'true';
+                    }
+                }
+            }
+
+            updateStatus() {
+                const windowCount = Array.from(this.processes.values())
+                    .filter(el => el.dataset.type === 'window').length;
+
+                document.getElementById('window-count').textContent = windowCount;
+                document.getElementById('focused-window').textContent = this.focusedWindow || 'None';
+            }
+
+            startRenderLoop() {
+                const updateClock = () => {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+                    const clockEl = document.getElementById('taskbar-clock');
+                    if (clockEl) {
+                        clockEl.textContent = timeString;
+                    }
+                };
+
+                const updateFPS = () => {
+                    this.frameCount++;
+                    const now = performance.now();
+                    const elapsed = now - this.lastFpsUpdate;
+
+                    if (elapsed >= 1000) {
+                        const fps = Math.round((this.frameCount * 1000) / elapsed);
+                        document.getElementById('fps').textContent = fps;
+                        this.frameCount = 0;
+                        this.lastFpsUpdate = now;
+                    }
+                };
+
+                const renderFrame = () => {
+                    updateFPS();
+                    requestAnimationFrame(renderFrame);
+                };
+
+                // Update clock every second
+                setInterval(updateClock, 1000);
+                updateClock();
+
+                // Start render loop
+                renderFrame();
+            }
+        }
+
+        // Initialize Pixel OS
+        const pixelOS = new PixelOS();
+
+        console.log(`
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║              🎨  P I X E L   O S   L I V E  🎨                ║
+║                                                                ║
+║          GPU-Native Operating System Visualization             ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+🚀 Pixel OS is running!
+   - Drag windows to move them
+   - Click windows to focus
+   - Use window controls to minimize/maximize/close
+   - All rendering simulates GPU-native PixelProcesses
+
+✨ This is a visual representation of the Pixel OS architecture
+   where every component would actually be a GPU shader program!
+        `);
+    </script>
+</body>
+</html>
