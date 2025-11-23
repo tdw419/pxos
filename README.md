@@ -1,8 +1,36 @@
-# pxOS v1.0 — A Primitive-Built x86 Bootloader Shell
+# pxOS v1.0 — Revolutionary OS Architecture
 
-**pxOS** is a **minimal interactive bootloader** that boots directly from BIOS, clears the screen, prints a welcome message, and runs a simple shell that echoes characters you type.
+**pxOS** is an educational operating system project demonstrating innovative architectural patterns:
 
-Built entirely using **custom assembly primitives** (`WRITE`, `DEFINE`, `CALL`) — demonstrating a unique approach to OS development without requiring a traditional assembler during initial development.
+1. **Bootloader Shell** - A minimal x86 bootloader built using custom assembly primitives (`WRITE`, `DEFINE`, `CALL`)
+2. **Shader VM Runtime** - A revolutionary GPU programming system using VM architecture (NEW!)
+
+## What's NEW: Shader VM Runtime 🎉
+
+We've added a groundbreaking GPU programming system based on the same architecture as JVM, .NET CLR, and WebAssembly:
+
+**Instead of compiling languages TO shaders, we built a VM that runs ON shaders!**
+
+### Key Features:
+- **Language Independence** - Multiple frontends (Effects, Math DSL, Python-like, LOGO)
+- **Hot-Reloading** - Change effects at runtime without recompilation
+- **GPU Performance** - Full parallel execution on GPU
+- **Simple Compilation** - Just emit bytecode, no complex SPIR-V generation
+- **Debuggable** - Disassemble bytecode, step through execution
+
+See [runtime/README.md](runtime/README.md) for complete documentation!
+
+### Quick Start - Shader VM:
+
+```bash
+# Test the compiler (no GPU required)
+cd runtime
+python demo.py --test
+
+# Run on GPU (requires wgpu-py)
+pip install wgpu glfw
+python demo.py --interactive
+```
 
 ---
 
@@ -126,6 +154,13 @@ pxos-v1.0/
 ├── build_pxos.py            # Build system (converts primitives → binary)
 ├── pxos_commands.txt        # Primitive source code
 ├── pxos.bin                 # Bootable binary (512 bytes + padding)
+├── runtime/                 # NEW: Shader VM Runtime
+│   ├── README.md            # Shader VM documentation
+│   ├── shader_vm.py         # VM instruction set & compiler
+│   ├── shader_vm.wgsl       # WGSL VM runtime
+│   ├── webgpu_runtime.py    # WebGPU integration
+│   ├── language_frontends.py # Math DSL, Python, LOGO compilers
+│   └── demo.py              # Comprehensive demo
 ├── tests/
 │   ├── boot_qemu.sh         # Boot in QEMU
 │   ├── boot_bochs.sh        # Boot in Bochs
